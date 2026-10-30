@@ -137,10 +137,11 @@ KeybindList:SetVisibility(false)
 local Combat = Window:Page({ Name = "Combat", Columns = 2 })
 local Movement = Window:Page({ Name = "Movement", Columns = 2 })
 local ESP = Window:Page({ Name = "ESP", Columns = 2 })
+local Render = Window:Page({ Name = "World", Columns = 2 })
 local Misc = Window:Page({ Name = "Misc", Columns = 2 })
 local Settings = Window:Page({ Name = "Settings", Columns = 2 })
 
-local function none() end
+function none() end
 
 local Silent = Combat:Section({ Name = "Silent Aim", Side = 1 })
 Silent:Toggle({ Name = "Enabled", Flag = "SA_Enabled", Default = false, Callback = none })
@@ -150,13 +151,16 @@ Silent:Dropdown({ Name = "Aim Mode", Flag = "SA_Mode", Default = "Silent", Items
 	end
 end })
 Silent:Slider({ Name = "Camera Smooth", Flag = "SA_Smooth", Min = 5, Default = 35, Max = 100, Suffix = "%", Decimals = 1, Callback = none })
-Silent:Dropdown({ Name = "Silent Key Mode", Flag = "SA_KeyMode", Default = "Toggle", Items = { "Hold", "Toggle", "Always" }, Callback = none })
+Silent:Dropdown({ Name = "Silent Key Mode", Flag = "SA_KeyMode", Default = "Always", Items = { "Hold", "Toggle", "Always" }, Callback = none })
 Silent:Label("Silent Key", "Left"):Keybind({
 	Name = "Silent Aim Key",
 	Flag = "SA_Key",
 	Default = Enum.KeyCode.Q,
 	Mode = "Toggle",
 	Callback = function(state)
+		if Library.Flags["SA_Enabled"] ~= true then
+			return
+		end
 		if type(state) == "boolean" then
 			saKeyOn = state
 		else
@@ -164,13 +168,16 @@ Silent:Label("Silent Key", "Left"):Keybind({
 		end
 	end,
 })
-Silent:Dropdown({ Name = "Camera Key Mode", Flag = "Cam_KeyMode", Default = "Toggle", Items = { "Hold", "Toggle", "Always" }, Callback = none })
+Silent:Dropdown({ Name = "Camera Key Mode", Flag = "Cam_KeyMode", Default = "Always", Items = { "Hold", "Toggle", "Always" }, Callback = none })
 Silent:Label("Camera Key", "Left"):Keybind({
 	Name = "Camera Aim Key",
 	Flag = "Cam_Key",
 	Default = Enum.KeyCode.E,
 	Mode = "Toggle",
 	Callback = function(state)
+		if Library.Flags["SA_Enabled"] ~= true then
+			return
+		end
 		if type(state) == "boolean" then
 			camKeyOn = state
 		else
@@ -189,14 +196,24 @@ Silent:Label("FOV Color", "Left"):Colorpicker({ Name = "FOV Color", Flag = "SA_F
 Silent:Label("FOV Color 2", "Left"):Colorpicker({ Name = "FOV Color 2", Flag = "SA_FovColor2", Default = Color3.fromRGB(255, 255, 255), Callback = none })
 Silent:Toggle({ Name = "Spin Star", Flag = "SA_FovSpin", Default = true, Callback = none })
 Silent:Slider({ Name = "Spin Speed", Flag = "SA_FovSpinSpeed", Min = 1, Default = 6, Max = 30, Decimals = 1, Callback = none })
-Silent:Dropdown({ Name = "Target Part", Flag = "SA_TargetPart", Items = { "Head", "HumanoidRootPart", "UpperTorso", "LowerTorso" }, Multi = false, Default = "Head", Callback = none })
-Silent:Toggle({ Name = "Autoshoot", Flag = "SA_Autoshoot", Default = false, Callback = none })
+Silent:Dropdown({ Name = "Target Part", Flag = "SA_TargetPart", Items = { "Head", "Closest", "HumanoidRootPart", "UpperTorso", "LowerTorso" }, Multi = false, Default = "Head", Callback = none })
+Silent:Dropdown({ Name = "Targets", Flag = "SA_Targets", Items = { "Players", "AI", "Both" }, Multi = false, Default = "Both", Callback = none })
+Silent:Toggle({ Name = "Snapline", Flag = "SA_Snapline", Default = false, Callback = none })
+Silent:Label("Snapline Color", "Left"):Colorpicker({ Name = "Snapline Color", Flag = "SA_SnapColor", Default = Color3.fromRGB(255, 255, 255), Callback = none })
+Silent:Slider({ Name = "Snapline Thickness", Flag = "SA_SnapThick", Min = 1, Default = 2, Max = 6, Decimals = 1, Callback = none })
+Silent:Dropdown({ Name = "Snapline From", Flag = "SA_SnapOrigin", Default = "Mouse", Items = { "Mouse", "Barrel", "FOV" }, Callback = none })
+Silent:Toggle({ Name = "Autoshoot", Flag = "SA_Autoshoot", Default = false, Callback = function(on)
+	autoKeyOn = on and true or false
+end })
 Silent:Label("Autoshoot Keybind", "Left"):Keybind({
 	Name = "Autoshoot Key",
 	Flag = "SA_AutoshootKey",
 	Default = Enum.KeyCode.T,
 	Mode = "Toggle",
 	Callback = function(state)
+		if Library.Flags["SA_Autoshoot"] ~= true then
+			return
+		end
 		if type(state) == "boolean" then
 			autoKeyOn = state
 		else
@@ -214,9 +231,9 @@ Silent:Label("Hidden Color", "Left"):Colorpicker({ Name = "SA Hidden Color", Fla
 Silent:Toggle({ Name = "Visibility Bar", Flag = "TargetState", Default = true, Callback = none })
 Silent:Toggle({ Name = "Ignore Downed", Flag = "SA_DownCheck", Default = true, Callback = none })
 Silent:Toggle({ Name = "Force Hit", Flag = "SA_ForceHit", Default = false, Callback = none })
-Silent:Toggle({ Name = "Target Teammates", Flag = "SA_TargetTeammates", Default = false, Callback = none })
+Silent:Toggle({ Name = "Team Check", Flag = "SA_TeamCheck", Default = true, Callback = none })
 
-local Guns = Combat:Section({ Name = "Gun Mods & Misc", Side = 2 })
+local Guns = Combat:Section({ Name = "Gun Mods", Side = 2 })
 Guns:Toggle({ Name = "No Recoil", Flag = "NoRecoil_Enabled", Default = false, Callback = none })
 Guns:Toggle({ Name = "Wall Touch", Flag = "NoWallTouch", Default = false, Callback = none })
 Guns:Toggle({ Name = "No Sway", Flag = "NoSway_Enabled", Default = false, Callback = none })
@@ -231,25 +248,56 @@ Guns:Slider({ Name = "Rounds Per Second", Flag = "RapidRPS", Min = 10, Default =
 Guns:Toggle({ Name = "Instant Reload", Flag = "InstantReload", Default = false, Callback = none })
 Guns:Toggle({ Name = "Range Multiplier", Flag = "RangeMult", Default = false, Callback = none })
 Guns:Slider({ Name = "Range Amount", Flag = "RangeAmount", Min = 1, Default = 5, Max = 20, Suffix = "x", Decimals = 1, Callback = none })
-Guns:Toggle({ Name = "Hitsound", Flag = "Hit_Enabled", Default = false, Callback = none })
-Guns:Dropdown({
+Guns:Toggle({ Name = "Instant Aim", Flag = "InstantAim", Default = false, Callback = none })
+Guns:Toggle({ Name = "Instant Lean", Flag = "InstantLean", Default = false, Callback = none })
+
+local Hits = Combat:Section({ Name = "Hit Feedback", Side = 2 })
+Hits:Toggle({ Name = "Hitsound", Flag = "Hit_Enabled", Default = false, Callback = none })
+Hits:Dropdown({
 	Name = "Hitsound Select",
 	Flag = "Hit_Sound",
 	Default = "Neverlose",
 	Items = { "Bameware", "Bell", "Bubble", "Pick", "Pop", "Rust", "Sans", "Fart", "Big", "Vine", "Bruh", "Skeet", "Neverlose", "Fatality", "Bonk", "Minecraft" },
 	Callback = none,
 })
-Guns:Toggle({ Name = "Hit Notifications", Flag = "Hit_Notify", Default = false, Callback = none })
-Guns:Label("Hit Log Color", "Left"):Colorpicker({ Name = "Hit Log Color", Flag = "Hit_Color", Default = Color3.fromRGB(255, 255, 255), Callback = none })
-Guns:Toggle({ Name = "Shoot Sound (Laser)", Flag = "Shoot_Enabled", Default = false, Callback = none })
-Guns:Toggle({ Name = "Tracer", Flag = "Tracer_Enabled", Default = false, Callback = none })
-Guns:Label("Tracer Color", "Left"):Colorpicker({ Name = "Tracer Color", Flag = "Tracer_Color", Default = Color3.fromRGB(100, 255, 150), Callback = none })
-Guns:Slider({ Name = "Tracer Duration", Flag = "Tracer_Duration", Min = 0, Default = 50, Max = 500, Suffix = "%", Decimals = 1, Callback = none })
-Guns:Slider({ Name = "Tracer Thickness", Flag = "Tracer_Thickness", Min = 0, Default = 15, Max = 100, Suffix = "%", Decimals = 1, Callback = none })
+Hits:Dropdown({
+	Name = "Head Sound",
+	Flag = "Hit_Head",
+	Default = "Neverlose",
+	Items = { "Bameware", "Bell", "Bubble", "Pick", "Pop", "Rust", "Sans", "Fart", "Big", "Vine", "Bruh", "Skeet", "Neverlose", "Fatality", "Bonk", "Minecraft" },
+	Callback = none,
+})
+Hits:Dropdown({
+	Name = "Body Sound",
+	Flag = "Hit_Body",
+	Default = "Neverlose",
+	Items = { "Bameware", "Bell", "Bubble", "Pick", "Pop", "Rust", "Sans", "Fart", "Big", "Vine", "Bruh", "Skeet", "Neverlose", "Fatality", "Bonk", "Minecraft" },
+	Callback = none,
+})
+Hits:Dropdown({
+	Name = "Kill Sound",
+	Flag = "Hit_Kill",
+	Default = "Bonk",
+	Items = { "Bameware", "Bell", "Bubble", "Pick", "Pop", "Rust", "Sans", "Fart", "Big", "Vine", "Bruh", "Skeet", "Neverlose", "Fatality", "Bonk", "Minecraft" },
+	Callback = none,
+})
+Hits:Slider({ Name = "Hit Volume", Flag = "Hit_Volume", Min = 0, Default = 100, Max = 100, Suffix = "%", Decimals = 1, Callback = none })
+Hits:Slider({ Name = "Hit Pitch", Flag = "Hit_Pitch", Min = 5, Default = 10, Max = 20, Suffix = "%", Decimals = 1, Callback = none })
+Hits:Toggle({ Name = "Hitmarker", Flag = "Hit_Marker", Default = false, Callback = none })
+Hits:Toggle({ Name = "Hit Flash", Flag = "Hit_Flash", Default = false, Callback = none })
+Hits:Toggle({ Name = "Bullet Impact", Flag = "Hit_Impact", Default = false, Callback = none })
+Hits:Toggle({ Name = "Hit Notifications", Flag = "Hit_Notify", Default = false, Callback = none })
+Hits:Label("Hit Log Color", "Left"):Colorpicker({ Name = "Hit Log Color", Flag = "Hit_Color", Default = Color3.fromRGB(255, 255, 255), Callback = none })
+Hits:Toggle({ Name = "Shoot Sound (Laser)", Flag = "Shoot_Enabled", Default = false, Callback = none })
+Hits:Toggle({ Name = "Tracer", Flag = "Tracer_Enabled", Default = false, Callback = none })
+Hits:Label("Tracer Color", "Left"):Colorpicker({ Name = "Tracer Color", Flag = "Tracer_Color", Default = Color3.fromRGB(100, 255, 150), Callback = none })
+Hits:Slider({ Name = "Tracer Duration", Flag = "Tracer_Duration", Min = 0, Default = 50, Max = 500, Suffix = "%", Decimals = 1, Callback = none })
+Hits:Slider({ Name = "Tracer Thickness", Flag = "Tracer_Thickness", Min = 0, Default = 15, Max = 100, Suffix = "%", Decimals = 1, Callback = none })
 
 local Omni = Movement:Section({ Name = "Omni Sprint", Side = 1 })
 Omni:Toggle({ Name = "Enabled", Flag = "OmniSprint", Default = false, Callback = none })
 Omni:Slider({ Name = "Sprint Speed", Flag = "OmniSprintSpeed", Min = 16, Default = 20, Max = 20, Suffix = " studs", Decimals = 1, Callback = none })
+Omni:Toggle({ Name = "Remove Sprint Animation", Flag = "NoSprintAnim", Default = false, Callback = none })
 
 local Spider = Movement:Section({ Name = "Spiderman", Side = 2 })
 spiderOn = false
@@ -260,6 +308,9 @@ Spider:Label("Keybind", "Left"):Keybind({
 	Default = Enum.KeyCode.C,
 	Mode = "Toggle",
 	Callback = function(state)
+		if Library.Flags["SpiderClimb"] ~= true then
+			return
+		end
 		if type(state) == "boolean" then
 			spiderOn = state
 		else
@@ -268,6 +319,16 @@ Spider:Label("Keybind", "Left"):Keybind({
 	end,
 })
 Spider:Slider({ Name = "Climb Speed", Flag = "SpiderSpeed", Min = 8, Default = 14, Max = 15, Suffix = " studs", Decimals = 1, Callback = none })
+
+local MoveExtra = Movement:Section({ Name = "Extra", Side = 1 })
+MoveExtra:Toggle({ Name = "Gravity", Flag = "Gravity", Default = false, Callback = none })
+MoveExtra:Slider({ Name = "Gravity", Flag = "GravityValue", Min = 20, Default = 80, Max = 196, Decimals = 1, Callback = none })
+MoveExtra:Toggle({ Name = "Long Jump", Flag = "LongJump", Default = false, Callback = none })
+MoveExtra:Slider({ Name = "Long Jump", Flag = "LongJumpPower", Min = 5, Default = 18, Max = 40, Decimals = 1, Callback = none })
+MoveExtra:Toggle({ Name = "Bunnyhop", Flag = "Bhop", Default = false, Callback = none })
+MoveExtra:Toggle({ Name = "No Jump Cooldown", Flag = "NoJumpCd", Default = false, Callback = none })
+MoveExtra:Toggle({ Name = "No Fall Damage", Flag = "NoFallDamage_Enabled", Default = false, Callback = none })
+MoveExtra:Toggle({ Name = "Jesus", Flag = "Jesus_Enabled", Default = false, Callback = none })
 
 local AntiAim = Movement:Section({ Name = "Anti Aim", Side = 2 })
 AntiAim:Toggle({ Name = "Enabled", Flag = "AA_Enabled", Default = false, Callback = none })
@@ -281,10 +342,11 @@ AntiAim:Toggle({ Name = "Spin", Flag = "AA_Spin", Default = false, Callback = no
 AntiAim:Slider({ Name = "Spin Speed", Flag = "AA_SpinSpeed", Min = -10, Default = 3, Max = 10, Decimals = 1, Callback = none })
 AntiAim:Toggle({ Name = "Show Server Position", Flag = "AA_ShowServer", Default = true, Callback = none })
 
-local function targetSection(page, name, side, prefix, box1, box2, withHealth)
+function targetSection(page, name, side, prefix, box1, box2, withHealth)
 	local section = page:Section({ Name = name, Side = side })
 	section:Toggle({ Name = "Enabled", Flag = prefix .. "ESPEnabled", Default = false, Callback = none })
 	section:Toggle({ Name = "Boxes", Flag = prefix .. "Boxes", Default = false, Callback = none })
+	section:Dropdown({ Name = "Box Style", Flag = prefix .. "BoxStyle", Default = "Full", Items = { "Full", "Corners" }, Callback = none })
 	section:Label("Box Color 1"):Colorpicker({ Name = prefix .. "C1", Flag = prefix .. "BoxColor1", Default = box1, Callback = none })
 	section:Label("Box Color 2"):Colorpicker({ Name = prefix .. "C2", Flag = prefix .. "BoxColor2", Default = box2, Callback = none })
 	section:Toggle({ Name = "Chams", Flag = prefix .. "Chams", Default = false, Callback = none })
@@ -299,6 +361,10 @@ local function targetSection(page, name, side, prefix, box1, box2, withHealth)
 	else
 		section:Label("Chams Fill"):Colorpicker({ Name = prefix .. "ChF", Flag = prefix .. "ChamsColor1", Default = box1, Callback = none })
 		section:Label("Chams Outline"):Colorpicker({ Name = prefix .. "ChO", Flag = prefix .. "ChamsColor2", Default = box2, Callback = none })
+		section:Toggle({ Name = "Skeleton", Flag = prefix .. "Skeleton", Default = false, Callback = none })
+		section:Label("Skeleton Color"):Colorpicker({ Name = prefix .. "SkC", Flag = prefix .. "SkeletonColor", Default = Color3.fromRGB(255, 255, 255), Callback = none })
+		section:Toggle({ Name = "Health Bar", Flag = prefix .. "Health", Default = false, Callback = none })
+		section:Toggle({ Name = "Health Text", Flag = prefix .. "HealthText", Default = false, Callback = none })
 	end
 	section:Toggle({ Name = "Body ESP", Flag = prefix .. "Body", Default = false, Callback = none })
 	section:Toggle({ Name = "Names", Flag = prefix .. "Names", Default = false, Callback = none })
@@ -323,7 +389,7 @@ local function targetSection(page, name, side, prefix, box1, box2, withHealth)
 		section:Dropdown({ Name = "Weapon Style", Flag = prefix .. "WeaponMode", Default = "Icon", Items = { "Text", "Icon" }, Callback = none })
 		section:Slider({ Name = "Icon Size", Flag = prefix .. "IconSize", Min = 20, Default = 48, Max = 96, Suffix = "px", Decimals = 1, Callback = none })
 	end
-	section:Slider({ Name = "Max Distance", Flag = prefix .. "MaxDistance", Min = 0, Default = 400, Max = 2000, Suffix = "m", Decimals = 1, Callback = none })
+	section:Slider({ Name = "Max Distance", Flag = prefix .. "MaxDistance", Min = 0, Default = withHealth and 800 or 400, Max = 2000, Suffix = "m", Decimals = 1, Callback = none })
 	if withHealth then
 		section:Dropdown({
 			Name = "Font",
@@ -353,7 +419,7 @@ local chamsColor = Color3.fromRGB(255, 255, 255)
 local painted = {}
 local charState = {}
 
-local function asColor(value, fallback)
+function asColor(value, fallback)
 	if typeof(value) == "Color3" then
 		return value
 	end
@@ -363,11 +429,11 @@ local function asColor(value, fallback)
 	return fallback
 end
 
-local function flagBool(name)
+function flagBool(name)
 	return Library.Flags[name] == true
 end
 
-local function flagNum(name, fallback)
+function flagNum(name, fallback)
 	local value = Library.Flags[name]
 	if type(value) == "number" and value == value and value > -math.huge and value < math.huge then
 		return value
@@ -375,7 +441,7 @@ local function flagNum(name, fallback)
 	return fallback
 end
 
-local function flagColor(name, fallback)
+function flagColor(name, fallback)
 	return asColor(Library.Flags[name], fallback)
 end
 
@@ -395,17 +461,17 @@ function bindActive(modeFlag, keyFlag, toggled)
 end
 
 function silentOn()
-	if Library.Flags["SA_Mode"] == "Camera" then
+	if Library.Flags["SA_Mode"] == "Camera" or not flagBool("SA_Enabled") then
 		return false
 	end
-	return flagBool("SA_Enabled") or bindActive("SA_KeyMode", "SA_Key", saKeyOn)
+	return bindActive("SA_KeyMode", "SA_Key", saKeyOn)
 end
 
 function cameraOn()
-	if Library.Flags["SA_Mode"] ~= "Camera" then
+	if Library.Flags["SA_Mode"] ~= "Camera" or not flagBool("SA_Enabled") then
 		return false
 	end
-	return flagBool("SA_Enabled") or bindActive("Cam_KeyMode", "Cam_Key", camKeyOn)
+	return bindActive("Cam_KeyMode", "Cam_Key", camKeyOn)
 end
 
 function aimOn()
@@ -413,7 +479,7 @@ function aimOn()
 end
 
 function thirdActive()
-	return flagBool("ThirdPerson") or thirdKeyOn == true
+	return flagBool("ThirdPerson") and thirdKeyOn == true
 end
 
 function rowByText(text)
@@ -511,7 +577,7 @@ local GEAR_WORDS = {
 	"respirator", "hood", "glove", "boot", "knee", "pouch", "carrier", "beret", "collar", "shirt", "pants", "jacket", "faceshield", "face shield",
 }
 
-local function isWornGear(inst)
+function isWornGear(inst)
 	local name = string.lower(inst.Name)
 	for _, word in GEAR_WORDS do
 		if string.find(name, word, 1, true) then
@@ -521,7 +587,7 @@ local function isWornGear(inst)
 	return false
 end
 
-local function handPart(character)
+function handPart(character)
 	return character:FindFirstChild("RightHand")
 		or character:FindFirstChild("Right Arm")
 		or character:FindFirstChild("LeftHand")
@@ -530,7 +596,7 @@ end
 
 local gunCache = {}
 
-local function heldGun(character)
+function heldGun(character)
 	local now = os.clock()
 	local cached = gunCache[character]
 	if cached and now - cached.time < 0.6 then
@@ -570,7 +636,7 @@ local function heldGun(character)
 	return best
 end
 
-local function inWeapon(part, character)
+function inWeapon(part, character)
 	local gun = heldGun(character)
 	if gun and part:IsDescendantOf(gun) then
 		return true
@@ -578,14 +644,14 @@ local function inWeapon(part, character)
 	return false
 end
 
-local function shouldPaint(part, character)
+function shouldPaint(part, character)
 	return part:IsA("BasePart")
 		and part.Name ~= "HumanoidRootPart"
 		and part.Transparency < 1
 		and not inWeapon(part, character)
 end
 
-local function applyForce(part, color, style, intensity)
+function applyForce(part, color, style, intensity)
 	style = style or "ForceField"
 	local solid = math.clamp(intensity or 100, 10, 100) / 100
 	local material = Enum.Material.ForceField
@@ -617,7 +683,7 @@ local function applyForce(part, color, style, intensity)
 	end
 end
 
-local function blankClothing(inst)
+function blankClothing(inst)
 	if inst:IsA("Shirt") then
 		inst.ShirtTemplate = ""
 	elseif inst:IsA("Pants") then
@@ -627,7 +693,7 @@ local function blankClothing(inst)
 	end
 end
 
-local function suppressOne(state, inst)
+function suppressOne(state, inst)
 	if charState[state.character] ~= state then
 		return
 	end
@@ -678,7 +744,7 @@ local function paintPart(state, part)
 	applyForce(part, state.color)
 end
 
-local function showOriginal(part)
+function showOriginal(part)
 	local snap = painted[part]
 	if not snap or not part.Parent then
 		return
@@ -705,7 +771,7 @@ local function showOriginal(part)
 	end)
 end
 
-local function hideSurfaces(part)
+function hideSurfaces(part)
 	local snap = painted[part]
 	if not snap then
 		return
@@ -754,7 +820,7 @@ local function restorePart(part)
 	end)
 end
 
-local function restoreCharacter(character)
+function restoreCharacter(character)
 	for _, object in character:GetDescendants() do
 		if object.Name == "MidnightWalls" then
 			object:Destroy()
@@ -786,7 +852,7 @@ local function restoreCharacter(character)
 	end
 end
 
-local function paintCharacter(character, color)
+function paintCharacter(character, color)
 	local state = charState[character]
 	if not state then
 		state = { character = character, color = color, clothes = {}, parts = {} }
@@ -829,7 +895,7 @@ local function paintCharacter(character, color)
 	end
 end
 
-local function syncChams(wanted)
+function syncChams(wanted)
 	for character, color in wanted do
 		paintCharacter(character, color)
 	end
@@ -870,9 +936,9 @@ SelfChams:Toggle({
 local espPacks = {}
 local drawingWarned = false
 
-local function hidePack(pack)
+function hidePack(pack)
 	for key, drawing in pack do
-		if key == "bones" or key == "limbs" then
+		if key == "bones" or key == "limbs" or key == "corners" then
 			for _, line in drawing do
 				line.Visible = false
 			end
@@ -882,9 +948,9 @@ local function hidePack(pack)
 	end
 end
 
-local function destroyPack(pack)
+function destroyPack(pack)
 	for key, drawing in pack do
-		if key == "bones" or key == "limbs" then
+		if key == "bones" or key == "limbs" or key == "corners" then
 			for _, line in drawing do
 				pcall(function()
 					line:Remove()
@@ -898,7 +964,7 @@ local function destroyPack(pack)
 	end
 end
 
-local function makePack()
+function makePack()
 	local function square(thickness, filled)
 		local drawing = Drawing.new("Square")
 		drawing.Visible = false
@@ -940,6 +1006,19 @@ local function makePack()
 			end
 		end
 	end
+	local corners = {}
+	for index = 1, 16 do
+		local okLine, line = pcall(function()
+			local created = Drawing.new("Line")
+			created.Visible = false
+			created.Thickness = index <= 8 and 3 or 1
+			created.Transparency = 1
+			return created
+		end)
+		if okLine and line then
+			corners[#corners + 1] = line
+		end
+	end
 	local cheat = text()
 	cheat.Color = Color3.fromRGB(255, 50, 50)
 	cheat.Size = 11
@@ -967,10 +1046,11 @@ local function makePack()
 		kd = kd,
 		bones = bones,
 		limbs = limbs,
+		corners = corners,
 	}
 end
 
-local function ensurePack(player)
+function ensurePack(player)
 	local pack = espPacks[player]
 	if pack then
 		return pack
@@ -983,13 +1063,13 @@ local function ensurePack(player)
 	return created
 end
 
-local function rootPart(character)
+function rootPart(character)
 	return character:FindFirstChild("HumanoidRootPart")
 		or character:FindFirstChild("Head")
 		or character.PrimaryPart
 end
 
-local function healthOf(character)
+function healthOf(character)
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if humanoid and humanoid.MaxHealth > 0 then
 		return humanoid.Health, humanoid.MaxHealth
@@ -1002,7 +1082,7 @@ local function healthOf(character)
 	return 100, 100
 end
 
-local function weaponOf(character)
+function weaponOf(character)
 	local gun = heldGun(character)
 	if gun then
 		return gun.Name
@@ -1176,7 +1256,7 @@ local BONES_R6 = {
 	{ "Torso", "Right Leg" },
 }
 
-local function drawSkeleton(pack, character, camera, color, enabled)
+function drawSkeleton(pack, character, camera, color, enabled)
 	local lines = pack.bones
 	if not enabled then
 		for _, line in lines do
@@ -1187,8 +1267,8 @@ local function drawSkeleton(pack, character, camera, color, enabled)
 	local links = character:FindFirstChild("UpperTorso") and BONES_R15 or BONES_R6
 	local used = 0
 	for _, link in links do
-		local a = character:FindFirstChild(link[1])
-		local b = character:FindFirstChild(link[2])
+		local a = character:FindFirstChild(link[1]) or character:FindFirstChild(link[1], true)
+		local b = character:FindFirstChild(link[2]) or character:FindFirstChild(link[2], true)
 		local outline = lines[used + 1]
 		local line = lines[used + 2]
 		used += 2
@@ -1247,7 +1327,7 @@ function drawBody(pack, character, camera, color, enabled)
 	local names = { "Head", "UpperTorso", "LowerTorso", "Torso", "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand", "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot", "Left Arm", "Right Arm", "Left Leg", "Right Leg" }
 	local used = 0
 	for _, name in names do
-		local part = character:FindFirstChild(name)
+		local part = character:FindFirstChild(name) or character:FindFirstChild(name, true)
 		if part and part:IsA("BasePart") and used < #squares then
 			used += 1
 			local square = squares[used]
@@ -1274,7 +1354,7 @@ local STAT_NAMES = { "KD", "KDR", "K/D", "KillDeath", "KillDeathRatio" }
 local KILL_NAMES = { "Kills", "Kill", "Eliminations", "Frags" }
 local DEATH_NAMES = { "Deaths", "Death" }
 
-local function statValue(root, names)
+function statValue(root, names)
 	if not root then
 		return nil
 	end
@@ -1294,7 +1374,7 @@ local function statValue(root, names)
 	return nil
 end
 
-local function kdOf(player)
+function kdOf(player)
 	local folder = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
 	local profile = folder and (folder:FindFirstChild(player.Name) or folder:FindFirstChild(tostring(player.UserId)))
 	local stats = profile and profile:FindFirstChild("Status")
@@ -1328,7 +1408,7 @@ end
 local motion = {}
 local flaggedPlayers = {}
 
-local function suspicious(player, character, root)
+function suspicious(player, character, root)
 	if player.AccountAge < 30 then
 		return true
 	end
@@ -1369,7 +1449,7 @@ local rayParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
 rayParams.IgnoreWater = true
 
-local function canSee(character, camera)
+function canSee(character, camera)
 	local part = character:FindFirstChild("Head") or rootPart(character)
 	if not part or not camera then
 		return false
@@ -1383,7 +1463,7 @@ local function canSee(character, camera)
 	return hit.Instance:IsDescendantOf(character)
 end
 
-local function partVisible(part, camera)
+function partVisible(part, camera)
 	local origin = camera.CFrame.Position
 	local offset = part.Position - origin
 	if offset.Magnitude < 0.2 then
@@ -1397,14 +1477,14 @@ local function partVisible(part, camera)
 	return (hit.Position - part.Position).Magnitude <= math.max(part.Size.Magnitude * 0.55, 1.1)
 end
 
-local function clearPartHighlight(part)
+function clearPartHighlight(part)
 	local highlight = part:FindFirstChild("MidnightWalls")
 	if highlight then
 		highlight:Destroy()
 	end
 end
 
-local function showPartThrough(part, color, style, intensity)
+function showPartThrough(part, color, style, intensity)
 	local highlight = part:FindFirstChild("MidnightWalls")
 	if not highlight then
 		highlight = Instance.new("Highlight")
@@ -1421,7 +1501,7 @@ local function showPartThrough(part, color, style, intensity)
 	highlight.Enabled = true
 end
 
-local function applySplit(character, camera, visibleColor, hiddenColor, through)
+function applySplit(character, camera, visibleColor, hiddenColor, through)
 	paintCharacter(character, visibleColor)
 	local state = charState[character]
 	if not state or not camera then
@@ -1451,7 +1531,7 @@ local STAFF_GROUP = 3765739
 local STAFF_WORDS = { "admin", "mod", "staff", "dev", "owner", "manager", "creator", "head", "helper", "support", "trial" }
 local staffCache = {}
 
-local function roleIsStaff(role, rank)
+function roleIsStaff(role, rank)
 	if type(rank) == "number" and rank >= 200 then
 		return true
 	end
@@ -1470,7 +1550,7 @@ local function roleIsStaff(role, rank)
 	return false
 end
 
-local function staffOf(player)
+function staffOf(player)
 	if player.UserId == game.CreatorId or player.UserId == game.PrivateServerOwnerId then
 		return "Owner"
 	end
@@ -1508,7 +1588,7 @@ local function staffOf(player)
 	return cached
 end
 
-local function applyHighlight(character, color, style, intensity)
+function applyHighlight(character, color, style, intensity)
 	local highlight = character:FindFirstChild("MidnightWalls")
 	if not highlight or not highlight:IsA("Highlight") then
 		for _, object in character:GetDescendants() do
@@ -1529,7 +1609,7 @@ local function applyHighlight(character, color, style, intensity)
 	highlight.Enabled = true
 end
 
-local function clearHighlight(character)
+function clearHighlight(character)
 	local highlight = character:FindFirstChild("MidnightWalls")
 	if highlight then
 		highlight:Destroy()
@@ -1540,7 +1620,7 @@ local fpsSmooth = 60
 local pingMs = 0
 local pingTick = 0
 
-local function readPing()
+function readPing()
 	local ok, ping = pcall(function()
 		return LocalPlayer:GetNetworkPing()
 	end)
@@ -1557,65 +1637,206 @@ local function readPing()
 	return pingMs
 end
 
-local function box2d(character, camera)
+function box2d(character, camera)
 	local root = rootPart(character)
 	if not root then
 		return nil
 	end
+	local head = character:FindFirstChild("Head")
+	if not (head and head:IsA("BasePart")) then
+		head = character:FindFirstChild("Head", true)
+	end
+	local topPos = (head and head:IsA("BasePart")) and (head.Position + Vector3.new(0, math.max(head.Size.Y, 1) * 0.55, 0)) or (root.Position + Vector3.new(0, 2.6, 0))
+	local bottomPos = root.Position - Vector3.new(0, 3, 0)
+	local foot = character:FindFirstChild("LeftFoot") or character:FindFirstChild("RightFoot") or character:FindFirstChild("Left Leg") or character:FindFirstChild("Right Leg")
+	if not (foot and foot:IsA("BasePart")) then
+		foot = character:FindFirstChild("LeftFoot", true) or character:FindFirstChild("RightFoot", true)
+	end
+	if foot and foot:IsA("BasePart") then
+		bottomPos = foot.Position - Vector3.new(0, foot.Size.Y * 0.45, 0)
+	end
+	local top = camera:WorldToViewportPoint(topPos)
+	local bottom = camera:WorldToViewportPoint(bottomPos)
+	if top.Z < 0.2 or bottom.Z < 0.2 then
+		return nil
+	end
+	local height = math.abs(bottom.Y - top.Y)
+	if height < 4 then
+		return nil
+	end
+	local width = math.max(height * 0.55, 6)
+	local centerX = (top.X + bottom.X) * 0.5
+	local topY = math.min(top.Y, bottom.Y)
+	local left = centerX - width * 0.5
 	local viewport = camera.ViewportSize
-	local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
-	local any = false
-	local names = { "Head", "UpperTorso", "Torso", "LeftHand", "RightHand", "LeftFoot", "RightFoot", "Left Arm", "Right Arm" }
-	for _, name in names do
-		local part = character:FindFirstChild(name)
-		if part and part:IsA("BasePart") then
-			local cf = part.CFrame
-			local halfY = part.Size.Y * 0.5
-			local samples = { cf.Position, (cf * CFrame.new(0, halfY, 0)).Position, (cf * CFrame.new(0, -halfY, 0)).Position }
-			for _, world in samples do
-				local screen = camera:WorldToViewportPoint(world)
-				if screen.Z > 0.2 then
-					any = true
-					if screen.X < minX then
-						minX = screen.X
-					end
-					if screen.X > maxX then
-						maxX = screen.X
-					end
-					if screen.Y < minY then
-						minY = screen.Y
-					end
-					if screen.Y > maxY then
-						maxY = screen.Y
-					end
+	if left > viewport.X + 80 or left + width < -80 or topY > viewport.Y + 80 or topY + height < -80 then
+		return nil
+	end
+	return left, topY, width, height
+end
+
+function vehicleBox(model, camera)
+	local function boundsOf(inst)
+		if inst:IsA("BasePart") then
+			return inst.CFrame, inst.Size
+		end
+		if inst:IsA("Model") then
+			local ok, boxCf, boxSize = pcall(inst.GetBoundingBox, inst)
+			if ok and typeof(boxCf) == "CFrame" and typeof(boxSize) == "Vector3" then
+				return boxCf, boxSize
+			end
+		end
+		return nil, nil
+	end
+	local cf, size
+	local best = 0
+	local current = model
+	for _ = 1, 5 do
+		if not current or current == workspace or current == game then
+			break
+		end
+		local boxCf, boxSize = boundsOf(current)
+		if boxCf and boxSize then
+			local longest = math.max(boxSize.X, boxSize.Y, boxSize.Z)
+			if longest > best and longest < 220 then
+				best = longest
+				cf = boxCf
+				size = boxSize
+			end
+		end
+		current = current.Parent
+	end
+	if not cf then
+		local minV = Vector3.new(math.huge, math.huge, math.huge)
+		local maxV = Vector3.new(-math.huge, -math.huge, -math.huge)
+		local found = false
+		for _, part in model:GetDescendants() do
+			if part:IsA("BasePart") then
+				found = true
+				local half = part.Size * 0.5
+				local partCf = part.CFrame
+				local samples = { Vector3.new(-1, -1, -1), Vector3.new(-1, -1, 1), Vector3.new(-1, 1, -1), Vector3.new(-1, 1, 1), Vector3.new(1, -1, -1), Vector3.new(1, -1, 1), Vector3.new(1, 1, -1), Vector3.new(1, 1, 1) }
+				for _, corner in samples do
+					local point = partCf:PointToWorldSpace(half * corner)
+					minV = Vector3.new(math.min(minV.X, point.X), math.min(minV.Y, point.Y), math.min(minV.Z, point.Z))
+					maxV = Vector3.new(math.max(maxV.X, point.X), math.max(maxV.Y, point.Y), math.max(maxV.Z, point.Z))
 				end
 			end
 		end
+		if found then
+			cf = CFrame.new((minV + maxV) * 0.5)
+			size = maxV - minV
+		end
 	end
-	if not any then
+	if not cf or not size then
 		return nil
 	end
-	local height = maxY - minY
-	local width = maxX - minX
-	if height < 10 or width < 4 then
+	local half = size * 0.5
+	local minX, minY, maxX, maxY = math.huge, math.huge, -math.huge, -math.huge
+	local viewport = camera.ViewportSize
+	local points = { Vector3.new(-1, -1, -1), Vector3.new(-1, -1, 1), Vector3.new(-1, 1, -1), Vector3.new(-1, 1, 1), Vector3.new(1, -1, -1), Vector3.new(1, -1, 1), Vector3.new(1, 1, -1), Vector3.new(1, 1, 1) }
+	for _, corner in points do
+		local screen = camera:WorldToViewportPoint(cf:PointToWorldSpace(half * corner))
+		local sx, sy = screen.X, screen.Y
+		if screen.Z <= 0.05 then
+			local cx = viewport.X * 0.5
+			local cy = viewport.Y * 0.5
+			local dx = cx - screen.X
+			local dy = cy - screen.Y
+			local mag = math.sqrt(dx * dx + dy * dy)
+			local reach = math.max(viewport.X, viewport.Y)
+			if mag < 1 then
+				sx, sy = cx, 0
+			else
+				sx = cx + dx / mag * reach
+				sy = cy + dy / mag * reach
+			end
+		end
+		if sx < minX then
+			minX = sx
+		end
+		if sx > maxX then
+			maxX = sx
+		end
+		if sy < minY then
+			minY = sy
+		end
+		if sy > maxY then
+			maxY = sy
+		end
+	end
+	if maxX < -80 or minX > viewport.X + 80 or maxY < -80 or minY > viewport.Y + 80 then
 		return nil
 	end
-	if maxX < -40 or minX > viewport.X + 40 or maxY < -40 or minY > viewport.Y + 40 then
-		return nil
-	end
-	local padX = math.max(6, width * 0.12)
-	local padY = math.max(6, height * 0.08)
-	return minX - padX, minY - padY, width + padX * 2, height + padY * 2
+	return minX, minY, math.max(maxX - minX, 10), math.max(maxY - minY, 10)
 end
 
-local function healthTint(ratio, low, mid, high)
+function drawEspBox(pack, x, y, w, h, color, style, visible)
+	local cornersOn = visible and style == "Corners"
+	pack.outline.Visible = visible and not cornersOn
+	pack.box.Visible = visible and not cornersOn
+	if visible and not cornersOn then
+		pack.outline.Position = Vector2.new(x - 1, y - 1)
+		pack.outline.Size = Vector2.new(w + 2, h + 2)
+		pack.outline.Color = Color3.new(0, 0, 0)
+		pack.outline.Thickness = 3
+		pack.outline.Filled = false
+		pack.box.Position = Vector2.new(x, y)
+		pack.box.Size = Vector2.new(w, h)
+		pack.box.Color = color
+		pack.box.Thickness = 1
+		pack.box.Filled = false
+	end
+	local lines = pack.corners
+	if not lines then
+		return
+	end
+	if not cornersOn then
+		for _, line in lines do
+			line.Visible = false
+		end
+		return
+	end
+	local len = math.clamp(math.min(w, h) * 0.28, 4, 28)
+	local segs = {
+		{ x, y, x + len, y },
+		{ x, y, x, y + len },
+		{ x + w, y, x + w - len, y },
+		{ x + w, y, x + w, y + len },
+		{ x, y + h, x + len, y + h },
+		{ x, y + h, x, y + h - len },
+		{ x + w, y + h, x + w - len, y + h },
+		{ x + w, y + h, x + w, y + h - len },
+	}
+	for index = 1, 8 do
+		local seg = segs[index]
+		local outline = lines[index]
+		local inner = lines[index + 8]
+		if outline then
+			outline.Visible = true
+			outline.Color = Color3.new(0, 0, 0)
+			outline.Thickness = 3
+			outline.From = Vector2.new(seg[1], seg[2])
+			outline.To = Vector2.new(seg[3], seg[4])
+		end
+		if inner then
+			inner.Visible = true
+			inner.Color = color
+			inner.Thickness = 1
+			inner.From = Vector2.new(seg[1], seg[2])
+			inner.To = Vector2.new(seg[3], seg[4])
+		end
+	end
+end
+
+function healthTint(ratio, low, mid, high)
 	if ratio >= 0.5 then
 		return mid:Lerp(high, (ratio - 0.5) * 2)
 	end
 	return low:Lerp(mid, ratio * 2)
 end
 
-local function rangeStuds(flag, fallbackMeters)
+function rangeStuds(flag, fallbackMeters)
 	local meters = flagNum(flag, fallbackMeters)
 	if meters <= 0 then
 		return math.huge
@@ -1623,8 +1844,8 @@ local function rangeStuds(flag, fallbackMeters)
 	return meters / 0.28
 end
 
-local function maxStuds()
-	return rangeStuds("PlayersMaxDistance", 400)
+function maxStuds()
+	return rangeStuds("PlayersMaxDistance", 800)
 end
 
 Players.PlayerRemoving:Connect(function(player)
@@ -1715,11 +1936,11 @@ local aimHighlight = nil
 local aimCharacter = nil
 local fovCircle = nil
 
-local function silentRadius()
+function silentRadius()
 	return math.clamp(flagNum("SA_Fov", 180), 10, 800)
 end
 
-local function solveQuadratic(a, b, c)
+function solveQuadratic(a, b, c)
 	if a == 0 then
 		return nil, nil
 	end
@@ -1731,7 +1952,7 @@ local function solveQuadratic(a, b, c)
 	return (-b - root) / (2 * a), (-b + root) / (2 * a)
 end
 
-local function ballisticTime(direction, gravity, projectileSpeed)
+function ballisticTime(direction, gravity, projectileSpeed)
 	local root1, root2 = solveQuadratic(gravity:Dot(gravity) / 4, gravity:Dot(direction) - projectileSpeed * projectileSpeed, direction:Dot(direction))
 	if root1 and root2 then
 		if root1 > 0 and root1 < root2 then
@@ -1743,20 +1964,20 @@ local function ballisticTime(direction, gravity, projectileSpeed)
 	return 0
 end
 
-local function projectileDrop(origin, target, projectileSpeed, acceleration)
+function projectileDrop(origin, target, projectileSpeed, acceleration)
 	local gravity = Vector3.yAxis * (acceleration * 2)
 	local time = ballisticTime(target - origin, gravity, projectileSpeed)
 	return 0.5 * gravity * time * time
 end
 
-local function predictPoint(target, origin, projectileSpeed, acceleration)
+function predictPoint(target, origin, projectileSpeed, acceleration)
 	local gravity = Vector3.yAxis * (acceleration * 2)
 	local time = ballisticTime(target.Position - origin, gravity, projectileSpeed)
 	local velocity = target.AssemblyLinearVelocity or target.Velocity
 	return target.Position + velocity * time
 end
 
-local function silentVisible(origin, part, extra)
+function silentVisible(origin, part, extra)
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	local filter = { workspace.CurrentCamera }
@@ -1817,7 +2038,31 @@ function canPenetrate(origin, part)
 	return false
 end
 
-local function considerSilent(part, camera, origin, radius, bestDist, bestPart, extra)
+function sameClan(player)
+	clanCache = clanCache or {}
+	local cached = clanCache[player]
+	if cached and os.clock() - cached.t < 1.5 then
+		return cached.v
+	end
+	local function clanOf(name)
+		local folder = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
+		local data = folder and folder:FindFirstChild(name)
+		local journey = data and data:FindFirstChild("Journey")
+		local node = journey and journey:FindFirstChild("Clan")
+		local value = node and node:GetAttribute("CurrentClan")
+		if value == nil or value == "" or value == "nil" then
+			return nil
+		end
+		return tostring(value)
+	end
+	local mine = clanOf(LocalPlayer.Name)
+	local theirs = clanOf(player.Name)
+	local same = (LocalPlayer.Team ~= nil and player.Team == LocalPlayer.Team) or (mine ~= nil and mine == theirs)
+	clanCache[player] = { t = os.clock(), v = same }
+	return same
+end
+
+function considerSilent(part, camera, origin, radius, bestDist, bestPart, extra)
 	if not part then
 		return bestDist, bestPart
 	end
@@ -1840,7 +2085,7 @@ local function considerSilent(part, camera, origin, radius, bestDist, bestPart, 
 	return bestDist, bestPart
 end
 
-local function getSilentTarget(extra)
+function getSilentTarget(extra)
 	local camera = workspace.CurrentCamera
 	if not camera then
 		return nil
@@ -1852,32 +2097,50 @@ local function getSilentTarget(extra)
 	if type(hitName) ~= "string" then
 		hitName = "Head"
 	end
+	local who = Library.Flags["SA_Targets"]
+	if type(who) == "table" then
+		who = who.Name or who[1]
+	end
+	if type(who) ~= "string" then
+		who = "Both"
+	end
 	local zones = workspace:FindFirstChild("AiZones")
-	if zones then
+	if who ~= "Players" and zones then
 		for _, zone in zones:GetChildren() do
 			for _, character in zone:GetChildren() do
 				local humanoid = character:FindFirstChildOfClass("Humanoid")
 				if humanoid and humanoid.Health > 0 then
-					bestDist, bestPart = considerSilent(character:FindFirstChild(hitName), camera, origin, bestDist, bestDist, bestPart, extra)
+					if hitName == "Closest" then
+						for _, bone in { "Head", "UpperTorso", "HumanoidRootPart" } do
+							bestDist, bestPart = considerSilent(character:FindFirstChild(bone), camera, origin, bestDist, bestDist, bestPart, extra)
+						end
+					else
+						bestDist, bestPart = considerSilent(character:FindFirstChild(hitName), camera, origin, bestDist, bestDist, bestPart, extra)
+					end
 				end
 			end
 		end
 	end
 	for _, player in Players:GetPlayers() do
-		if player ~= LocalPlayer and player.Character then
+		if who ~= "AI" and player ~= LocalPlayer and player.Character then
 			local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
 			local alive = humanoid and humanoid.Health > 0
 			local downed = humanoid and (humanoid:GetAttribute("Downed") == true or player.Character:GetAttribute("Downed") == true)
-			local teammate = player.Team ~= nil and player.Team == LocalPlayer.Team
-			if alive and not (flagBool("SA_DownCheck") and downed) and (flagBool("SA_TargetTeammates") or not teammate) then
-				bestDist, bestPart = considerSilent(player.Character:FindFirstChild(hitName), camera, origin, bestDist, bestDist, bestPart, extra)
+			if alive and not (flagBool("SA_DownCheck") and downed) and not (flagBool("SA_TeamCheck") and sameClan(player)) then
+				if hitName == "Closest" then
+					for _, bone in { "Head", "UpperTorso", "HumanoidRootPart", "LowerTorso" } do
+						bestDist, bestPart = considerSilent(player.Character:FindFirstChild(bone), camera, origin, bestDist, bestDist, bestPart, extra)
+					end
+				else
+					bestDist, bestPart = considerSilent(player.Character:FindFirstChild(hitName), camera, origin, bestDist, bestDist, bestPart, extra)
+				end
 			end
 		end
 	end
 	return bestPart
 end
 
-local function paintAim()
+function paintAim()
 	if aimHighlight then
 		aimHighlight:Destroy()
 		aimHighlight = nil
@@ -1912,87 +2175,225 @@ function noteHit(model, partName)
 		meters = math.floor((root.Position - camera.CFrame.Position).Magnitude * 0.28 + 0.5)
 	end
 	if flagBool("Hit_Enabled") then
+		local humanoid = model:FindFirstChildOfClass("Humanoid")
 		local picked = Library.Flags["Hit_Sound"]
+		local pitch = flagNum("Hit_Pitch", 10) / 10
+		if humanoid and humanoid.Health <= 0 then
+			picked = Library.Flags["Hit_Kill"] or picked
+		elseif string.lower(where) == "head" then
+			picked = Library.Flags["Hit_Head"] or picked
+			pitch = pitch * 1.15
+		else
+			picked = Library.Flags["Hit_Body"] or picked
+		end
 		if type(picked) == "table" then
 			picked = picked.Name or picked[1]
 		end
-		playShotSound(HIT_IDS[picked] or HIT_IDS.Neverlose)
+		playShotSound(HIT_IDS[picked] or HIT_IDS.Neverlose, flagNum("Hit_Volume", 100) / 100, pitch)
 	end
 	if flagBool("Hit_Notify") then
 		pushHit(string.format("%s   %s   %dm", model.Name, where, meters))
 	end
+	if flagBool("Hit_Marker") then
+		hitMarkerUntil = os.clock() + 0.12
+	end
+	if flagBool("Hit_Flash") then
+		hitFlashUntil = os.clock() + 0.08
+	end
+	if flagBool("Hit_Impact") and root then
+		showImpact(root.Position)
+	end
 end
 
-function installRayHook()
-	rayHooked = true
+function syncInstantAmmo()
+	local folder = game:GetService("ReplicatedStorage"):FindFirstChild("AmmoTypes")
+	if not folder then
+		return
+	end
+	ammoBase = ammoBase or {}
+	local instant = Library.Flags["SA_NoDrag"] == true
+	for _, ammo in folder:GetChildren() do
+		local velocity = ammo:GetAttribute("MuzzleVelocity")
+		local drop = ammo:GetAttribute("ProjectileDrop")
+		local drag = ammo:GetAttribute("Drag")
+		if not ammoBase[ammo] then
+			ammoBase[ammo] = {
+				Drag = drag,
+				MuzzleVelocity = type(velocity) == "number" and velocity < 5000 and velocity or nil,
+				ProjectileDrop = drop,
+			}
+		end
+		local saved = ammoBase[ammo]
+		if type(saved.MuzzleVelocity) == "number" and type(velocity) == "number" and velocity >= 5000 then
+			ammo:SetAttribute("MuzzleVelocity", saved.MuzzleVelocity)
+		end
+		if saved.ProjectileDrop ~= nil and ammo:GetAttribute("ProjectileDrop") == 0 and saved.ProjectileDrop ~= 0 then
+			ammo:SetAttribute("ProjectileDrop", saved.ProjectileDrop)
+		end
+		if instant then
+			ammo:SetAttribute("Drag", 0)
+		elseif saved.Drag ~= nil then
+			ammo:SetAttribute("Drag", saved.Drag)
+		end
+	end
+end
+
+function noteAimMotion(part)
+	if typeof(part) ~= "Instance" then
+		return Vector3.zero
+	end
+	aimMotion = aimMotion or {}
+	local now = os.clock()
+	local prev = aimMotion[part]
+	local velocity = part.AssemblyLinearVelocity
+	if typeof(velocity) ~= "Vector3" then
+		velocity = Vector3.zero
+	end
+	if prev then
+		local dt = now - prev.t
+		if dt > 0.01 and dt < 0.35 then
+			local sampled = (part.Position - prev.pos) / dt
+			if sampled.Magnitude > velocity.Magnitude and sampled.Magnitude < 90 then
+				velocity = sampled
+			end
+		elseif prev.vel and velocity.Magnitude < 1 then
+			velocity = prev.vel
+		end
+	end
+	aimMotion[part] = { pos = part.Position, t = now, vel = velocity }
+	return velocity
 end
 
 task.spawn(function()
-	installRayHook()
 	local ok, bullet = pcall(require, game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("FPS"):WaitForChild("Bullet"))
 	if not ok or type(bullet) ~= "table" or type(bullet.CreateBullet) ~= "function" then
 		Library:Notification("Bullet module not ready", 4, Color3.fromRGB(255, 80, 80))
 		return
 	end
 	if type(hookfunction) ~= "function" then
-		Library:Notification("hookfunction missing", 4, Color3.fromRGB(255, 80, 80))
+		Library:Notification("Silent aim needs hookfunction", 4, Color3.fromRGB(255, 80, 80))
 		return
 	end
-	local oldBullet
-	oldBullet = hookfunction(bullet.CreateBullet, function(idk, model, model2, model3, aimPart, idk2, ammoType, tick, recoilPattern)
-		if flagBool("NoRecoil_Enabled") then
-			recoilPattern = nil
+	local function solveQuadratic(a, b, c)
+		local discriminant = b * b - 4 * a * c
+		if discriminant < 0 then
+			return nil, nil
 		end
-		local function shoot(part)
-			local camera = workspace.CurrentCamera
-			local mine = camera and typeof(part) == "Instance" and part:IsA("BasePart") and (part:IsDescendantOf(camera) or (LocalPlayer.Character and part:IsDescendantOf(LocalPlayer.Character)) or (part.Position - camera.CFrame.Position).Magnitude < 8)
-			if mine and onLocalShot then
-				onLocalShot(part)
+		local root = math.sqrt(discriminant)
+		return (-b - root) / (2 * a), (-b + root) / (2 * a)
+	end
+	local function flightTime(direction, gravity, speed)
+		local root1, root2 = solveQuadratic(gravity:Dot(gravity) / 4, gravity:Dot(direction) - speed * speed, direction:Dot(direction))
+		if root1 and root2 then
+			if root1 > 0 and root1 < root2 then
+				return math.sqrt(root1)
+			elseif root2 > 0 and root2 < root1 then
+				return math.sqrt(root2)
 			end
-			return oldBullet(idk, model, model2, model3, part, idk2, ammoType, tick, recoilPattern)
 		end
-		if not silentOn() or Library.Flags["SA_Mode"] == "Camera" or typeof(aimPart) ~= "Instance" or not aimPart:IsA("BasePart") then
-			return shoot(aimPart)
+		return 0
+	end
+	local function projectileDrop(origin, target, speed, acceleration)
+		local gravity = Vector3.yAxis * (math.abs(acceleration) * 2)
+		local time = flightTime(target - origin, gravity, speed)
+		local drop = 0.5 * gravity * time * time
+		local distance = (target - origin).Magnitude
+		if drop.Y < distance * 0.012 then
+			local fallback = distance / math.max(speed, 400)
+			drop = Vector3.new(0, math.max(drop.Y, 0.5 * 90 * fallback * fallback), 0)
+		end
+		return drop
+	end
+	local function predictPoint(target, origin, speed, acceleration)
+		local gravity = Vector3.yAxis * (math.abs(acceleration) * 2)
+		local time = flightTime(target.Position - origin, gravity, speed)
+		local velocity = noteAimMotion(target)
+		velocity = Vector3.new(velocity.X, 0, velocity.Z)
+		if velocity.Magnitude < 8 then
+			velocity = Vector3.zero
+		end
+		return target.Position + velocity * time
+	end
+	local oldBullet
+	oldBullet = hookfunction(bullet.CreateBullet, function(a1, a2, a3, a4, aimPart, a6, ammoType, a8, a9)
+		if not silentOn() or typeof(aimPart) ~= "Instance" then
+			return oldBullet(a1, a2, a3, a4, aimPart, a6, ammoType, a8, a9)
 		end
 		local chance = flagNum("SA_Hitchance", 100)
 		if chance < 100 and math.random(1, 100) > chance then
-			return shoot(aimPart)
+			return oldBullet(a1, a2, a3, a4, aimPart, a6, ammoType, a8, a9)
 		end
-		local found, target = pcall(getSilentTarget, { model, model2, model3, aimPart })
-		if not found or not target then
-			return shoot(aimPart)
+		local target = getSilentTarget({ a2, a3, a4, aimPart })
+		if not target then
+			return oldBullet(a1, a2, a3, a4, aimPart, a6, ammoType, a8, a9)
+		end
+		local ammoFolder = game:GetService("ReplicatedStorage"):FindFirstChild("AmmoTypes")
+		local bulletStats = nil
+		if ammoFolder then
+			local seen = { ammoType, a6, a8, a9 }
+			for _, value in seen do
+				if typeof(value) == "Instance" and value:GetAttribute("MuzzleVelocity") ~= nil then
+					bulletStats = value
+					break
+				end
+				local name = typeof(value) == "Instance" and value.Name or (type(value) == "string" and value or nil)
+				local found = name and ammoFolder:FindFirstChild(name)
+				if found then
+					bulletStats = found
+					break
+				end
+			end
+		end
+		local instant = Library.Flags["SA_NoDrag"] == true
+		local acceleration = 0
+		local speed = 0
+		if bulletStats then
+			local saved = ammoBase and ammoBase[bulletStats]
+			local liveSpeed = bulletStats:GetAttribute("MuzzleVelocity")
+			if type(liveSpeed) == "number" and liveSpeed > 1 and liveSpeed < 5000 then
+				speed = liveSpeed
+			elseif saved and type(saved.MuzzleVelocity) == "number" then
+				speed = saved.MuzzleVelocity
+			end
+			if saved and type(saved.ProjectileDrop) == "number" and math.abs(saved.ProjectileDrop) > 0.05 then
+				acceleration = math.abs(saved.ProjectileDrop)
+			else
+				local liveDrop = bulletStats:GetAttribute("ProjectileDrop")
+				acceleration = type(liveDrop) == "number" and math.abs(liveDrop) or 0
+			end
+			if acceleration < 1 then
+				acceleration = 45
+			end
+			bulletStats:SetAttribute("Drag", 0)
+		end
+		if speed < 1 then
+			speed = 700
+		end
+		if acceleration < 1 then
+			acceleration = 45
+		end
+		if instant then
+			shotInstant = os.clock()
+		end
+		local origin = aimPart.Position
+		local targetPosition = target.Position
+		if Library.Flags["SA_Prediction"] ~= false and speed > 1 then
+			targetPosition = predictPoint(target, origin, speed, acceleration)
+		end
+		local drop = Vector3.zero
+		if speed > 0 then
+			drop = projectileDrop(origin, targetPosition, speed, acceleration)
+		end
+		if (targetPosition + drop - origin).Magnitude < 0.05 then
+			return oldBullet(a1, a2, a3, a4, aimPart, a6, ammoType, a8, a9)
 		end
 		silentPart = target
-		local aimAt = target.Position
-		pcall(function()
-			local ammoFolder = game:GetService("ReplicatedStorage"):FindFirstChild("AmmoTypes")
-			local ammo = ammoFolder and ammoFolder:FindFirstChild(tostring(ammoType))
-			local acceleration = ammo and tonumber(ammo:GetAttribute("ProjectileDrop")) or 0
-			local speed = ammo and tonumber(ammo:GetAttribute("MuzzleVelocity")) or 0
-			if ammo and Library.Flags["SA_NoDrag"] ~= false then
-				ammo:SetAttribute("Drag", 0)
-			end
-			if Library.Flags["SA_Prediction"] ~= false and speed > 1 then
-				aimAt = predictPoint(target, aimPart.Position, speed, acceleration)
-				aimAt = aimAt + projectileDrop(aimPart.Position, aimAt, speed, acceleration)
-			end
-		end)
-		if (aimAt - aimPart.Position).Magnitude < 0.05 then
-			return shoot(aimPart)
+		if onLocalShot then
+			onLocalShot(aimPart)
 		end
-		local oldCf = aimPart.CFrame
-		local aimed = pcall(function()
-			aimPart.CFrame = CFrame.lookAt(aimPart.Position, aimAt)
-		end)
-		if not aimed then
-			return shoot(aimPart)
-		end
-		local results = table.pack(pcall(shoot, aimPart))
-		aimPart.CFrame = oldCf
-		if results[1] then
-			return table.unpack(results, 2, results.n)
-		end
-		return shoot(aimPart)
+		return oldBullet(a1, a2, a3, a4, {
+			CFrame = CFrame.new(origin, targetPosition + drop),
+		}, a6, ammoType, a8, a9)
 	end)
 end)
 
@@ -2110,7 +2511,7 @@ do
 	invGrid.Parent = invPanel
 end
 
-local function iconOf(entry)
+function iconOf(entry)
 	local function read(inst)
 		if not inst then
 			return nil
@@ -2143,7 +2544,7 @@ local function iconOf(entry)
 	return read(entry) or read(entry:FindFirstChild("ItemProperties"))
 end
 
-local function templateFor(name)
+function templateFor(name)
 	if templateCache[name] then
 		return templateCache[name]
 	end
@@ -2165,7 +2566,7 @@ local function templateFor(name)
 	return found or nil
 end
 
-local function frameModel(viewport, source)
+function frameModel(viewport, source)
 	local ok = pcall(function()
 		local clone = source:Clone()
 		for _, object in clone:GetDescendants() do
@@ -2229,14 +2630,14 @@ local function frameModel(viewport, source)
 	return ok
 end
 
-local function clearInvSlots()
+function clearInvSlots()
 	for _, slot in invSlots do
 		slot:Destroy()
 	end
 	table.clear(invSlots)
 end
 
-local function itemLabel(entry)
+function itemLabel(entry)
 	local props = entry:FindFirstChild("ItemProperties")
 	if props then
 		local call = props:GetAttribute("CallSign")
@@ -2255,7 +2656,7 @@ end
 
 local guiIconCache = {}
 
-local function guiIcon(name)
+function guiIcon(name)
 	if guiIconCache[name] ~= nil then
 		return guiIconCache[name] or nil
 	end
@@ -2276,7 +2677,7 @@ local function guiIcon(name)
 	return found
 end
 
-local function addInvSlot(order, entry)
+function addInvSlot(order, entry)
 	local slot = Instance.new("Frame")
 	slot.LayoutOrder = order
 	slot.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
@@ -2505,7 +2906,7 @@ function addInvBox(parent, order, info, size)
 	invRowPool[#invRowPool + 1] = box
 end
 
-local function rebuildInventory(player)
+function rebuildInventory(player)
 	if invGrid then
 		invGrid.Visible = false
 	end
@@ -2775,7 +3176,7 @@ local function rebuildInventory(player)
 	end
 end
 
-local function inventorySignature(player)
+function inventorySignature(player)
 	local folder = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
 	local profile = folder and (folder:FindFirstChild(player.Name) or folder:FindFirstChild(tostring(player.UserId)))
 	if not profile then
@@ -2797,7 +3198,7 @@ local function inventorySignature(player)
 	return table.concat(names, "|")
 end
 
-local function closestInFov(camera)
+function closestInFov(camera)
 	local radius = silentRadius()
 	local center = camera.ViewportSize * 0.5
 	local origin = camera.CFrame.Position
@@ -2826,7 +3227,7 @@ end
 local BOSS_LIST = {
 	{ label = "Anton", keys = { "anton" } },
 	{ label = "Dozer", keys = { "dozer" } },
-	{ label = "Whisper", keys = { "whisper" } },
+	{ label = "Whisper", keys = { "whisper", "quiet" } },
 	{ label = "Death", keys = { "death", "wendigo", "halloween" } },
 	{ label = "Mi-24", keys = { "mi-24", "mi24", "hind" } },
 	{ label = "BTR-80", keys = { "btr-80", "btr80", "btr" } },
@@ -2899,6 +3300,59 @@ do
 	bossReadout.Parent = panel
 	bossPanel = panel
 	dragOverlay(panel)
+	local questsPanel = Instance.new("Frame")
+	questsPanel.Name = "Quests"
+	questsPanel.AnchorPoint = Vector2.new(0, 0)
+	questsPanel.Position = UDim2.fromOffset(16, 118)
+	questsPanel.Size = UDim2.fromOffset(260, 0)
+	questsPanel.AutomaticSize = Enum.AutomaticSize.Y
+	questsPanel.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
+	questsPanel.BorderSizePixel = 0
+	questsPanel.Visible = false
+	questsPanel.Parent = gui
+	local questStroke = Instance.new("UIStroke")
+	questStroke.Color = Color3.fromRGB(68, 68, 68)
+	questStroke.Parent = questsPanel
+	local questPad = Instance.new("UIPadding")
+	questPad.PaddingLeft = UDim.new(0, 8)
+	questPad.PaddingRight = UDim.new(0, 8)
+	questPad.PaddingTop = UDim.new(0, 6)
+	questPad.PaddingBottom = UDim.new(0, 8)
+	questPad.Parent = questsPanel
+	local questLayout = Instance.new("UIListLayout")
+	questLayout.Padding = UDim.new(0, 3)
+	questLayout.Parent = questsPanel
+	local questLine = Instance.new("Frame")
+	questLine.Size = UDim2.new(1, 0, 0, 2)
+	questLine.BackgroundColor3 = Color3.fromRGB(255, 214, 80)
+	questLine.BorderSizePixel = 0
+	questLine.LayoutOrder = 1
+	questLine.Parent = questsPanel
+	local questTitle = Instance.new("TextLabel")
+	questTitle.BackgroundTransparency = 1
+	questTitle.Font = Enum.Font.Code
+	questTitle.TextSize = 13
+	questTitle.TextXAlignment = Enum.TextXAlignment.Left
+	questTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+	questTitle.Size = UDim2.new(1, 0, 0, 16)
+	questTitle.Text = "QUESTS"
+	questTitle.LayoutOrder = 2
+	questTitle.Parent = questsPanel
+	questReadout = Instance.new("TextLabel")
+	questReadout.BackgroundTransparency = 1
+	questReadout.Font = Enum.Font.Code
+	questReadout.TextSize = 12
+	questReadout.TextXAlignment = Enum.TextXAlignment.Left
+	questReadout.TextYAlignment = Enum.TextYAlignment.Top
+	questReadout.TextColor3 = Color3.fromRGB(230, 230, 230)
+	questReadout.TextWrapped = true
+	questReadout.Size = UDim2.new(1, 0, 0, 0)
+	questReadout.AutomaticSize = Enum.AutomaticSize.Y
+	questReadout.Text = ""
+	questReadout.LayoutOrder = 3
+	questReadout.Parent = questsPanel
+	questPanel = questsPanel
+	dragOverlay(questsPanel)
 end
 
 local worldClock = 100
@@ -2907,8 +3361,21 @@ local worldPool = {}
 local worldUsed = 0
 local worldMarks = {}
 
-local function bossLabel(name)
-	local lower = string.lower(name)
+function isEscort(model, display)
+	local blob = string.lower(tostring(model and model.Name or "") .. " " .. tostring(display or ""))
+	return string.find(blob, "guard", 1, true) ~= nil
+		or string.find(blob, "soldier", 1, true) ~= nil
+		or string.find(blob, "escort", 1, true) ~= nil
+		or string.find(blob, "minion", 1, true) ~= nil
+		or string.find(blob, "bodyguard", 1, true) ~= nil
+end
+
+function bossLabel(name)
+	local raw = string.lower(tostring(name or ""))
+	if raw == "" or isEscort({ Name = raw }, raw) then
+		return nil
+	end
+	local lower = string.gsub(raw, "[^%w%-]", "")
 	for _, boss in BOSS_LIST do
 		for _, key in boss.keys do
 			if string.find(lower, key, 1, true) then
@@ -2919,7 +3386,19 @@ local function bossLabel(name)
 	return nil
 end
 
-local function ownedCharacter(model)
+function isWhisper(model)
+	if typeof(model) ~= "Instance" or not model:IsA("Model") or ownedCharacter(model) then
+		return false
+	end
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then
+		return false
+	end
+	local blob = string.lower(model.Name .. " " .. (humanoid.DisplayName or ""))
+	return string.find(blob, "whisper", 1, true) ~= nil
+end
+
+function ownedCharacter(model)
 	local current = model
 	while current do
 		if current:IsA("Model") and Players:GetPlayerFromCharacter(current) then
@@ -2971,13 +3450,34 @@ scanFound = nil
 scanBosses = nil
 liveBosses = {}
 
-local function refreshWorld()
+function markKind(inst)
+	local blob = string.lower(inst.Name .. " " .. (inst.Parent and inst.Parent.Name or ""))
+	if flagBool("VehicleESP") and (inst:FindFirstChildWhichIsA("VehicleSeat", true) or string.find(blob, "vehicle", 1, true) or string.find(blob, "btr", 1, true) or string.find(blob, "heli", 1, true)) then
+		return { model = inst, kind = "mark", label = inst.Name, flag = "VehicleESP", color = flagColor("VehicleColor", Color3.fromRGB(120, 180, 255)), distFlag = "VehicleMax" }
+	end
+	if flagBool("MineESP") and (string.find(blob, "mine", 1, true) or string.find(blob, "claymore", 1, true) or string.find(blob, "tripwire", 1, true)) then
+		return { model = inst, kind = "mark", label = inst.Name, flag = "MineESP", color = flagColor("MineColor", Color3.fromRGB(255, 60, 60)), distFlag = "MineMax" }
+	end
+	if flagBool("TraderESP") then
+		local compact = string.gsub(string.lower(inst.Name), "[^%a]", "")
+		local traders = { tarmo = true, nurse = true, blaze = true, mihkel = true, mikhel = true, seryozha = true, boss = true }
+		if traders[compact] or string.find(blob, "trader", 1, true) or string.find(blob, "merchant", 1, true) then
+			return { model = inst, kind = "mark", label = inst.Name, flag = "TraderESP", color = flagColor("TraderColor", Color3.fromRGB(255, 190, 70)), distFlag = "TraderMax" }
+		end
+	end
+	if flagBool("DropESP") and (string.find(blob, "supply", 1, true) or string.find(blob, "airdrop", 1, true) or string.find(blob, "supply drop", 1, true)) then
+		return { model = inst, kind = "mark", label = inst.Name, flag = "DropESP", color = flagColor("DropColor", Color3.fromRGB(80, 220, 255)), distFlag = "DropMax" }
+	end
+	return nil
+end
+
+function refreshWorld()
 	local wantItems = flagBool("ItemESPEnabled")
-	local wantAi = flagBool("AIESPEnabled")
-	local wantBoss = flagBool("BossESPEnabled") or Library.Flags["BossTracker"] == true
-	if not (wantItems or wantAi or wantBoss) then
-		worldCache = {}
-		liveBosses = {}
+	local wantMarks = flagBool("TraderESP") or flagBool("VehicleESP") or flagBool("MineESP") or flagBool("DropESP") or flagBool("CorpseESPEnabled")
+	if not (wantItems or wantMarks) then
+		if not flagBool("AIESPEnabled") and not flagBool("BossESPEnabled") then
+			worldCache = {}
+		end
 		scanStack = nil
 		return liveBosses
 	end
@@ -2988,41 +3488,6 @@ local function refreshWorld()
 		scanStack = { workspace:FindFirstChild("DroppedItems") or workspace, workspace }
 		scanFound = {}
 		scanBosses = {}
-		if wantAi then
-			local zones = workspace:FindFirstChild("AiZones")
-			if zones then
-				for _, zone in zones:GetChildren() do
-					local models = zone:IsA("Model") and { zone } or zone:GetChildren()
-					for _, model in models do
-						if typeof(model) == "Instance" and model:IsA("Model") and not ownedCharacter(model) then
-						local humanoid = model:FindFirstChildOfClass("Humanoid")
-						local root = model:FindFirstChild("HumanoidRootPart")
-						local head = model:FindFirstChild("Head")
-						if humanoid and root and head and humanoid.Health > 0 and not bossLabel(model.Name) and root.Size.Magnitude < 30 then
-							local aiName = model.Name
-							local display = humanoid.DisplayName
-							if aiName == "Model" or aiName == "NPC" then
-								aiName = (display ~= "" and display ~= "Humanoid") and display or aiName
-							end
-							scanFound[#scanFound + 1] = { model = model, kind = "ai", label = aiName, humanoid = humanoid }
-						end
-						end
-					end
-				end
-			end
-			local kept = {}
-			for _, entry in worldCache do
-				if entry.kind ~= "ai" then
-					kept[#kept + 1] = entry
-				end
-			end
-			for _, entry in scanFound do
-				if entry.kind == "ai" then
-					kept[#kept + 1] = entry
-				end
-			end
-			worldCache = kept
-		end
 	end
 	local budget = 120
 	while budget > 0 and #scanStack > 0 do
@@ -3034,8 +3499,8 @@ local function refreshWorld()
 			if not label and humanoid then
 				label = bossLabel(humanoid.DisplayName)
 			end
-			if not label and inst.Parent then
-				label = bossLabel(inst.Parent.Name)
+			if label and isEscort(inst, humanoid and humanoid.DisplayName) then
+				label = nil
 			end
 			if label and (humanoid or label == "Mi-24" or label == "BTR-80") then
 				if not scanBosses[label] then
@@ -3045,6 +3510,8 @@ local function refreshWorld()
 				end
 			elseif flagBool("CorpseESPEnabled") and humanoid and inst:FindFirstChild("UpperTorso") and workspace:FindFirstChild("DroppedItems") and inst:IsDescendantOf(workspace.DroppedItems) then
 				scanFound[#scanFound + 1] = { model = inst, kind = "corpse", label = inst.Name .. "'s corpse" }
+			elseif markKind(inst) then
+				scanFound[#scanFound + 1] = markKind(inst)
 			elseif flagBool("CorpsesEnabled") and humanoid and humanoid.Health <= 0 then
 				scanFound[#scanFound + 1] = { model = inst, kind = "item", label = inst.Name .. "'s corpse", cat = "Corpses" }
 			elseif wantItems and not humanoid then
@@ -3082,14 +3549,13 @@ local function refreshWorld()
 	end
 	if #scanStack == 0 then
 		worldCache = scanFound
-		liveBosses = scanBosses
 		scanStack = nil
 		worldScanDone = os.clock()
 	end
 	return liveBosses
 end
 
-local function nextWorldDraw()
+function nextWorldDraw()
 	worldUsed += 1
 	local row = worldPool[worldUsed]
 	if row then
@@ -3120,51 +3586,581 @@ end
 function quickBosses()
 	local found = {}
 	local function consider(inst)
-		if typeof(inst) ~= "Instance" or not inst:IsA("Model") or ownedCharacter(inst) then
+		if typeof(inst) ~= "Instance" or ownedCharacter(inst) then
+			return
+		end
+		if isWhisper(inst) then
+			found["Whisper"] = inst
+			return
+		end
+		if not inst:IsA("Model") and not inst:IsA("BasePart") and not inst:IsA("Folder") then
 			return
 		end
 		local humanoid = inst:FindFirstChildOfClass("Humanoid")
+		if isEscort(inst, humanoid and humanoid.DisplayName) then
+			return
+		end
 		local label = bossLabel(inst.Name)
 		if not label and humanoid then
 			label = bossLabel(humanoid.DisplayName)
 		end
-		if not label and inst.Parent then
-			label = bossLabel(inst.Parent.Name)
-		end
-		if label then
-			local alive = true
-			if humanoid and humanoid.Health <= 0 then
-				alive = false
+		if not label then
+			local named = inst:GetAttribute("BossName") or inst:GetAttribute("NPCName")
+			if type(named) == "string" then
+				label = bossLabel(named)
 			end
-			if alive then
+		end
+		if not label then
+			return
+		end
+		local alive = true
+		if humanoid and humanoid.Health <= 0 then
+			alive = false
+		end
+		if alive then
+			local current = found[label]
+			local better = typeof(current) ~= "Instance"
+			if not better and humanoid then
+				local old = current:FindFirstChildOfClass("Humanoid")
+				local oldHp = old and old.MaxHealth or 0
+				better = humanoid.MaxHealth > oldHp or (string.lower(inst.Name) == string.lower(label) and string.lower(current.Name) ~= string.lower(label))
+			end
+			if better then
 				found[label] = inst
-			elseif not found[label] then
-				found[label] = false
+			end
+		elseif found[label] == nil then
+			found[label] = false
+		end
+	end
+	local function considerNpc(inst)
+		if inst:IsA("Model") then
+			consider(inst)
+		elseif inst:IsA("Folder") then
+			for _, inner in inst:GetChildren() do
+				if inner:IsA("Model") then
+					consider(inner)
+				end
 			end
 		end
 	end
 	local zones = workspace:FindFirstChild("AiZones")
 	if zones then
 		for _, zone in zones:GetChildren() do
-			consider(zone)
-			for _, child in zone:GetChildren() do
-				consider(child)
-				if child:IsA("Folder") or child:IsA("Model") then
-					for _, nested in child:GetChildren() do
-						consider(nested)
+			considerNpc(zone)
+			if not zone:IsA("Model") then
+				for _, npc in zone:GetChildren() do
+					considerNpc(npc)
+				end
+			end
+		end
+	end
+	for _, child in workspace:GetChildren() do
+		if child:IsA("Model") then
+			consider(child)
+		end
+	end
+	return found
+end
+
+function instancePoint(inst)
+	if typeof(inst) ~= "Instance" then
+		return nil
+	end
+	if inst:IsA("BasePart") then
+		return inst.Position
+	end
+	if inst:IsA("Model") then
+		local root = inst:FindFirstChild("HumanoidRootPart") or inst:FindFirstChild("Head") or inst:FindFirstChildWhichIsA("BasePart")
+		if root then
+			return root.Position
+		end
+		local ok, pivot = pcall(inst.GetPivot, inst)
+		if ok and typeof(pivot) == "CFrame" then
+			return pivot.Position
+		end
+	end
+	local part = inst:FindFirstChildWhichIsA("BasePart", true)
+	return part and part.Position
+end
+
+function questPhrase(text)
+	return string.gsub(string.lower(tostring(text or "")), "[^%w]", "")
+end
+
+function questFits(itemName, phrase)
+	if itemName == "" or phrase == "" or #phrase < 4 then
+		return false
+	end
+	if itemName == phrase then
+		return true
+	end
+	local generic = {
+		rations = true,
+		ration = true,
+		documents = true,
+		document = true,
+		meds = true,
+		bandage = true,
+		bandages = true,
+		food = true,
+		water = true,
+		ammo = true,
+		supplies = true,
+		supply = true,
+		gear = true,
+		loot = true,
+		parts = true,
+	}
+	if generic[phrase] then
+		return false
+	end
+	return #phrase >= 8 and string.find(itemName, phrase, 1, true) ~= nil
+end
+
+function questWordHit(itemName, phrase)
+	return questFits(itemName, phrase)
+end
+
+function readQuestWords()
+	local words = {}
+	local seen = {}
+	local function add(title, phrase)
+		local filler = { find = true, collect = true, bring = true, the = true, some = true, get = true, grab = true, locate = true, search = true, retrieve = true, deliver = true, turn = true, of = true, ["and"] = true, ["for"] = true, a = true, an = true, ["in"] = true, to = true, from = true, with = true, your = true, you = true, quest = true }
+		local bits = {}
+		for word in string.gmatch(string.lower(tostring(phrase or "")), "%a+") do
+			if not filler[word] and #word >= 3 then
+				bits[#bits + 1] = word
+			end
+		end
+		phrase = #bits > 0 and table.concat(bits) or questPhrase(phrase)
+		if #phrase < 4 or seen[phrase] or phrase == "complete" then
+			return
+		end
+		seen[phrase] = true
+		words[#words + 1] = { phrase = phrase, title = title }
+	end
+	questPageFound = false
+	local quests = questPage
+	if not quests or not quests.Parent then
+		local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+		local main = playerGui and playerGui:FindFirstChild("MainGui")
+		local frame = main and main:FindFirstChild("MainFrame")
+		quests = frame and frame:FindFirstChild("Quests", true)
+		questPage = quests
+	end
+	questPageFound = quests ~= nil
+	if quests then
+		for _, inst in quests:GetDescendants() do
+			local leaf = string.lower(inst.Name)
+			if leaf ~= "questdescrij" and leaf ~= "questdescription" and leaf ~= "queststory" and (inst:IsA("TextLabel") or inst:IsA("TextButton")) then
+				local text = inst.Text
+				if type(text) == "string" then
+					text = string.gsub(text, "<.->", "")
+					if #text <= 72 and not string.find(text, "\n", 1, true) and not string.find(text, "[Complete]", 1, true) then
+						local trader, name = string.match(text, "%[([^%]]+)%]%s*(.+)")
+						if trader and name and trader ~= "Complete" then
+							add("[" .. trader .. "] " .. name, name)
+						end
+					end
+				end
+			end
+		end
+	end
+	return words
+end
+
+function stepQuestPins()
+	local now = os.clock()
+	if now - (questWordTime or 0) < 8 then
+		return
+	end
+	questWordTime = now
+	if not questWords or now - (questListTime or 0) >= 20 then
+		questWords = readQuestWords()
+		questListTime = now
+	end
+	local phraseByTitle = {}
+	for _, entry in questWords or {} do
+		phraseByTitle[entry.title] = entry.phrase
+	end
+	local kept = {}
+	for _, pin in questPins or {} do
+		local phrase = pin.title and phraseByTitle[pin.title]
+		if phrase and pin.item and questFits(questPhrase(pin.item), phrase) and typeof(pin.pos) == "Vector3" then
+			kept[pin.title] = pin
+		end
+	end
+	local folder = workspace:FindFirstChild("Questitems") or workspace:FindFirstChild("QuestItems")
+	local lines = {}
+	local foundName = {}
+	if #questWords == 0 then
+		lines[1] = questPageFound and "none read" or "quest page missing"
+	elseif folder then
+		local samples = {}
+		local stack = { folder }
+		local steps = 0
+		while #stack > 0 and steps < 400 do
+			local inst = table.remove(stack)
+			steps += 1
+			if inst ~= folder and (inst:IsA("Model") or inst:IsA("BasePart") or inst:IsA("Folder")) then
+				local itemName = questPhrase(inst.Name)
+				for _, entry in questWords do
+					if not foundName[entry.title] and questWordHit(itemName, entry.phrase) then
+						local pos = nil
+						if inst:IsA("BasePart") then
+							pos = inst.Position
+						else
+							local okPos, pivot = pcall(inst.GetPivot, inst)
+							if okPos and typeof(pivot) == "CFrame" then
+								pos = pivot.Position
+							end
+						end
+						if typeof(pos) == "Vector3" then
+							kept[entry.title] = { pos = pos, title = entry.title, item = inst.Name }
+							foundName[entry.title] = inst.Name
+							rememberMap("quest:" .. entry.title, entry.title, flagColor("QuestColor", Color3.fromRGB(255, 214, 80)), pos)
+						end
+						break
+					end
+				end
+			end
+			if inst and not inst:IsA("BasePart") then
+				for _, child in inst:GetChildren() do
+					stack[#stack + 1] = child
+				end
+			end
+		end
+		local anyFound = false
+		for _ in foundName do
+			anyFound = true
+			break
+		end
+		if not anyFound and #samples > 0 then
+			lines[#lines + 1] = "in folder: " .. table.concat(samples, ", ")
+		end
+	else
+		lines[#lines + 1] = "no Questitems"
+	end
+	local allowed = {}
+	for _, entry in questWords do
+		allowed[entry.title] = true
+	end
+	questPins = {}
+	if #questWords == 0 then
+		for _, pin in kept do
+			questPins[#questPins + 1] = pin
+		end
+	else
+		for title, pin in kept do
+			if allowed[title] then
+				questPins[#questPins + 1] = pin
+			end
+		end
+	end
+	for _, entry in questWords do
+		lines[#lines + 1] = entry.title .. (foundName[entry.title] and ("  " .. foundName[entry.title]) or (kept[entry.title] and "  saved" or "  no item"))
+	end
+	if mapSaved then
+		local live = {}
+		for _, pin in questPins do
+			if pin.title then
+				live["quest:" .. pin.title] = true
+			end
+		end
+		for key in mapSaved do
+			if string.sub(key, 1, 6) == "quest:" and not live[key] then
+				mapSaved[key] = nil
+			end
+		end
+	end
+	if questReadout then
+		questReadout.Text = table.concat(lines, "\n")
+		if questPanel then
+			questPanel.Visible = true
+		end
+	end
+end
+
+function refreshActors()
+	local list = {}
+	local picks = {}
+	local extras = {}
+	local function pushAi(model, humanoid, display)
+		if not humanoid or humanoid.Health <= 0 then
+			return
+		end
+		local aiName = model.Name
+		if bossLabel(aiName) or isEscort(model, display) then
+			aiName = "Guard"
+		elseif aiName == "Model" or aiName == "NPC" or aiName == "Character" then
+			aiName = (display ~= "" and display ~= "Humanoid") and display or aiName
+		end
+		list[#list + 1] = { model = model, kind = "ai", label = aiName, humanoid = humanoid }
+	end
+	local function take(model)
+		if not model or not model:IsA("Model") or ownedCharacter(model) then
+			return
+		end
+		local humanoid = model:FindFirstChildOfClass("Humanoid")
+		local display = humanoid and humanoid.DisplayName or ""
+		local escort = isEscort(model, display)
+		local bossName = nil
+		if not escort then
+			if isWhisper(model) then
+				bossName = "Whisper"
+			else
+				bossName = bossLabel(model.Name) or (display ~= "" and bossLabel(display))
+			end
+		end
+		if bossName and (not humanoid or humanoid.Health > 0 or bossName == "Mi-24" or bossName == "BTR-80") then
+			local hp = humanoid and humanoid.MaxHealth or 0
+			local exact = string.lower(model.Name) == string.lower(bossName)
+			local prev = picks[bossName]
+			if not prev or (exact and not prev.exact) or (exact == prev.exact and hp > prev.hp) then
+				if prev then
+					extras[#extras + 1] = prev.model
+				end
+				picks[bossName] = { model = model, humanoid = humanoid, label = bossName, hp = hp, exact = exact }
+			else
+				extras[#extras + 1] = model
+			end
+			return
+		end
+		pushAi(model, humanoid, display)
+	end
+	local zones = workspace:FindFirstChild("AiZones")
+	if zones then
+		for _, zone in zones:GetChildren() do
+			if zone:IsA("Model") then
+				take(zone)
+			else
+				for _, npc in zone:GetChildren() do
+					if npc:IsA("Model") then
+						take(npc)
+					elseif npc:IsA("Folder") then
+						for _, inner in npc:GetChildren() do
+							if inner:IsA("Model") then
+								take(inner)
+							end
+						end
 					end
 				end
 			end
 		end
 	end
 	for _, child in workspace:GetChildren() do
-		consider(child)
+		if child:IsA("Model") then
+			local label = bossLabel(child.Name)
+			if label == "Mi-24" or label == "BTR-80" then
+				list[#list + 1] = { model = child, kind = "boss", label = label }
+			end
+		end
 	end
-	return found
+	for _, pick in picks do
+		list[#list + 1] = { model = pick.model, kind = "boss", label = pick.label, humanoid = pick.humanoid }
+	end
+	for _, model in extras do
+		local humanoid = model:FindFirstChildOfClass("Humanoid")
+		pushAi(model, humanoid, humanoid and humanoid.DisplayName or "")
+	end
+	actorCache = list
 end
 
-local function drawWorldEsp(camera, doScan)
-	local anyWorld = flagBool("ItemESPEnabled") or flagBool("AIESPEnabled") or flagBool("BossESPEnabled") or flagBool("ExfilESPEnabled") or flagBool("CorpseESPEnabled") or Library.Flags["BossTracker"] == true
+function npcBox(model, camera)
+	local head = model:FindFirstChild("Head")
+	local root = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+	if not head and not root then
+		return nil
+	end
+	local anchor = root or head
+	local topPos = head and head:IsA("BasePart") and (head.Position + Vector3.new(0, head.Size.Y * 0.55, 0)) or (anchor.Position + Vector3.new(0, 2.2, 0))
+	local bottomPos = anchor.Position - Vector3.new(0, 3, 0)
+	local foot = model:FindFirstChild("LeftFoot") or model:FindFirstChild("RightFoot") or model:FindFirstChild("Left Leg") or model:FindFirstChild("Right Leg")
+	if foot and foot:IsA("BasePart") then
+		bottomPos = foot.Position - Vector3.new(0, foot.Size.Y * 0.45, 0)
+	end
+	local top = camera:WorldToViewportPoint(topPos)
+	local bottom = camera:WorldToViewportPoint(bottomPos)
+	if top.Z < 0.25 or bottom.Z < 0.25 then
+		return nil
+	end
+	local height = math.max(math.abs(bottom.Y - top.Y), 16)
+	local width = math.max(height * 0.5, 12)
+	local centerX = (top.X + bottom.X) * 0.5
+	local topY = math.min(top.Y, bottom.Y)
+	return centerX - width * 0.5 - 2, topY - 2, width + 4, height + 4
+end
+
+function drawActors(camera, origin, active)
+	actorSeen = {}
+	if not flagBool("AIESPEnabled") and not flagBool("BossESPEnabled") then
+		if actorPacks then
+			for _, pack in actorPacks do
+				hidePack(pack)
+			end
+		end
+		return
+	end
+	for _, entry in actorCache or {} do
+		local model = entry.model
+		if model and model.Parent then
+			local isBoss = entry.kind == "boss"
+			local enabled = isBoss and flagBool("BossESPEnabled") or (not isBoss and flagBool("AIESPEnabled"))
+			if enabled then
+				local prefix = isBoss and "Boss" or "AI"
+				local root = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
+				local pos = root and root:IsA("BasePart") and root.Position
+				if not pos then
+					local okPos, pivot = pcall(model.GetPivot, model)
+					if okPos and typeof(pivot) == "CFrame" then
+						pos = pivot.Position
+					end
+				end
+				if pos then
+					local dist = (pos - origin).Magnitude
+					local limit = rangeStuds(prefix .. "MaxDistance", isBoss and 800 or 400)
+					if dist <= limit then
+						local chams = flagBool(prefix .. "Chams")
+						local mark = model:FindFirstChild("MidnightMark")
+						if chams then
+							if not mark then
+								mark = Instance.new("Highlight")
+								mark.Name = "MidnightMark"
+								mark.Adornee = model
+								mark.Parent = model
+								mark.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+							end
+							mark.Enabled = true
+							mark.FillColor = flagColor(prefix .. "ChamsColor1", Color3.fromRGB(255, 160, 80))
+							mark.OutlineColor = flagColor(prefix .. "ChamsColor2", Color3.new(1, 1, 1))
+							active[mark] = true
+						elseif mark then
+							mark.Enabled = false
+						end
+						local ahead = camera:WorldToViewportPoint(pos)
+						if ahead.Z > 0.15 then
+							actorPacks = actorPacks or {}
+							local pack = actorPacks[model]
+							if not pack then
+								local okPack, created = pcall(makePack)
+								if okPack then
+									actorPacks[model] = created
+									pack = created
+								end
+							end
+							actorSeen[model] = true
+							if pack then
+								local showName = flagBool(prefix .. "Names")
+								local showDist = flagBool(prefix .. "Distance")
+								local showBox = flagBool(prefix .. "Boxes")
+								local showHealth = flagBool(prefix .. "Health")
+								local showHealthText = flagBool(prefix .. "HealthText")
+								local x, y, w, h
+								if entry.label == "Mi-24" or entry.label == "BTR-80" then
+									x, y, w, h = vehicleBox(model, camera)
+								else
+									x, y, w, h = box2d(model, camera)
+								end
+								if not x then
+									hidePack(pack)
+								else
+									local textFont = drawingFont()
+									local nameColor = flagColor(prefix .. "NameColor", isBoss and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(255, 160, 80))
+									drawEspBox(pack, x, y, w, h, flagColor(prefix .. "BoxColor1", nameColor), Library.Flags[prefix .. "BoxStyle"] or "Full", showBox)
+									local textSize = math.clamp(math.floor(h * 0.22), 9, 13)
+									pack.name.Visible = showName
+									pack.name.Text = entry.label or ""
+									pack.name.Size = textSize
+									pack.name.Center = true
+									pack.name.Font = textFont
+									pack.name.Color = nameColor
+									pack.name.Outline = true
+									pack.name.Position = Vector2.new(x + w * 0.5, y - textSize - 1)
+									pack.kd.Visible = false
+									pack.cheat.Visible = false
+									pack.weapon.Visible = false
+									pack.visor.Visible = false
+									pack.aim.Visible = false
+									pack.dist.Visible = showDist
+									pack.dist.Text = string.format("%dm", math.floor(dist * 0.28 + 0.5))
+									pack.dist.Size = textSize
+									pack.dist.Font = textFont
+									pack.dist.Color = flagColor(prefix .. "DistanceColor", nameColor)
+									pack.dist.Outline = true
+									pack.dist.Center = true
+									pack.dist.Position = Vector2.new(x + w * 0.5, y + h + 2)
+									local hp, maxHp = healthOf(model)
+									local ratio = math.clamp(maxHp > 0 and hp / maxHp or 0, 0, 1)
+									local barH = math.max(h, textSize + 2)
+									local barW = math.clamp(math.floor(textSize * 0.34), 3, 5)
+									local barX = x - barW - 3
+									local barY = (y + h * 0.5) - barH * 0.5
+									pack.hpOutline.Visible = showHealth
+									pack.hpOutline.Position = Vector2.new(barX - 1, barY - 1)
+									pack.hpOutline.Size = Vector2.new(barW + 2, barH + 2)
+									pack.hpOutline.Color = Color3.new(0, 0, 0)
+									pack.hpOutline.Filled = false
+									pack.hpOutline.Thickness = 1
+									pack.hpBack.Visible = showHealth
+									pack.hpBack.Position = Vector2.new(barX, barY)
+									pack.hpBack.Size = Vector2.new(barW, barH)
+									pack.hpBack.Color = Color3.new(0, 0, 0)
+									pack.hpFill.Visible = showHealth
+									pack.hpFill.Position = Vector2.new(barX, barY + barH * (1 - ratio))
+									pack.hpFill.Size = Vector2.new(barW, math.max(barH * ratio, 1))
+									pack.hpFill.Color = healthTint(ratio, Color3.fromRGB(255, 70, 70), Color3.fromRGB(255, 220, 70), Color3.fromRGB(80, 255, 120))
+									pack.hpText.Visible = showHealthText
+									pack.hpText.Text = tostring(math.floor(hp + 0.5))
+									pack.hpText.Size = textSize
+									pack.hpText.Font = textFont
+									pack.hpText.Outline = true
+									pack.hpText.OutlineColor = Color3.new(0, 0, 0)
+									pack.hpText.Color = Color3.new(1, 1, 1)
+									pack.hpText.Center = false
+									local hpWidth = #pack.hpText.Text * textSize * 0.62
+									pack.hpText.Position = Vector2.new(barX - hpWidth - 3, barY + barH * 0.5 - textSize * 0.5)
+									drawSkeleton(pack, model, camera, flagColor(prefix .. "SkeletonColor", Color3.new(1, 1, 1)), flagBool(prefix .. "Skeleton"))
+									drawBody(pack, model, camera, nameColor, flagBool(prefix .. "Body"))
+								end
+							end
+						elseif actorPacks and actorPacks[model] then
+							hidePack(actorPacks[model])
+						end
+					end
+				end
+			end
+		end
+	end
+	if actorPacks then
+		for model, pack in actorPacks do
+			if not actorSeen[model] or not model.Parent then
+				hidePack(pack)
+				actorPacks[model] = nil
+			end
+		end
+	end
+end
+
+function drawWorldEsp(camera, doScan)
+	local trackBoss = Library.Flags["BossTracker"] ~= false
+	if doScan and bossReadout and bossReadout.Parent then
+		local bosses = quickBosses()
+		liveBosses = bosses
+		bossReadout.Parent.Visible = trackBoss
+		if trackBoss then
+			local lines = {}
+			for _, boss in BOSS_LIST do
+				local model = bosses[boss.label]
+				if typeof(model) == "Instance" and model.Parent then
+					lines[#lines + 1] = boss.label .. "  True"
+				else
+					lines[#lines + 1] = boss.label .. "  False"
+				end
+			end
+			bossReadout.Text = table.concat(lines, "\n")
+		end
+	end
+	local anyWorld = flagBool("ItemESPEnabled") or flagBool("AIESPEnabled") or flagBool("BossESPEnabled") or flagBool("ExfilESPEnabled") or flagBool("CorpseESPEnabled") or flagBool("VehicleESP") or flagBool("MineESP") or flagBool("TraderESP") or flagBool("DropESP") or flagBool("QuestESP") or trackBoss
 	if not anyWorld then
 		for index = 1, #worldPool do
 			worldPool[index].text.Visible = false
@@ -3174,30 +4170,21 @@ local function drawWorldEsp(camera, doScan)
 	end
 	if doScan then
 		refreshWorld()
-		local bosses = quickBosses()
-		liveBosses = bosses
-		if bossReadout and bossReadout.Parent then
-			local show = Library.Flags["BossTracker"] == true
-			bossReadout.Parent.Visible = show
-			if show then
-				local lines = {}
-				for _, boss in BOSS_LIST do
-					local model = bosses[boss.label]
-					if typeof(model) == "Instance" and model.Parent then
-						lines[#lines + 1] = boss.label .. "  True"
-					else
-						lines[#lines + 1] = boss.label .. "  False"
-					end
-				end
-				bossReadout.Text = table.concat(lines, "\n")
-			end
+		if flagBool("AIESPEnabled") or flagBool("BossESPEnabled") then
+			refreshActors()
+		else
+			actorCache = {}
 		end
 	end
 
 	worldUsed = 0
 	local origin = camera.CFrame.Position
 	local active = {}
+	drawActors(camera, origin, active)
 	for _, entry in worldCache do
+		if entry.kind == "ai" or entry.kind == "boss" then
+			continue
+		end
 		local model = entry.model
 		if model and model.Parent then
 			local root = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
@@ -3213,7 +4200,7 @@ local function drawWorldEsp(camera, doScan)
 					pos = pivot.Position
 				end
 			end
-			local skip = (not pos) or (entry.kind == "ai" and not (root and root:IsA("BasePart"))) or (entry.kind == "ai" and pos and (pos - origin).Magnitude < 6)
+			local skip = not pos
 			if not skip then
 			local dist = (pos - origin).Magnitude
 			local limit = 1200
@@ -3237,6 +4224,10 @@ local function drawWorldEsp(camera, doScan)
 				show = true
 				color = flagColor("CorpseColor", Color3.fromRGB(255, 255, 255))
 				limit = rangeStuds("CorpseMaxDistance", 300)
+			elseif entry.kind == "mark" and flagBool(entry.flag) then
+				show = true
+				color = entry.color
+				limit = rangeStuds(entry.distFlag, 400)
 			elseif entry.kind == "item" then
 				show = true
 				color = flagColor(entry.cat .. "Color", Color3.fromRGB(235, 255, 240))
@@ -3269,8 +4260,10 @@ local function drawWorldEsp(camera, doScan)
 						if entry.humanoid and entry.kind ~= "corpse" then
 							text = string.format("%s  %dhp", entry.label, math.floor(entry.humanoid.Health + 0.5))
 						end
-						if entry.kind ~= "corpse" or flagBool("CorpseDistance") then
-							text = string.format("%s  [%dm]", text, math.floor(dist * 0.28 + 0.5))
+						if entry.kind ~= "corpse" and entry.kind ~= "mark" or (entry.kind == "corpse" and flagBool("CorpseDistance")) or (entry.kind == "mark" and true) then
+							if entry.kind ~= "mark" or true then
+								text = string.format("%s  [%dm]", text, math.floor(dist * 0.28 + 0.5))
+							end
 						end
 						row.text.Visible = true
 						row.text.Font = drawingFont()
@@ -3343,6 +4336,34 @@ local function drawWorldEsp(camera, doScan)
 			end
 		end
 	end
+	if flagBool("QuestESP") then
+		pcall(stepQuestPins)
+		local color = flagColor("QuestColor", Color3.fromRGB(255, 214, 80))
+		local limit = rangeStuds("QuestMaxDistance", 400)
+		for _, pin in questPins or {} do
+			local pos = pin.pos
+			if typeof(pos) == "Vector3" then
+				local dist = (pos - origin).Magnitude
+				if dist <= limit then
+					local screen, onScreen = camera:WorldToViewportPoint(pos)
+					local viewport = camera.ViewportSize
+					if onScreen and screen.Z > 0.4 and screen.X > 0 and screen.X < viewport.X and screen.Y > 0 and screen.Y < viewport.Y then
+						local row = nextWorldDraw()
+						if row then
+							local meters = math.floor(dist * 0.28 + 0.5)
+							row.text.Visible = true
+							row.text.Text = string.format("%s  [%dm]", pin.title, meters)
+							row.text.Color = color
+							row.text.Position = Vector2.new(screen.X, screen.Y)
+							row.box.Visible = false
+						end
+					end
+				end
+			end
+		end
+	elseif questPanel then
+		questPanel.Visible = false
+	end
 	for index = worldUsed + 1, #worldPool do
 		worldPool[index].text.Visible = false
 		worldPool[index].box.Visible = false
@@ -3396,19 +4417,10 @@ function profileStats(player)
 	absorbReports(stats)
 	absorbReports(profile)
 	absorbReports(player)
-	if profile then
-		for _, inst in profile:GetDescendants() do
+	if stats then
+		for _, inst in stats:GetChildren() do
 			if string.find(string.lower(inst.Name), "report", 1, true) then
 				absorbReports(inst)
-				for _, child in inst:GetChildren() do
-					absorbReports(child)
-					if child:IsA("ValueBase") then
-						local number = tonumber(child.Value)
-						if number then
-							reports += number
-						end
-					end
-				end
 				if inst:GetAttribute("Count") == nil and #inst:GetChildren() > 0 and reports == 0 then
 					reports = #inst:GetChildren()
 				end
@@ -3459,11 +4471,6 @@ function profileStats(player)
 	readHours(stats)
 	readHours(profile)
 	readHours(player)
-	if profile then
-		for _, inst in profile:GetDescendants() do
-			readHours(inst)
-		end
-	end
 	local kd = deaths > 0 and (kills / deaths) or kills
 	statCache[player] = { t = os.clock(), kills = kills, deaths = deaths, kd = kd, reports = reports, hours = hours }
 	return kills, deaths, kd, reports, hours
@@ -3794,6 +4801,79 @@ function ensureFovDrawings()
 	end
 end
 
+function barrelScreen(camera)
+	local viewmodel = camera:FindFirstChild("ViewModel")
+	if not viewmodel then
+		return nil
+	end
+	local named = nil
+	local best = nil
+	local bestDot = -math.huge
+	local look = camera.CFrame.LookVector
+	local origin = camera.CFrame.Position
+	for _, obj in viewmodel:GetDescendants() do
+		if obj:IsA("BasePart") then
+			local name = string.lower(obj.Name)
+			if string.find(name, "muzzle", 1, true) or string.find(name, "barrel", 1, true) then
+				named = obj
+				break
+			end
+			if obj:FindFirstAncestor("Item") then
+				local dot = (obj.Position - origin):Dot(look)
+				if dot > bestDot then
+					bestDot = dot
+					best = obj
+				end
+			end
+		end
+	end
+	local part = named or best
+	if not part then
+		return nil
+	end
+	local screen, onScreen = camera:WorldToViewportPoint(part.Position)
+	if not onScreen then
+		return nil
+	end
+	return Vector2.new(screen.X, screen.Y)
+end
+
+function drawSnapline(camera)
+	if type(Drawing) ~= "table" or type(Drawing.new) ~= "function" then
+		return
+	end
+	if not snapLine then
+		snapLine = Drawing.new("Line")
+		snapLine.Visible = false
+		snapLine.Transparency = 1
+	end
+	local targeting = silentPart and camera and (aimOn() or (flagBool("SA_Autoshoot") and autoKeyOn))
+	if not flagBool("SA_Snapline") or not targeting then
+		snapLine.Visible = false
+		return
+	end
+	local screen, onScreen = camera:WorldToViewportPoint(silentPart.Position)
+	if not onScreen then
+		snapLine.Visible = false
+		return
+	end
+	local origin = Library.Flags["SA_SnapOrigin"]
+	if type(origin) == "table" then
+		origin = origin.Name or origin[1]
+	end
+	local from = camera.ViewportSize * 0.5
+	if origin == "Mouse" then
+		from = game:GetService("UserInputService"):GetMouseLocation()
+	elseif origin == "Barrel" then
+		from = barrelScreen(camera) or from
+	end
+	snapLine.Visible = true
+	snapLine.From = from
+	snapLine.To = Vector2.new(screen.X, screen.Y)
+	snapLine.Color = flagColor("SA_SnapColor", Color3.fromRGB(255, 255, 255))
+	snapLine.Thickness = math.clamp(flagNum("SA_SnapThick", 2), 1, 6)
+end
+
 function drawFov(camera)
 	ensureFovDrawings()
 	local show = aimOn() and Library.Flags["SA_FovCircle"] ~= false and camera
@@ -3886,6 +4966,31 @@ end
 pcall(function()
 	RunService:UnbindFromRenderStep("MidnightESP")
 end)
+if not shared.MidnightFall then
+	shared.MidnightFall = true
+	RunService.Heartbeat:Connect(function()
+		if syncInstantAmmo then
+			syncInstantAmmo()
+		end
+		if not flagBool("NoFallDamage_Enabled") then
+			return
+		end
+		local character = LocalPlayer.Character
+		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		local root = character and character:FindFirstChild("HumanoidRootPart")
+		if not humanoid then
+			return
+		end
+		local state = humanoid:GetState()
+		if state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.FallingDown or state == Enum.HumanoidStateType.PlatformStanding then
+			humanoid:ChangeState(Enum.HumanoidStateType.Running)
+		end
+		if root and root.AssemblyLinearVelocity.Y < -30 then
+			local velocity = root.AssemblyLinearVelocity
+			root.AssemblyLinearVelocity = Vector3.new(velocity.X, -8, velocity.Z)
+		end
+	end)
+end
 RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, function(dt)
 	local wanted = {}
 	local camera = workspace.CurrentCamera
@@ -3899,6 +5004,9 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 	end
 	if aimOn() and camera then
 		silentPart = getSilentTarget()
+		if silentPart then
+			noteAimMotion(silentPart)
+		end
 		local aimModel = silentPart and silentPart:FindFirstAncestorOfClass("Model")
 		aimChamModel = aimModel
 		aimChamColor = flagColor("SA_TargetVisible", Color3.fromRGB(80, 255, 120))
@@ -3907,8 +5015,11 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 		end
 		paintAim()
 		updateTargetCard(aimModel)
-	elseif (flagBool("SA_Autoshoot") or autoKeyOn) and camera then
+	elseif (flagBool("SA_Autoshoot") and autoKeyOn) and camera then
 		silentPart = getSilentTarget()
+		if silentPart then
+			noteAimMotion(silentPart)
+		end
 		aimChamModel = silentPart and silentPart:FindFirstAncestorOfClass("Model")
 		aimChamColor = flagColor("SA_TargetVisible", Color3.fromRGB(80, 255, 120))
 		updateTargetCard(aimChamModel)
@@ -3919,7 +5030,7 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 		paintAim()
 		updateTargetCard(nil)
 	end
-	if (flagBool("SA_Autoshoot") or autoKeyOn) and silentPart and camera then
+	if flagBool("SA_Autoshoot") and autoKeyOn and silentPart and camera then
 		pullTrigger()
 	end
 	if cameraOn() and silentPart and camera then
@@ -3928,6 +5039,8 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 	end
 	if camera then
 		drawFov(camera)
+		drawSnapline(camera)
+		drawHitFx(camera)
 	end
 	local fontNow = Library.Flags["EspFont"]
 	if fontNow ~= lastEspFont then
@@ -4062,21 +5175,7 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 					weaponIcons[player].Visible = false
 				end
 			else
-			espHold = espHold or {}
-			espMiss = espMiss or {}
 			local x, y, w, h = box2d(character, camera)
-			if x then
-				espMiss[player] = 0
-				espHold[player] = { x, y, w, h }
-			else
-				espMiss[player] = (espMiss[player] or 0) + 1
-				local held = espHold[player]
-				if held and espMiss[player] <= 4 then
-					x, y, w, h = held[1], held[2], held[3], held[4]
-				else
-					espHold[player] = nil
-				end
-			end
 			if not x then
 				if pack then
 					hidePack(pack)
@@ -4088,29 +5187,18 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 				pack = ensurePack(player)
 				if pack then
 					local boxColor = flagColor("PlayersBoxColor1", Color3.fromRGB(255, 255, 255))
-					local boxColor2 = flagColor("PlayersBoxColor2", Color3.fromRGB(0, 0, 0))
-					pack.outline.Visible = showBox
-					pack.outline.Position = Vector2.new(x - 1, y - 1)
-					pack.outline.Size = Vector2.new(w + 2, h + 2)
-					pack.outline.Color = Color3.new(0, 0, 0)
-					pack.outline.Thickness = 3
-					pack.outline.Filled = false
-					pack.box.Visible = showBox
-					pack.box.Position = Vector2.new(x, y)
-					pack.box.Size = Vector2.new(w, h)
-					pack.box.Color = flagColor("PlayersBoxColor1", Color3.fromRGB(255, 255, 255))
-					pack.box.Thickness = 1
-					pack.box.Filled = false
+					drawEspBox(pack, x, y, w, h, boxColor, Library.Flags["PlayersBoxStyle"] or "Full", showBox)
 
 					local textFont = drawingFont()
 					pack.name.Visible = showName
 					pack.name.Text = player.Name
-					pack.name.Size = math.clamp(math.floor(h * 0.13), 11, 14)
+					pack.name.Size = math.clamp(math.floor(h * 0.22), 9, 13)
 					pack.name.Center = true
 					pack.name.Font = textFont
 					pack.name.Color = flagColor("PlayersNameColor", Color3.fromRGB(255, 255, 255))
 					pack.name.Outline = true
-					pack.name.Position = Vector2.new(x + w * 0.5, y - 18)
+					local nameY = y - pack.name.Size - 1
+					pack.name.Position = Vector2.new(x + w * 0.5, nameY)
 
 					local showKd = Library.Flags["PlayersKD"] ~= false
 					pack.kd.Visible = showKd and type(kd) == "number"
@@ -4121,15 +5209,15 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 					pack.kd.Font = textFont
 					pack.kd.Outline = true
 					pack.kd.OutlineColor = Color3.new(0, 0, 0)
-					pack.kd.Position = Vector2.new(x + w * 0.5 + (#player.Name * 3.8) + 10, y - 16)
+					pack.kd.Position = Vector2.new(x + w * 0.5 + (#player.Name * pack.name.Size * 0.28) + 4, nameY)
 
 					pack.cheat.Visible = flagged
 					pack.cheat.Text = flagged and string.format("CHEATER %dd", age) or ""
-					pack.cheat.Size = 11
+					pack.cheat.Size = math.max(pack.name.Size - 1, 8)
 					pack.cheat.Font = textFont
 					pack.cheat.Outline = true
 					pack.cheat.OutlineColor = Color3.new(0, 0, 0)
-					pack.cheat.Position = Vector2.new(x + w * 0.5, y - 30)
+					pack.cheat.Position = Vector2.new(x + w * 0.5, nameY - pack.cheat.Size - 1)
 
 					local footY = y + h + 2
 					local footPart = character:FindFirstChild("LeftFoot") or character:FindFirstChild("RightFoot") or character:FindFirstChild("Left Leg") or character:FindFirstChild("Right Leg")
@@ -4196,34 +5284,41 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 
 					local hp, maxHp = healthOf(character)
 					local ratio = math.clamp(maxHp > 0 and hp / maxHp or 0, 0, 1)
-					local far = h < 70
-					local barX, barW = x - (far and 4 or 6), far and 1 or 2
-					pack.hpOutline.Visible = showHealth and not far
-					pack.hpOutline.Position = Vector2.new(barX - 1, y - 1)
-					pack.hpOutline.Size = Vector2.new(barW + 2, h + 2)
+					local textSize = math.clamp(pack.name.Size, 11, 14)
+					local barH = math.max(h, textSize + 2)
+					local barW = math.clamp(math.floor(textSize * 0.34), 3, 5)
+					local barX = x - barW - 3
+					local barY = (y + h * 0.5) - barH * 0.5
+					pack.hpOutline.Visible = showHealth
+					pack.hpOutline.Position = Vector2.new(barX - 1, barY - 1)
+					pack.hpOutline.Size = Vector2.new(barW + 2, barH + 2)
 					pack.hpOutline.Color = Color3.new(0, 0, 0)
 					pack.hpOutline.Filled = false
 					pack.hpOutline.Thickness = 1
 					pack.hpBack.Visible = showHealth
-					pack.hpBack.Position = Vector2.new(barX, y)
-					pack.hpBack.Size = Vector2.new(barW, h)
+					pack.hpBack.Position = Vector2.new(barX, barY)
+					pack.hpBack.Size = Vector2.new(barW, barH)
 					pack.hpBack.Color = Color3.new(0, 0, 0)
 					pack.hpFill.Visible = showHealth
-					pack.hpFill.Position = Vector2.new(barX, y + h * (1 - ratio))
-					pack.hpFill.Size = Vector2.new(barW, math.max(h * ratio, 1))
+					pack.hpFill.Position = Vector2.new(barX, barY + barH * (1 - ratio))
+					pack.hpFill.Size = Vector2.new(barW, math.max(barH * ratio, 1))
 					pack.hpFill.Color = healthTint(
 						ratio,
 						flagColor("PlayersHealthColor1", Color3.fromRGB(255, 70, 70)),
 						flagColor("PlayersHealthColor2", Color3.fromRGB(255, 220, 70)),
 						flagColor("PlayersHealthColor3", Color3.fromRGB(80, 255, 120))
 					)
-					pack.hpText.Visible = showHealthText and h > 36
+					pack.hpText.Visible = showHealthText
 					pack.hpText.Text = tostring(math.floor(hp + 0.5))
-					pack.hpText.Size = math.clamp(math.floor(h * 0.14), 8, 12)
+					pack.hpText.Size = textSize
+					pack.hpText.Font = textFont
+					pack.hpText.Outline = true
+					pack.hpText.OutlineColor = Color3.new(0, 0, 0)
 					pack.hpText.Color = flagColor("PlayersHealthTextColor", Color3.fromRGB(255, 255, 255))
-					pack.hpText.Center = true
-					pack.hpText.Position = Vector2.new(barX - 16, y + h * (1 - ratio))
-					local infoY = pack.hpText.Position.Y + 11
+					pack.hpText.Center = false
+					local hpWidth = #pack.hpText.Text * textSize * 0.62
+					pack.hpText.Position = Vector2.new(barX - hpWidth - 3, barY + barH * 0.5 - textSize * 0.5)
+					local infoY = pack.hpText.Position.Y + textSize + 2
 					local showVisor = Library.Flags["PlayersVisor"] ~= false
 					local visor = showVisor and visorOf(player) or nil
 					pack.visor.Visible = visor ~= nil
@@ -4372,6 +5467,10 @@ end)
 
 targetSection(ESP, "Boss", 1, "Boss", Color3.fromRGB(255, 80, 80), Color3.fromRGB(255, 200, 80), false)
 ESP:Section({ Name = "Boss Tracker", Side = 1 }):Toggle({ Name = "Show Spawned", Flag = "BossTracker", Default = true, Callback = none })
+local QuestEsp = ESP:Section({ Name = "Quests", Side = 1 })
+QuestEsp:Toggle({ Name = "Quest ESP", Flag = "QuestESP", Default = false, Callback = none })
+QuestEsp:Label("Color"):Colorpicker({ Name = "Quest Color", Flag = "QuestColor", Default = Color3.fromRGB(255, 214, 80), Callback = none })
+QuestEsp:Slider({ Name = "Max Distance", Flag = "QuestMaxDistance", Min = 0, Default = 400, Max = 2000, Suffix = "m", Decimals = 1, Callback = none })
 targetSection(ESP, "Bots", 2, "AI", Color3.fromRGB(255, 120, 80), Color3.fromRGB(255, 220, 120), false)
 local ExfilEsp = ESP:Section({ Name = "Exfil", Side = 2 })
 ExfilEsp:Toggle({ Name = "Enabled", Flag = "ExfilESPEnabled", Default = false, Callback = none })
@@ -4385,6 +5484,20 @@ CorpseEsp:Toggle({ Name = "Enabled", Flag = "CorpseESPEnabled", Default = false,
 CorpseEsp:Toggle({ Name = "Distance", Flag = "CorpseDistance", Default = true, Callback = none })
 CorpseEsp:Label("Color"):Colorpicker({ Name = "Corpse Color", Flag = "CorpseColor", Default = Color3.fromRGB(255, 255, 255), Callback = none })
 CorpseEsp:Slider({ Name = "Max Distance", Flag = "CorpseMaxDistance", Min = 0, Default = 300, Max = 2000, Suffix = "m", Decimals = 1, Callback = none })
+
+local Marks = ESP:Section({ Name = "World Marks", Side = 2 })
+Marks:Toggle({ Name = "Vehicles", Flag = "VehicleESP", Default = false, Callback = none })
+Marks:Label("Vehicle Color"):Colorpicker({ Name = "Vehicle Color", Flag = "VehicleColor", Default = Color3.fromRGB(120, 180, 255), Callback = none })
+Marks:Slider({ Name = "Vehicle Dist", Flag = "VehicleMax", Min = 0, Default = 500, Max = 2000, Suffix = "m", Decimals = 1, Callback = none })
+Marks:Toggle({ Name = "Landmines", Flag = "MineESP", Default = false, Callback = none })
+Marks:Label("Mine Color"):Colorpicker({ Name = "Mine Color", Flag = "MineColor", Default = Color3.fromRGB(255, 60, 60), Callback = none })
+Marks:Slider({ Name = "Mine Dist", Flag = "MineMax", Min = 0, Default = 80, Max = 500, Suffix = "m", Decimals = 1, Callback = none })
+Marks:Toggle({ Name = "Traders", Flag = "TraderESP", Default = false, Callback = none })
+Marks:Label("Trader Color"):Colorpicker({ Name = "Trader Color", Flag = "TraderColor", Default = Color3.fromRGB(255, 190, 70), Callback = none })
+Marks:Slider({ Name = "Trader Dist", Flag = "TraderMax", Min = 0, Default = 400, Max = 2000, Suffix = "m", Decimals = 1, Callback = none })
+Marks:Toggle({ Name = "Supply Drops", Flag = "DropESP", Default = false, Callback = none })
+Marks:Label("Drop Color"):Colorpicker({ Name = "Drop Color", Flag = "DropColor", Default = Color3.fromRGB(80, 220, 255), Callback = none })
+Marks:Slider({ Name = "Drop Dist", Flag = "DropMax", Min = 0, Default = 800, Max = 2000, Suffix = "m", Decimals = 1, Callback = none })
 
 local ItemEsp = ESP:Section({ Name = "Item ESP", Side = 2 })
 ItemEsp:Toggle({ Name = "Enabled", Flag = "ItemESPEnabled", Default = false, Callback = none })
@@ -4476,7 +5589,9 @@ ItemEsp:Button({
 	end,
 })
 
-local Ambience = Misc:Section({ Name = "Ambience", Side = 1 })
+ESP:Section({ Name = "Map", Side = 1 }):Toggle({ Name = "ESP Map", Flag = "EspMap", Default = false, Callback = none })
+
+local Ambience = Render:Section({ Name = "Ambience", Side = 1 })
 Ambience:Toggle({ Name = "Enabled", Flag = "Amb_Enabled", Default = false, Callback = none })
 Ambience:Slider({ Name = "Brightness", Flag = "Amb_Brightness", Min = 0, Default = 12, Max = 100, Suffix = "%", Decimals = 1, Callback = none })
 Ambience:Slider({ Name = "Indoor Brightness", Flag = "Amb_Indoor", Min = 0, Default = 4, Max = 100, Suffix = "%", Decimals = 1, Callback = none })
@@ -4484,8 +5599,12 @@ Ambience:Label("Color", "Left"):Colorpicker({ Name = "Color", Flag = "Amb_Color"
 Ambience:Toggle({ Name = "Bloom", Flag = "Bloom_Enabled", Default = false, Callback = none })
 Ambience:Slider({ Name = "Bloom Intensity", Flag = "Bloom_Intensity", Min = 0, Default = 1, Max = 5, Decimals = 1, Callback = none })
 Ambience:Slider({ Name = "Bloom Size", Flag = "Bloom_Size", Min = 0, Default = 24, Max = 56, Decimals = 1, Callback = none })
+Ambience:Toggle({ Name = "Fullbright", Flag = "Fullbright", Default = false, Callback = none })
+Ambience:Toggle({ Name = "No Shadows", Flag = "NoShadows", Default = false, Callback = none })
+Ambience:Toggle({ Name = "Time Changer", Flag = "TimeChanger", Default = false, Callback = none })
+Ambience:Slider({ Name = "Clock", Flag = "ClockHour", Min = 0, Default = 14, Max = 24, Suffix = "h", Decimals = 1, Callback = none })
 
-local Armor = Misc:Section({ Name = "Inventory Viewer", Side = 1 })
+local Armor = ESP:Section({ Name = "Inventory Viewer", Side = 2 })
 Armor:Toggle({ Name = "Enabled", Flag = "Inv_Enabled", Default = false, Callback = none })
 Armor:Slider({ Name = "Icon Size", Flag = "Inv_IconSize", Min = 36, Default = 64, Max = 120, Suffix = "px", Decimals = 1, Callback = none })
 Armor:Slider({ Name = "X", Flag = "Inv_X", Min = 0, Default = 2, Max = 80, Suffix = "%", Decimals = 1, Callback = none })
@@ -4500,11 +5619,6 @@ Armor:Label("Food", "Left"):Colorpicker({ Name = "Inv Food", Flag = "InvColor_Fo
 Armor:Label("Other", "Left"):Colorpicker({ Name = "Inv Other", Flag = "InvColor_Other", Default = Color3.fromRGB(220, 220, 220), Callback = none })
 
 local Exploits = Misc:Section({ Name = "Exploits", Side = 1 })
-Exploits:Toggle({ Name = "No Fall Damage", Flag = "NoFallDamage_Enabled", Default = false, Callback = none })
-Exploits:Toggle({ Name = "Jesus", Flag = "Jesus_Enabled", Default = false, Callback = none })
-Exploits:Toggle({ Name = "Instant Aim", Flag = "InstantAim", Default = false, Callback = none })
-Exploits:Toggle({ Name = "Instant Lean", Flag = "InstantLean", Default = false, Callback = none })
-Exploits:Toggle({ Name = "ESP Map", Flag = "EspMap", Default = false, Callback = none })
 Exploits:Button({ Name = "Rejoin", Callback = function()
 	pcall(function()
 		game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer)
@@ -4512,18 +5626,45 @@ Exploits:Button({ Name = "Rejoin", Callback = function()
 end })
 
 local Utility = Misc:Section({ Name = "Utility", Side = 2 })
-Utility:Toggle({ Name = "Fullbright", Flag = "Fullbright", Default = false, Callback = none })
-Utility:Toggle({ Name = "No Shadows", Flag = "NoShadows", Default = false, Callback = none })
-Utility:Toggle({ Name = "Time Changer", Flag = "TimeChanger", Default = false, Callback = none })
-Utility:Slider({ Name = "Clock", Flag = "ClockHour", Min = 0, Default = 14, Max = 24, Suffix = "h", Decimals = 1, Callback = none })
-Utility:Toggle({ Name = "Crosshair", Flag = "Crosshair", Default = false, Callback = none })
-Utility:Slider({ Name = "Crosshair Size", Flag = "CrossSize", Min = 2, Default = 8, Max = 24, Suffix = "px", Decimals = 1, Callback = none })
-Utility:Slider({ Name = "Crosshair Gap", Flag = "CrossGap", Min = 0, Default = 4, Max = 20, Suffix = "px", Decimals = 1, Callback = none })
-Utility:Label("Crosshair Color"):Colorpicker({ Name = "Cross Color", Flag = "CrossColor", Default = Color3.fromRGB(255, 255, 255), Callback = none })
 Utility:Toggle({ Name = "Coords", Flag = "Coords", Default = false, Callback = none })
 Utility:Toggle({ Name = "Proximity Alert", Flag = "ProxAlert", Default = false, Callback = none })
 Utility:Slider({ Name = "Alert Range", Flag = "ProxRange", Min = 5, Default = 40, Max = 200, Suffix = "m", Decimals = 1, Callback = none })
 Utility:Toggle({ Name = "Anti AFK", Flag = "AntiAFK", Default = false, Callback = none })
+Utility:Toggle({ Name = "Trash Talk", Flag = "TrashTalk", Default = false, Callback = none })
+Utility:Label("Trash Key", "Left"):Keybind({
+	Name = "Trash Key",
+	Flag = "TrashKey",
+	Default = Enum.KeyCode.Y,
+	Mode = "Toggle",
+	Callback = function()
+		if Library.Flags["TrashTalk"] ~= true then
+			return
+		end
+		local lines = {
+			"nice try",
+			"stay down",
+			"midnight.cc",
+			"unlucky",
+			"too slow",
+		}
+		local line = lines[math.random(1, #lines)]
+		local channels = game:GetService("TextChatService"):FindFirstChild("TextChannels")
+		local general = channels and channels:FindFirstChild("RBXGeneral")
+		if general then
+			pcall(function()
+				general:SendAsync(line)
+			end)
+			return
+		end
+		local events = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+		local say = events and events:FindFirstChild("SayMessageRequest")
+		if say then
+			pcall(function()
+				say:FireServer(line, "All")
+			end)
+		end
+	end,
+})
 
 local Scan = Misc:Section({ Name = "Server Scan", Side = 2 })
 Scan:Slider({ Name = "Notify Time", Flag = "ScanTime", Min = 3, Default = 12, Max = 60, Suffix = "s", Decimals = 1, Callback = none })
@@ -4601,7 +5742,7 @@ Scan:Button({
 local freecamWanted = false
 local zoomWanted = false
 
-local Freecam = Misc:Section({ Name = "Freecam", Side = 2 })
+local Freecam = Movement:Section({ Name = "Freecam", Side = 1 })
 Freecam:Toggle({
 	Name = "Enabled",
 	Flag = "Freecam_Enabled",
@@ -4616,6 +5757,9 @@ Freecam:Label("Toggle Keybind", "Left"):Keybind({
 	Default = Enum.KeyCode.U,
 	Mode = "Toggle",
 	Callback = function(state)
+		if Library.Flags["Freecam_Enabled"] ~= true then
+			return
+		end
 		if type(state) == "boolean" then
 			freecamWanted = state
 		else
@@ -4625,7 +5769,7 @@ Freecam:Label("Toggle Keybind", "Left"):Keybind({
 })
 Freecam:Slider({ Name = "Speed", Flag = "Freecam_Speed", Min = 0, Default = 30, Max = 100, Suffix = "%", Decimals = 1, Callback = none })
 
-local Fov = Misc:Section({ Name = "FOV Changer", Side = 2 })
+local Fov = Render:Section({ Name = "FOV Changer", Side = 2 })
 Fov:Toggle({ Name = "FOV Changer", Flag = "FovChanger_Enabled", Default = false, Callback = none })
 Fov:Slider({ Name = "FOV Amount", Flag = "FovChanger_Amount", Min = 70, Default = 100, Max = 120, Suffix = "fov", Decimals = 1, Callback = none })
 Fov:Toggle({ Name = "Zoom Enabled", Flag = "FovZoom_Enabled", Default = false, Callback = none })
@@ -4635,6 +5779,9 @@ Fov:Label("Zoom Keybind", "Left"):Keybind({
 	Default = Enum.KeyCode.Z,
 	Mode = "Toggle",
 	Callback = function(state)
+		if Library.Flags["FovZoom_Enabled"] ~= true then
+			return
+		end
 		if type(state) == "boolean" then
 			zoomWanted = state
 		else
@@ -4645,11 +5792,12 @@ Fov:Label("Zoom Keybind", "Left"):Keybind({
 Fov:Slider({ Name = "Zoom Amount", Flag = "FovZoom_Amount", Min = 1, Default = 30, Max = 80, Decimals = 1, Callback = none })
 Fov:Slider({ Name = "Animation Speed", Flag = "FovZoom_AnimSpeed", Min = 1, Default = 8, Max = 30, Decimals = 1, Callback = none })
 
-local World = Misc:Section({ Name = "World", Side = 2 })
+local World = Render:Section({ Name = "World", Side = 2 })
 World:Toggle({ Name = "Remove Grass", Flag = "RemoveGrass_Enabled", Default = false, Callback = none })
 World:Toggle({ Name = "No Leaves", Flag = "NoLeaves_Enabled", Default = false, Callback = none })
+World:Toggle({ Name = "Remove Trees", Flag = "RemoveTrees", Default = false, Callback = none })
 
-local extra = Misc:Section({ Name = "Viewmodel", Side = 1 })
+local extra = Render:Section({ Name = "Viewmodel", Side = 1 })
 extra:Toggle({ Name = "Texture Changer", Flag = "ViewTex", Default = false, Callback = none })
 extra:Dropdown({ Name = "Hand Material", Flag = "ViewHandMat", Default = "ForceField", Items = { "ForceField", "Neon", "Plastic" }, Callback = none })
 extra:Dropdown({ Name = "Gun Material", Flag = "ViewGunMat", Default = "ForceField", Items = { "ForceField", "Neon", "Plastic" }, Callback = none })
@@ -4660,8 +5808,10 @@ extra:Slider({ Name = "View X", Flag = "ViewX", Min = -5, Default = 0, Max = 5, 
 extra:Slider({ Name = "View Y", Flag = "ViewY", Min = -5, Default = 0, Max = 5, Decimals = 1, Callback = none })
 extra:Slider({ Name = "View Z", Flag = "ViewZ", Min = -5, Default = 0, Max = 5, Decimals = 1, Callback = none })
 
-extra = Misc:Section({ Name = "Camera", Side = 2 })
-extra:Toggle({ Name = "Third Person", Flag = "ThirdPerson", Default = false, Callback = none })
+extra = Render:Section({ Name = "Camera", Side = 2 })
+extra:Toggle({ Name = "Third Person", Flag = "ThirdPerson", Default = false, Callback = function(on)
+	thirdKeyOn = on and true or false
+end })
 extra:Toggle({ Name = "Show Character", Flag = "ThirdShow", Default = false, Callback = none })
 extra:Slider({ Name = "Offset X", Flag = "ThirdX", Min = -10, Default = 2, Max = 10, Decimals = 1, Callback = none })
 extra:Slider({ Name = "Offset Y", Flag = "ThirdY", Min = -10, Default = 2, Max = 10, Decimals = 1, Callback = none })
@@ -4672,6 +5822,9 @@ extra:Label("Keybind", "Left"):Keybind({
 	Default = Enum.KeyCode.V,
 	Mode = "Toggle",
 	Callback = function(state)
+		if Library.Flags["ThirdPerson"] ~= true then
+			return
+		end
 		if type(state) == "boolean" then
 			thirdKeyOn = state
 		else
@@ -4683,6 +5836,10 @@ extra:Toggle({ Name = "Remove Screen Effects", Flag = "NoScreenEffects", Default
 extra:Toggle({ Name = "No Visor", Flag = "NoVisor", Default = false, Callback = none })
 extra:Toggle({ Name = "Hide Server Info", Flag = "HideServerInfo", Default = false, Callback = none })
 extra:Toggle({ Name = "Visor Indicator", Flag = "VisorIndicator", Default = false, Callback = none })
+extra:Toggle({ Name = "Crosshair", Flag = "Crosshair", Default = false, Callback = none })
+extra:Slider({ Name = "Crosshair Size", Flag = "CrossSize", Min = 2, Default = 8, Max = 24, Suffix = "px", Decimals = 1, Callback = none })
+extra:Slider({ Name = "Crosshair Gap", Flag = "CrossGap", Min = 0, Default = 4, Max = 20, Suffix = "px", Decimals = 1, Callback = none })
+extra:Label("Crosshair Color"):Colorpicker({ Name = "Cross Color", Flag = "CrossColor", Default = Color3.fromRGB(255, 255, 255), Callback = none })
 
 local Themes = Settings:Section({ Name = "Themes", Side = 1 })
 pcall(function()
@@ -4712,11 +5869,11 @@ local configName = ""
 local selectedConfig = nil
 local configList
 
-local function configFile(path)
+function configFile(path)
 	return (path:match("([^/\\]+)$")) or path
 end
 
-local function configNames()
+function configNames()
 	local names = {}
 	local ok, files = pcall(listfiles, configFolder)
 	if ok and type(files) == "table" then
@@ -4731,13 +5888,13 @@ local function configNames()
 	return names
 end
 
-local function refreshConfigs()
+function refreshConfigs()
 	configList:Refresh(configNames())
 end
 
 local HttpService = game:GetService("HttpService")
 
-local function saveValue(value)
+function saveValue(value)
 	local kind = typeof(value)
 	if kind == "number" then
 		if value ~= value or value == math.huge or value == -math.huge then
@@ -4787,7 +5944,7 @@ local function saveValue(value)
 	return nil
 end
 
-local function saveConfigString()
+function saveConfigString()
 	local config = {}
 	for index, value in Library.Flags do
 		if type(index) == "string" and index ~= "Configs List" and index ~= "Config Name" then
@@ -4800,7 +5957,7 @@ local function saveConfigString()
 	return HttpService:JSONEncode(config)
 end
 
-local function applyConfig(contents)
+function applyConfig(contents)
 	local decoded = HttpService:JSONDecode(contents)
 	if type(decoded) ~= "table" then
 		return
@@ -4823,7 +5980,7 @@ local function applyConfig(contents)
 	end
 end
 
-local function chosenName()
+function chosenName()
 	local selected = selectedConfig or Library.Flags["Configs List"]
 	if type(selected) == "table" then
 		selected = selected.Name or selected[1]
@@ -4838,7 +5995,7 @@ local function chosenName()
 	return selected
 end
 
-local function typedConfigName()
+function typedConfigName()
 	local typed = configName
 	if typed == "" then
 		local flag = Library.Flags["Config Name"]
@@ -4997,17 +6154,6 @@ Configs:Toggle({
 		KeybindList:SetVisibility(on)
 	end,
 })
-if isfile(configFolder .. "/autoload.txt") then
-	local autoName = readfile(configFolder .. "/autoload.txt")
-	local autoPath = configFolder .. "/" .. configFile(autoName)
-	if isfile(autoPath) then
-		pcall(function()
-			configList:Set(configFile(autoName))
-			applyConfig(readfile(autoPath))
-		end)
-	end
-end
-
 local UserInputService = game:GetService("UserInputService")
 
 function keyHeld(flagName)
@@ -5095,7 +6241,7 @@ local streamClock = 0
 local skinClock = 0
 local shownGun = ""
 
-local function playingReload()
+function playingReload()
 	local function from(animator)
 		if not animator then
 			return nil
@@ -5129,7 +6275,7 @@ local function playingReload()
 	return nil
 end
 
-local function rememberPart(part)
+function rememberPart(part)
 	if part:GetAttribute("MidnightGunSaved") then
 		return
 	end
@@ -5173,12 +6319,12 @@ local function paintPart(part, color, materialName)
 	end)
 end
 
-local function armPart(part)
+function armPart(part)
 	local name = string.lower(part.Name)
 	return string.find(name, "arm", 1, true) or string.find(name, "hand", 1, true) or string.find(name, "sleeve", 1, true)
 end
 
-local function skinsFor(gunName)
+function skinsFor(gunName)
 	local items = { "None" }
 	local skins = game:GetService("ReplicatedStorage"):FindFirstChild("Skins")
 	if not skins or gunName == "" then
@@ -5197,7 +6343,7 @@ local function skinsFor(gunName)
 	return items
 end
 
-local function pushSkinList(items)
+function pushSkinList(items)
 	if not skinDrop then
 		return
 	end
@@ -5210,7 +6356,7 @@ local function pushSkinList(items)
 	end
 end
 
-local function applyHeldSkin(gunName, skinName)
+function applyHeldSkin(gunName, skinName)
 	local folder = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
 	local profile = folder and folder:FindFirstChild(LocalPlayer.Name)
 	if not profile then
@@ -5247,7 +6393,7 @@ local leafState = {}
 leafStack = nil
 leafClock = 0
 
-local function hudAmmo()
+function hudAmmo()
 	local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
 	if not playerGui then
 		return nil, nil
@@ -5290,7 +6436,7 @@ healthSnap = {}
 lastShot = 0
 gunClock = 0
 
-function playShotSound(id)
+function playShotSound(id, volume, pitch)
 	local cached = hitSoundCache and hitSoundCache[id]
 	if not cached then
 		hitSoundCache = hitSoundCache or {}
@@ -5304,12 +6450,84 @@ function playShotSound(id)
 		end)
 	end
 	local sound = cached:Clone()
-	sound.Volume = 1
+	sound.Volume = volume or 1
+	sound.PlaybackSpeed = pitch or 1
 	sound.Parent = game:GetService("SoundService")
 	sound:Play()
 	task.delay(2, function()
 		sound:Destroy()
 	end)
+end
+
+function showImpact(pos)
+	if impactPart and impactPart.Parent then
+		impactPart.Position = pos
+	else
+		impactPart = Instance.new("Part")
+		impactPart.Name = "MidnightImpact"
+		impactPart.Anchored = true
+		impactPart.CanCollide = false
+		impactPart.CanQuery = false
+		impactPart.CanTouch = false
+		impactPart.Material = Enum.Material.Neon
+		impactPart.Color = Color3.fromRGB(255, 220, 80)
+		impactPart.Size = Vector3.new(0.35, 0.35, 0.35)
+		impactPart.Shape = Enum.PartType.Ball
+		impactPart.Parent = workspace
+		impactPart.Position = pos
+	end
+	impactUntil = os.clock() + 0.35
+end
+
+function drawHitFx(camera)
+	if flagBool("Hit_Marker") and type(Drawing) == "table" and hitMarkerUntil and os.clock() < hitMarkerUntil then
+		if not hitMarks then
+			hitMarks = {}
+			for _ = 1, 2 do
+				local line = Drawing.new("Line")
+				line.Thickness = 1
+				line.Color = Color3.fromRGB(255, 255, 255)
+				hitMarks[#hitMarks + 1] = line
+			end
+		end
+		local center = camera.ViewportSize * 0.5
+		hitMarks[1].Visible = true
+		hitMarks[1].From = center + Vector2.new(-8, -8)
+		hitMarks[1].To = center + Vector2.new(8, 8)
+		hitMarks[2].Visible = true
+		hitMarks[2].From = center + Vector2.new(-8, 8)
+		hitMarks[2].To = center + Vector2.new(8, -8)
+	elseif hitMarks then
+		hitMarks[1].Visible = false
+		hitMarks[2].Visible = false
+	end
+	if impactPart and (not impactUntil or os.clock() > impactUntil or not flagBool("Hit_Impact")) then
+		impactPart.Parent = nil
+	end
+	if flagBool("Hit_Flash") and hitFlashUntil and os.clock() < hitFlashUntil then
+		if not hitFlash then
+			local parent = LocalPlayer:FindFirstChild("PlayerGui")
+			if parent then
+				local gui = Instance.new("ScreenGui")
+				gui.Name = "MidnightFlash"
+				gui.IgnoreGuiInset = true
+				gui.DisplayOrder = 80
+				gui.ResetOnSpawn = false
+				gui.Parent = parent
+				hitFlash = Instance.new("Frame")
+				hitFlash.Size = UDim2.fromScale(1, 1)
+				hitFlash.BackgroundColor3 = Color3.new(1, 1, 1)
+				hitFlash.BackgroundTransparency = 0.82
+				hitFlash.BorderSizePixel = 0
+				hitFlash.Parent = gui
+			end
+		end
+		if hitFlash then
+			hitFlash.Visible = true
+		end
+	elseif hitFlash then
+		hitFlash.Visible = false
+	end
 end
 
 function drawTracer(from, to)
@@ -5378,94 +6596,10 @@ end
 function checkHits()
 end
 
-function tuneModule(data, inst)
-	gunBase = gunBase or {}
-	local base = gunBase[inst]
-	if not base then
-		base = {}
-		gunBase[inst] = base
-	end
-	for key, value in data do
-		if type(key) == "string" and type(value) == "number" and base[key] == nil then
-			base[key] = value
-		end
-	end
-	local rpmMult = math.clamp(flagNum("RPM_Mult", 1), 1, 15)
-	local rangeMult = math.clamp(flagNum("RangeAmount", 5), 1, 20)
-	for key, value in base do
-		local lower = string.lower(key)
-		local nextValue = value
-		if flagBool("NoRecoil_Enabled") and string.find(lower, "recoil", 1, true) then
-			nextValue = 0
-		end
-		if flagBool("NoSway_Enabled") and string.find(lower, "sway", 1, true) then
-			nextValue = 0
-		end
-		if flagBool("NoBob_Enabled") and string.find(lower, "bob", 1, true) then
-			nextValue = 0
-		end
-		if flagBool("NoSpread_Enabled") and (string.find(lower, "spread", 1, true) or string.find(lower, "deviation", 1, true) or string.find(lower, "accuracy", 1, true)) then
-			nextValue = 0
-		end
-		if flagBool("RPM_Enabled") and (string.find(lower, "firerate", 1, true) or lower == "rpm" or lower == "rof") then
-			if value >= 20 then
-				nextValue = value * rpmMult
-			else
-				nextValue = value / rpmMult
-			end
-		elseif flagBool("RPM_Enabled") and (string.find(lower, "delay", 1, true) or string.find(lower, "cooldown", 1, true) or string.find(lower, "firetime", 1, true) or string.find(lower, "shottime", 1, true)) then
-			nextValue = value / rpmMult
-		end
-		if flagBool("RangeMult") and (string.find(lower, "range", 1, true) or lower == "maxdist") then
-			nextValue = value * rangeMult
-		end
-		data[key] = nextValue
-	end
+function tuneModule()
 end
 
 function applyGunMods()
-	local ammoFolder = game:GetService("ReplicatedStorage"):FindFirstChild("AmmoTypes")
-	if ammoFolder then
-		ammoBase = ammoBase or {}
-		for _, ammo in ammoFolder:GetChildren() do
-			local base = ammoBase[ammo]
-			if not base then
-				base = {}
-				ammoBase[ammo] = base
-				for _, attr in { "RecoilStrength", "Recoil", "VerticalRecoil", "HorizontalRecoil", "AimRecoil", "HipRecoil", "CameraRecoil", "GunRecoil", "AccuracyDeviation", "Spread", "MOA", "PelletSpread", "Range", "MaxRange", "EffectiveRange", "Distance", "FireRate", "RPM" } do
-					local value = ammo:GetAttribute(attr)
-					if type(value) == "number" then
-						base[attr] = value
-					end
-				end
-			end
-			local rangeMult = math.clamp(flagNum("RangeAmount", 5), 1, 20)
-			local rpmMult = math.clamp(flagNum("RPM_Mult", 1), 1, 15)
-			for attr, value in base do
-				local lower = string.lower(attr)
-				local nextValue = value
-				if flagBool("NoRecoil_Enabled") and string.find(lower, "recoil", 1, true) then
-					nextValue = 0
-				end
-				if flagBool("NoSpread_Enabled") and (string.find(lower, "spread", 1, true) or string.find(lower, "deviation", 1, true) or lower == "moa") then
-					nextValue = 0
-				end
-				if flagBool("RangeMult") and (string.find(lower, "range", 1, true) or string.find(lower, "distance", 1, true)) then
-					nextValue = value * rangeMult
-				end
-				if flagBool("RPM_Enabled") and (string.find(lower, "firerate", 1, true) or lower == "rpm" or lower == "rof") then
-					if value >= 20 then
-						nextValue = value * rpmMult
-					else
-						nextValue = value / rpmMult
-					end
-				end
-				if ammo:GetAttribute(attr) ~= nextValue then
-					ammo:SetAttribute(attr, nextValue)
-				end
-			end
-		end
-	end
 	local playersFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
 	local profile = playersFolder and playersFolder:FindFirstChild(LocalPlayer.Name)
 	local inventory = profile and profile:FindFirstChild("Inventory")
@@ -5621,6 +6755,14 @@ function closeEspMap()
 		game:GetService("UserInputService").MouseIconEnabled = false
 	end)
 	espMapMarkers = nil
+	if espMapExtra then
+		for _, dot in espMapExtra do
+			if dot then
+				dot:Destroy()
+			end
+		end
+	end
+	espMapExtra = nil
 end
 
 function openEspMap()
@@ -5666,6 +6808,121 @@ function openEspMap()
 	end
 end
 
+function mapPoint(pos)
+	local sizeReal = espMapImage and espMapImage:GetAttribute("SizeReal")
+	if type(sizeReal) ~= "number" or sizeReal == 0 then
+		sizeReal = 1
+	end
+	return UDim2.new(0.5 + ((pos.X - 208) / sizeReal), 0, 0.5 + ((pos.Z + 203) / sizeReal), 0)
+end
+
+function mapExtra(key, text, color, pos)
+	if not espMapTemplate or not espMapFolder then
+		return
+	end
+	espMapExtra = espMapExtra or {}
+	local dot = espMapExtra[key]
+	if not dot or not dot.Parent then
+		dot = espMapTemplate:Clone()
+		dot.Name = "MidnightPin"
+		dot.Parent = espMapFolder
+		espMapExtra[key] = dot
+	end
+	dot.Visible = typeof(pos) == "Vector3"
+	dot.ImageColor3 = color
+	if dot:FindFirstChild("TextLabel") then
+		dot.TextLabel.Visible = true
+		dot.TextLabel.Text = text
+		dot.TextLabel.TextColor3 = color
+		dot.TextLabel.RichText = false
+	end
+	if typeof(pos) == "Vector3" then
+		dot.Position = mapPoint(pos)
+	end
+end
+
+function rememberMap(key, text, color, pos)
+	if typeof(pos) ~= "Vector3" then
+		return
+	end
+	mapSaved = mapSaved or {}
+	mapSaved[key] = { text = text, color = color, pos = pos }
+end
+
+function harvestMapPoints()
+	local noCollision = workspace:FindFirstChild("NoCollision")
+	local exits = noCollision and noCollision:FindFirstChild("ExitLocations")
+	if exits then
+		local function walk(inst)
+			local pos = nil
+			if inst:IsA("BasePart") then
+				pos = inst.Position
+			elseif inst:IsA("Model") or inst:IsA("Folder") then
+				pos = instancePoint(inst)
+			end
+			if typeof(pos) == "Vector3" and (inst:IsA("BasePart") or inst:IsA("Model")) then
+				local key = string.format("exfil:%d:%d", math.floor(pos.X / 40), math.floor(pos.Z / 40))
+				rememberMap(key, inst.Name, Color3.fromRGB(80, 220, 140), pos)
+				if inst:IsA("Model") then
+					return
+				end
+			end
+			if not inst:IsA("BasePart") then
+				for _, child in inst:GetChildren() do
+					walk(child)
+				end
+			end
+		end
+		for _, inst in exits:GetChildren() do
+			walk(inst)
+		end
+	end
+	if flagBool("QuestESP") then
+		for _, pin in questPins or {} do
+			if typeof(pin.pos) == "Vector3" and pin.title then
+				rememberMap("quest:" .. pin.title, pin.title, flagColor("QuestColor", Color3.fromRGB(255, 214, 80)), pin.pos)
+			end
+		end
+	end
+	if type(liveBosses) == "table" then
+		for label, model in liveBosses do
+			if typeof(model) == "Instance" then
+				local pos = instancePoint(model)
+				if pos then
+					rememberMap("boss:" .. label, label, Color3.fromRGB(255, 70, 70), pos)
+				end
+			end
+		end
+	end
+end
+
+function warmMapStream()
+	if mapWarm then
+		return
+	end
+	mapWarm = true
+	task.spawn(function()
+		local center = Vector3.new(208, 40, -203)
+		for x = -2, 2 do
+			for z = -2, 2 do
+				if not flagBool("EspMap") then
+					mapWarm = false
+					return
+				end
+				pcall(function()
+					LocalPlayer:RequestStreamAroundAsync(center + Vector3.new(x * 900, 0, z * 900), 1)
+				end)
+				pcall(function()
+					questWordTime = 0
+					stepQuestPins()
+				end)
+				pcall(harvestMapPoints)
+				task.wait(0.35)
+			end
+		end
+	end)
+end
+
 function updateEspMap()
 	if not espMapMarkers or not espMapImage or not espMapTemplate then
 		return
@@ -5709,6 +6966,30 @@ function updateEspMap()
 			end
 		end
 	end
+	local keep = {}
+	harvestMapPoints()
+	for key, saved in mapSaved or {} do
+		local show = false
+		if string.sub(key, 1, 6) == "exfil:" then
+			show = flagBool("ExfilESPEnabled")
+		elseif string.sub(key, 1, 6) == "quest:" then
+			show = flagBool("QuestESP")
+		elseif string.sub(key, 1, 5) == "boss:" then
+			show = flagBool("BossESPEnabled") or Library.Flags["BossTracker"] ~= false
+		end
+		if show then
+			keep[key] = true
+			mapExtra(key, saved.text, saved.color, saved.pos)
+		end
+	end
+	if espMapExtra then
+		for key, dot in espMapExtra do
+			if not keep[key] then
+				dot:Destroy()
+				espMapExtra[key] = nil
+			end
+		end
+	end
 end
 
 function runEspMap()
@@ -5719,6 +7000,7 @@ function runEspMap()
 		return
 	end
 	while flagBool("EspMap") do
+		pcall(warmMapStream)
 		pcall(updateEspMap)
 		task.wait(0.15)
 	end
@@ -5891,8 +7173,28 @@ task.spawn(function()
 				end
 				if flagBool("NoBob_Enabled") then
 					kill("walkCycle")
-					kill("sprintCycle")
 					kill("jumpTilt")
+				end
+				if flagBool("NoBob_Enabled") or flagBool("NoSprintAnim") then
+					kill("sprintCycle")
+					local cycle = a1.springs.sprintCycle
+					if flagBool("NoSprintAnim") and type(cycle) == "table" then
+						cycle.Speed = 0
+						cycle.Velocity = Vector3.zero
+					end
+				end
+				if flagBool("NoSprintAnim") then
+					if typeof(a1.weaponOffset) == "CFrame" then
+						a1.sprintIdleOffset = a1.weaponOffset
+					end
+					if type(a1.sprintAlpha) == "number" then
+						a1.sprintAlpha = 0
+					end
+					local sprintTrack = a1.sprintAnim or a1.sprintTrack
+					if typeof(sprintTrack) == "Instance" and sprintTrack:IsA("AnimationTrack") then
+						sprintTrack:AdjustWeight(0, 0)
+						sprintTrack:AdjustSpeed(0)
+					end
 				end
 				if flagBool("NoRecoil_Enabled") then
 					kill("recoilPos")
@@ -5919,25 +7221,58 @@ function installSwimHooks()
 	end
 	swimHooked = true
 	local oldName
-	oldName = hookmetamethod(game, "__namecall", function(self, ...)
+	local function namecallHook(self, ...)
+		local args = { ... }
 		local method = getnamecallmethod()
 		if method == "GetAttribute" and flagBool("NoSpread_Enabled") then
-			local attribute = ...
-			if attribute == "AccuracyDeviation" then
+			if args[1] == "AccuracyDeviation" then
 				return 0
 			end
 		end
-		if method == "FireServer" and typeof(self) == "Instance" and self.Name == "ProjectileInflict" then
-			local hitPart = ...
-			if typeof(hitPart) == "Instance" then
-				local model = hitPart:FindFirstAncestorOfClass("Model")
-				if model and model ~= LocalPlayer.Character then
-					pcall(noteHit, model, hitPart.Name)
-				end
+		local instantShot = Library.Flags["SA_NoDrag"] == true and silentOn() and silentPart and silentPart.Parent and shotInstant and os.clock() - shotInstant < 0.25
+		if method == "Raycast" and instantShot and typeof(args[1]) == "Vector3" and typeof(args[2]) == "Vector3" then
+			local traced = debug.traceback()
+			local bulletRay = string.find(traced, "Bullet", 1, true) ~= nil
+			if not bulletRay then
+				local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+				bulletRay = root and (args[1] - root.Position).Magnitude < 10 and args[2].Magnitude > 25
+			end
+			if bulletRay then
+				args[2] = silentPart.Position - args[1]
+				return oldName(self, unpack(args))
 			end
 		end
+		if method == "InvokeServer" and typeof(self) == "Instance" and self.Name == "FireProjectile" and instantShot then
+			bulletInfos = bulletInfos or {}
+			local packet = table.create(3)
+			packet[1] = args[2]
+			packet[2] = args[3]
+			packet[3] = args[1]
+			bulletInfos[args[2]] = packet
+			if args[1] ~= nil then
+				bulletInfos[args[1]] = packet
+			end
+			return oldName(self, unpack(args))
+		end
+		if method == "FireServer" and typeof(self) == "Instance" and self.Name == "ProjectileInflict" and Library.Flags["SA_NoDrag"] == true and silentOn() then
+			local traced = debug.traceback()
+			local fromController = string.find(traced, "CharacterController", 1, true) ~= nil
+			local fromBullet = string.find(traced, "Bullet", 1, true) ~= nil
+			if fromController and not fromBullet then
+				return coroutine.yield()
+			end
+			local packet = bulletInfos and (bulletInfos[args[3]] or bulletInfos[args[2]] or bulletInfos[args[1]])
+			if type(packet) == "table" and type(packet[2]) == "number" then
+				args[4] = packet[2] + 5
+			end
+			return oldName(self, unpack(args))
+		end
 		return oldName(self, ...)
-	end)
+	end
+	if type(newcclosure) == "function" then
+		namecallHook = newcclosure(namecallHook)
+	end
+	oldName = hookmetamethod(game, "__namecall", namecallHook)
 	local oldIndex
 	oldIndex = hookmetamethod(game, "__index", function(self, key)
 		if key == "ReducedMotionEnabled" and flagBool("NoRecoil_Enabled") and self == game:GetService("GuiService") then
@@ -6167,6 +7502,76 @@ function applyUtility(camera)
 	end
 end
 
+function muteOneSprint(track, sprinting)
+	local anim = track.Animation
+	local blob = string.lower(tostring(track.Name or "") .. " " .. tostring(anim and anim.Name or "") .. " " .. tostring(anim and anim.Parent and anim.Parent.Name or ""))
+	local id = anim and anim.AnimationId
+	local hit = sprintIds and id and sprintIds[id]
+	if not hit then
+		if string.find(blob, "sprint", 1, true) then
+			hit = true
+		elseif sprinting and string.find(blob, "run", 1, true) and not string.find(blob, "walk", 1, true) and not string.find(blob, "idle", 1, true) then
+			hit = true
+		end
+	end
+	if not hit then
+		return
+	end
+	pcall(function()
+		track:AdjustWeight(0, 0)
+		track:AdjustSpeed(0)
+	end)
+end
+
+function watchSprintAnimator(animator)
+	sprintWatched = sprintWatched or {}
+	if not animator or sprintWatched[animator] then
+		return
+	end
+	sprintWatched[animator] = true
+	animator.AnimationPlayed:Connect(function(track)
+		if flagBool("NoSprintAnim") then
+			muteOneSprint(track, true)
+		end
+	end)
+end
+
+function muteSprintAnims(character, camera)
+	sprintIds = sprintIds or {}
+	local now = os.clock()
+	if now - (sprintScanTime or 0) > 0.4 then
+		sprintScanTime = now
+		sprintAnims = {}
+		local function collect(root)
+			if not root then
+				return
+			end
+			for _, inst in root:GetDescendants() do
+				if inst:IsA("Animation") then
+					local blob = string.lower(inst.Name .. " " .. (inst.Parent and inst.Parent.Name or ""))
+					if string.find(blob, "sprint", 1, true) and inst.AnimationId ~= "" then
+						sprintIds[inst.AnimationId] = true
+					end
+				elseif inst:IsA("Animator") then
+					sprintAnims[#sprintAnims + 1] = inst
+				end
+			end
+		end
+		collect(character)
+		local viewmodel = camera and (camera:FindFirstChild("ViewModel") or camera:FindFirstChild("Viewmodel"))
+		collect(viewmodel or camera)
+	end
+	local sprinting = UserInputService:IsKeyDown(Enum.KeyCode.LeftShift)
+	for _, animator in sprintAnims or {} do
+		if animator.Parent then
+			watchSprintAnimator(animator)
+			for _, track in animator:GetPlayingAnimationTracks() do
+				muteOneSprint(track, sprinting)
+			end
+		end
+	end
+end
+
 RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1, function(dt)
 	local camera = workspace.CurrentCamera
 	if not camera then
@@ -6272,7 +7677,7 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 		camera.FieldOfView = camera.FieldOfView + (targetFov - camera.FieldOfView) * math.clamp(dt * speed, 0, 1)
 	end
 
-	if freecamWanted and not freecamActive then
+	if flagBool("Freecam_Enabled") and freecamWanted and not freecamActive then
 		freecamActive = true
 		freecamCf = camera.CFrame
 		local look = freecamCf.LookVector
@@ -6291,7 +7696,7 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 		pcall(function()
 			LocalPlayer.ReplicationFocus = streamFocus
 		end)
-	elseif not freecamWanted and freecamActive then
+	elseif freecamActive and not (flagBool("Freecam_Enabled") and freecamWanted) then
 		freecamActive = false
 		camera.CameraType = Enum.CameraType.Custom
 		local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
@@ -6419,8 +7824,42 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 	elseif flagBool("Speedhack") and humanoid then
 		humanoid.WalkSpeed = math.clamp(flagNum("SpeedhackSpeed", 20), 16, 24)
 	end
+	if flagBool("NoSprintAnim") then
+		muteSprintAnims(character, camera)
+	end
 	if flagBool("JumpHack") and humanoid then
 		humanoid.JumpHeight = math.clamp(flagNum("JumpHeight", 5), 3, 8)
+	end
+	if flagBool("Gravity") then
+		if gravBase == nil then
+			gravBase = workspace.Gravity
+		end
+		workspace.Gravity = math.clamp(flagNum("GravityValue", 80), 20, 196)
+	elseif gravBase then
+		workspace.Gravity = gravBase
+		gravBase = nil
+	end
+	if flagBool("NoJumpCd") and humanoid then
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+	end
+	if flagBool("Bhop") and humanoid and UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+		local state = humanoid:GetState()
+		if state == Enum.HumanoidStateType.Landed or state == Enum.HumanoidStateType.Running then
+			humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+		end
+	end
+	if flagBool("LongJump") and humanoid and root then
+		local state = humanoid:GetState()
+		if state == Enum.HumanoidStateType.Jumping and not longJumpUsed then
+			longJumpUsed = true
+			local flat = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
+			if flat.Magnitude > 0.05 then
+				local boost = math.clamp(flagNum("LongJumpPower", 18), 5, 40)
+				root.AssemblyLinearVelocity = root.AssemblyLinearVelocity + flat.Unit * boost
+			end
+		elseif state ~= Enum.HumanoidStateType.Freefall then
+			longJumpUsed = false
+		end
 	end
 	if flagBool("SpiderClimb") and (spiderOn or keyHeld("SpiderKey")) and humanoid and root and humanoid.Health > 0 and humanoid.MoveDirection.Magnitude > 0.1 then
 		local flat = Vector3.new(humanoid.MoveDirection.X, 0, humanoid.MoveDirection.Z)
@@ -6437,11 +7876,13 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 		end
 	end
 	if flagBool("NoFallDamage_Enabled") and humanoid and root then
-		humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
-		humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
 		local state = humanoid:GetState()
-		if (state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.FallingDown) and root.AssemblyLinearVelocity.Y < -40 then
+		if state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.FallingDown or state == Enum.HumanoidStateType.PlatformStanding then
 			humanoid:ChangeState(Enum.HumanoidStateType.Running)
+		end
+		if root.AssemblyLinearVelocity.Y < -30 then
+			local velocity = root.AssemblyLinearVelocity
+			root.AssemblyLinearVelocity = Vector3.new(velocity.X, -8, velocity.Z)
 		end
 	end
 	if flagBool("Jesus_Enabled") and root then
@@ -6628,93 +8069,87 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 			pcall(function()
 				sethiddenproperty(workspace.Terrain, "Decoration", false)
 			end)
-			grassStack = { workspace }
-		end
-		if grassStack then
-			local budget = 120
-			while budget > 0 and #grassStack > 0 do
-				budget -= 1
-				local inst = table.remove(grassStack)
-				if inst then
-					local name = string.lower(inst.Name)
-					if string.find(name, "grass", 1, true) or string.find(name, "foliage", 1, true) or string.find(name, "leaf", 1, true) or string.find(name, "bush", 1, true) then
-						if inst:IsA("BasePart") then
-							grassState[inst] = inst.LocalTransparencyModifier
-							inst.LocalTransparencyModifier = 1
-						elseif inst:IsA("Decal") or inst:IsA("Texture") then
-							grassState[inst] = inst.Transparency
-							inst.Transparency = 1
-						end
-					end
-					if not inst:IsA("Terrain") then
-						for _, child in inst:GetChildren() do
-							grassStack[#grassStack + 1] = child
-						end
-					end
-				end
-			end
-			if #grassStack == 0 then
-				grassStack = nil
-			end
 		end
 	elseif grassOn then
 		grassOn = false
 		pcall(function()
 			sethiddenproperty(workspace.Terrain, "Decoration", true)
 		end)
-		for inst, value in grassState do
-			if inst.Parent then
-				if inst:IsA("BasePart") then
+	end
+	local wantLeaves = flagBool("NoLeaves_Enabled")
+	local wantTrees = flagBool("RemoveTrees")
+	local foliageMode = (wantTrees and "t" or "") .. (wantLeaves and "l" or "")
+	if wantLeaves or wantTrees then
+		if leafMode ~= foliageMode then
+			for inst, value in leafState do
+				if inst.Parent and inst:IsA("BasePart") then
 					inst.LocalTransparencyModifier = value
-				else
-					inst.Transparency = value
 				end
 			end
+			table.clear(leafState)
+			leafMode = foliageMode
+			leafOn = false
 		end
-		table.clear(grassState)
-	end
-	if flagBool("NoLeaves_Enabled") then
 		if not leafOn then
 			leafOn = true
 			leafStack = { workspace }
 			leafClock = 0
 		end
 		leafClock += dt or 0
-		if not leafStack and leafClock > 8 then
+		if not leafStack and leafClock > 4 then
 			leafStack = { workspace }
 			leafClock = 0
 		end
 		if leafStack then
-			local budget = 60
+			local budget = 250
 			while budget > 0 and #leafStack > 0 do
 				budget -= 1
 				local inst = table.remove(leafStack)
-				if inst then
-					local name = string.lower(inst.Name)
-					local isLeaf = string.find(name, "leaf", 1, true) or string.find(name, "foliage", 1, true) or string.find(name, "canopy", 1, true)
-					if isLeaf then
-						local parts = { inst }
-						if not inst:IsA("BasePart") and not inst:IsA("Decal") and not inst:IsA("Texture") then
-							parts = inst:GetDescendants()
+				if inst and inst ~= workspace.Terrain then
+					if inst:IsA("BasePart") then
+						local name = string.lower(inst.Name)
+						local parentName = string.lower(inst.Parent and inst.Parent.Name or "")
+						local model = inst:FindFirstAncestorOfClass("Model")
+						local modelName = string.lower(model and model.Name or "")
+						local function has(text, word)
+							return string.find(text, word, 1, true) ~= nil
 						end
-						for _, part in parts do
-							if part:IsA("BasePart") or part:IsA("Decal") or part:IsA("Texture") then
-								if leafState[part] == nil then
-									if part:IsA("BasePart") then
-										leafState[part] = part.LocalTransparencyModifier
-										part.LocalTransparencyModifier = 1
-									else
-										leafState[part] = part.Transparency
-										part.Transparency = 1
+						local trunk = has(name, "trunk") or has(name, "bark") or has(name, "stump") or has(name, "log") or name == "wood"
+						local leafWord = has(name, "leaf") or has(name, "foliage") or has(name, "canopy") or has(name, "needle") or has(name, "frond")
+						local treeWord = has(name, "tree") or has(parentName, "tree") or has(modelName, "tree") or has(name, "pine") or has(parentName, "pine") or has(modelName, "pine") or has(parentName, "birch") or has(modelName, "birch") or has(parentName, "vegetation") or has(modelName, "vegetation")
+						local inFoliage = has(parentName, "foliage") or has(parentName, "leaf") or has(modelName, "foliage") or has(modelName, "leaves") or has(modelName, "canopy")
+						local appearance = inst:FindFirstChildOfClass("SurfaceAppearance")
+						local hide = false
+						if wantTrees and (treeWord or trunk or has(parentName, "trees")) then
+							hide = true
+						end
+						if wantLeaves and not trunk and not has(name, "tree") and not has(name, "pine") then
+							if leafWord or (appearance and inFoliage) then
+								hide = true
+							elseif appearance and treeWord then
+								local parent = inst.Parent
+								if parent then
+									for _, sibling in parent:GetChildren() do
+										if sibling ~= inst and sibling:IsA("BasePart") then
+											local siblingName = string.lower(sibling.Name)
+											if string.find(siblingName, "trunk", 1, true) or string.find(siblingName, "bark", 1, true) or string.find(siblingName, "wood", 1, true) or not sibling:FindFirstChildOfClass("SurfaceAppearance") then
+												hide = true
+												break
+											end
+										end
 									end
 								end
 							end
 						end
-					end
-					if not inst:IsA("Terrain") and not isLeaf then
-						for _, child in inst:GetChildren() do
-							leafStack[#leafStack + 1] = child
+						if hide and leafState[inst] == nil then
+							leafState[inst] = inst.LocalTransparencyModifier
+							inst.LocalTransparencyModifier = 1
+						elseif hide then
+							inst.LocalTransparencyModifier = 1
 						end
+					end
+					for _, child in inst:GetChildren() do
+						leafStack[#leafStack + 1] = child
 					end
 				end
 			end
@@ -6722,16 +8157,17 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 				leafStack = nil
 			end
 		end
+		for inst in leafState do
+			if inst.Parent then
+				inst.LocalTransparencyModifier = 1
+			end
+		end
 	elseif leafOn then
 		leafOn = false
 		leafStack = nil
 		for inst, value in leafState do
-			if inst.Parent then
-				if inst:IsA("BasePart") then
-					inst.LocalTransparencyModifier = value
-				else
-					inst.Transparency = value
-				end
+			if inst.Parent and inst:IsA("BasePart") then
+				inst.LocalTransparencyModifier = value
 			end
 		end
 		table.clear(leafState)
@@ -6773,12 +8209,13 @@ RunService:BindToRenderStep("MidnightSelfVisible", Enum.RenderPriority.Last.Valu
 end)
 
 task.defer(refreshAimRows)
-pcall(function()
+do
 	local virtualUser = game:GetService("VirtualUser")
 	LocalPlayer.Idled:Connect(function()
-		if flagBool("AntiAFK") then
-			virtualUser:CaptureController()
-			virtualUser:ClickButton2(Vector2.new(0, 0))
+		if not flagBool("AntiAFK") then
+			return
 		end
+		virtualUser:CaptureController()
+		virtualUser:ClickButton2(Vector2.new(0, 0))
 	end)
-end)
+end
