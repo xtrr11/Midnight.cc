@@ -229,6 +229,9 @@ Silent:Toggle({ Name = "Instant Bullet", Flag = "SA_NoDrag", Default = true, Cal
 Silent:Label("Visible Color", "Left"):Colorpicker({ Name = "SA Visible Color", Flag = "SA_TargetVisible", Default = Color3.fromRGB(80, 255, 120), Callback = none })
 Silent:Label("Hidden Color", "Left"):Colorpicker({ Name = "SA Hidden Color", Flag = "SA_TargetHidden", Default = Color3.fromRGB(255, 70, 70), Callback = none })
 Silent:Toggle({ Name = "Visibility Bar", Flag = "TargetState", Default = true, Callback = none })
+Silent:Toggle({ Name = "Status Background", Flag = "Status_Bg", Default = true, Callback = none })
+Silent:Slider({ Name = "Status Transparency", Flag = "Status_Transparency", Min = 0, Default = 15, Max = 90, Suffix = "%", Decimals = 1, Callback = none })
+Silent:Label("Status Color", "Left"):Colorpicker({ Name = "Status Color", Flag = "Status_Color", Default = Color3.fromRGB(0, 0, 0), Callback = none })
 Silent:Toggle({ Name = "Ignore Downed", Flag = "SA_DownCheck", Default = true, Callback = none })
 Silent:Toggle({ Name = "Force Hit", Flag = "SA_ForceHit", Default = false, Callback = none })
 Silent:Toggle({ Name = "Team Check", Flag = "SA_TeamCheck", Default = true, Callback = none })
@@ -287,6 +290,7 @@ Hits:Toggle({ Name = "Hitmarker", Flag = "Hit_Marker", Default = false, Callback
 Hits:Toggle({ Name = "Hit Flash", Flag = "Hit_Flash", Default = false, Callback = none })
 Hits:Toggle({ Name = "Bullet Impact", Flag = "Hit_Impact", Default = false, Callback = none })
 Hits:Toggle({ Name = "Hit Notifications", Flag = "Hit_Notify", Default = false, Callback = none })
+Hits:Toggle({ Name = "Hit Background", Flag = "Hit_Bg", Default = true, Callback = none })
 Hits:Label("Hit Log Color", "Left"):Colorpicker({ Name = "Hit Log Color", Flag = "Hit_Color", Default = Color3.fromRGB(255, 255, 255), Callback = none })
 Hits:Toggle({ Name = "Shoot Sound (Laser)", Flag = "Shoot_Enabled", Default = false, Callback = none })
 Hits:Toggle({ Name = "Tracer", Flag = "Tracer_Enabled", Default = false, Callback = none })
@@ -409,6 +413,8 @@ Aware:Toggle({ Name = "Looking At You", Flag = "LookAtYou", Default = true, Call
 	Default = Color3.fromRGB(255, 214, 64),
 	Callback = none,
 })
+Aware:Toggle({ Name = "Background", Flag = "LookBg", Default = true, Callback = none })
+Aware:Toggle({ Name = "KD Background", Flag = "SelfBg", Default = true, Callback = none })
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -480,6 +486,99 @@ end
 
 function thirdActive()
 	return flagBool("ThirdPerson") and thirdKeyOn == true
+end
+
+function mapEspOn()
+	if not flagBool("EspMap") then
+		return false
+	end
+	return bindActive("Map_KeyMode", "Map_Key", mapKeyOn)
+end
+
+function paintBack(frame, on, transparency, color)
+	if not frame then
+		return
+	end
+	if typeof(color) == "Color3" then
+		frame.BackgroundColor3 = color
+	end
+	frame.BackgroundTransparency = on and transparency or 1
+	local stroke = frame:FindFirstChildOfClass("UIStroke")
+	if stroke then
+		stroke.Enabled = on and true or false
+	end
+end
+
+function paintKeybindModes()
+	local named = {
+		["Silent Aim Key"] = Library.Flags["SA_KeyMode"] or "Always",
+		["Camera Aim Key"] = Library.Flags["Cam_KeyMode"] or "Always",
+		["Map ESP Key"] = Library.Flags["Map_KeyMode"] or "Always",
+	}
+	for name, mode in named do
+		if type(mode) == "string" then
+			local bind = Library.Flags[name]
+			if type(bind) == "table" then
+				bind.Mode = mode
+			end
+		end
+	end
+	if os.clock() - (bindPaintAt or 0) < 1 then
+		return
+	end
+	bindPaintAt = os.clock()
+	if bindListRoot == false then
+		return
+	end
+	if not bindListRoot or not bindListRoot.Parent then
+		bindListRoot = nil
+		local root = Library.Holder and Library.Holder.Instance
+		if typeof(root) == "Instance" then
+			for _, obj in root:GetDescendants() do
+				if obj:IsA("TextLabel") and string.find(obj.Text, "Silent Aim Key", 1, true) then
+					bindListRoot = obj.Parent
+					break
+				end
+			end
+		end
+		if not bindListRoot then
+			local extra = {}
+			pcall(function()
+				extra[#extra + 1] = game:GetService("CoreGui")
+			end)
+			local playerGui = LocalPlayer:FindFirstChild("PlayerGui")
+			if playerGui then
+				extra[#extra + 1] = playerGui
+			end
+			for _, gui in extra do
+				for _, obj in gui:GetDescendants() do
+					if obj:IsA("TextLabel") and string.find(obj.Text, "Silent Aim Key", 1, true) then
+						bindListRoot = obj.Parent
+						break
+					end
+				end
+				if bindListRoot then
+					break
+				end
+			end
+		end
+		if not bindListRoot then
+			bindListRoot = false
+			return
+		end
+	end
+	for _, obj in bindListRoot:GetDescendants() do
+		if obj:IsA("TextLabel") then
+			local mode, rest = string.match(obj.Text, "^%((%a+)%)%s+(.+)$")
+			if mode and rest then
+				local base = string.match(rest, "^(.-)%s+%-") or rest
+				local want = named[base]
+				if type(want) == "string" and mode ~= want then
+					obj.Text = "(" .. want .. ") " .. rest
+				end
+			end
+		end
+	end
 end
 
 function rowByText(text)
@@ -1657,22 +1756,47 @@ function box2d(character, camera)
 	end
 	local top = camera:WorldToViewportPoint(topPos)
 	local bottom = camera:WorldToViewportPoint(bottomPos)
-	if top.Z < 0.2 or bottom.Z < 0.2 then
+	if top.Z < 0.05 or bottom.Z < 0.05 then
 		return nil
 	end
 	local height = math.abs(bottom.Y - top.Y)
-	if height < 4 then
-		return nil
-	end
-	local width = math.max(height * 0.55, 6)
 	local centerX = (top.X + bottom.X) * 0.5
-	local topY = math.min(top.Y, bottom.Y)
+	local midY = (top.Y + bottom.Y) * 0.5
+	if height < 14 then
+		height = 14
+	end
+	local width = math.max(height * 0.55, 8)
+	local topY = midY - height * 0.5
 	local left = centerX - width * 0.5
 	local viewport = camera.ViewportSize
 	if left > viewport.X + 80 or left + width < -80 or topY > viewport.Y + 80 or topY + height < -80 then
 		return nil
 	end
 	return left, topY, width, height
+end
+
+function fallbackBox(camera, worldPos)
+	local screen = camera:WorldToViewportPoint(worldPos)
+	if screen.Z < 0.05 then
+		return nil
+	end
+	local fov = math.rad(math.clamp(camera.FieldOfView, 1, 120))
+	local dist = math.max((worldPos - camera.CFrame.Position).Magnitude, 1)
+	local height = (5.5 / dist) * (camera.ViewportSize.Y / (2 * math.tan(fov * 0.5)))
+	height = math.clamp(height, 14, 420)
+	local width = math.max(height * 0.55, 8)
+	local left = screen.X - width * 0.5
+	local topY = screen.Y - height * 0.62
+	local viewport = camera.ViewportSize
+	if left > viewport.X + 80 or left + width < -80 or topY > viewport.Y + 80 or topY + height < -80 then
+		return nil
+	end
+	return left, topY, width, height
+end
+
+function scopedIn()
+	local camera = workspace.CurrentCamera
+	return camera ~= nil and camera.FieldOfView <= 55
 end
 
 function vehicleBox(model, camera)
@@ -1937,7 +2061,12 @@ local aimCharacter = nil
 local fovCircle = nil
 
 function silentRadius()
-	return math.clamp(flagNum("SA_Fov", 180), 10, 800)
+	local radius = math.clamp(flagNum("SA_Fov", 180), 10, 800)
+	local camera = workspace.CurrentCamera
+	if camera and camera.FieldOfView <= 55 then
+		radius = math.max(radius, math.min(camera.ViewportSize.X, camera.ViewportSize.Y) * 0.48)
+	end
+	return radius
 end
 
 function solveQuadratic(a, b, c)
@@ -2044,6 +2173,11 @@ function sameClan(player)
 	if cached and os.clock() - cached.t < 1.5 then
 		return cached.v
 	end
+	local squad = readSquad()
+	if squad[LocalPlayer.Name] and squad[player.Name] then
+		clanCache[player] = { t = os.clock(), v = true }
+		return true
+	end
 	local function clanOf(name)
 		local folder = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
 		local data = folder and folder:FindFirstChild(name)
@@ -2060,6 +2194,68 @@ function sameClan(player)
 	local same = (LocalPlayer.Team ~= nil and player.Team == LocalPlayer.Team) or (mine ~= nil and mine == theirs)
 	clanCache[player] = { t = os.clock(), v = same }
 	return same
+end
+
+function readSquad()
+	savedSquad = savedSquad or {}
+	if os.clock() - (squadReadAt or 0) < 6 then
+		return savedSquad
+	end
+	squadReadAt = os.clock()
+	local gui = LocalPlayer:FindFirstChild("PlayerGui")
+	if not gui then
+		return savedSquad
+	end
+	local title
+	for _, obj in gui:GetDescendants() do
+		if obj:IsA("TextLabel") then
+			local text = obj.Text
+			if type(text) == "string" and string.find(text, "s team", 1, true) and #text < 48 then
+				title = obj
+				break
+			end
+		end
+	end
+	if not title then
+		return savedSquad
+	end
+	local found = {}
+	local owner = string.match(title.Text, "^(.-)'s team$") or string.match(title.Text, "^(.-)’s team$")
+	if owner and owner ~= "" then
+		found[owner] = true
+	end
+	local root = title.Parent
+	local hasDisband = false
+	for _ = 1, 6 do
+		if not root then
+			break
+		end
+		local count = 0
+		for _, obj in root:GetDescendants() do
+			if obj:IsA("TextLabel") or obj:IsA("TextButton") then
+				if obj.Text == "Disband" then
+					hasDisband = true
+				end
+				if Players:FindFirstChild(obj.Text) then
+					count += 1
+				end
+			end
+		end
+		if count >= 1 then
+			for _, obj in root:GetDescendants() do
+				if (obj:IsA("TextLabel") or obj:IsA("TextButton")) and (Players:FindFirstChild(obj.Text) or obj.Text == LocalPlayer.Name) then
+					found[obj.Text] = true
+				end
+			end
+			break
+		end
+		root = root.Parent
+	end
+	if hasDisband or found[LocalPlayer.Name] then
+		found[LocalPlayer.Name] = true
+		savedSquad = found
+	end
+	return savedSquad
 end
 
 function considerSilent(part, camera, origin, radius, bestDist, bestPart, extra)
@@ -2148,31 +2344,53 @@ function paintAim()
 	end
 end
 
-function noteHit(model, partName)
-	if os.clock() - (lastShot or 0) > 0.4 then
+function noteHit(model, partName, forced)
+	local now = os.clock()
+	if now - (lastNotedHit or 0) < 0.35 then
+		return
+	end
+	if not forced and now - (lastShot or 0) > 1.3 then
 		return
 	end
 	if not model or model == LocalPlayer.Character then
 		return
 	end
-	if not model:FindFirstChildOfClass("Humanoid") then
-		return
-	end
 	if Players:GetPlayerFromCharacter(model) == LocalPlayer then
 		return
 	end
-	local now = os.clock()
-	hitDebounce = hitDebounce or {}
-	if hitDebounce[model] and now - hitDebounce[model] < 0.45 then
+	if not model:FindFirstChildOfClass("Humanoid") and not Players:GetPlayerFromCharacter(model) then
 		return
 	end
-	hitDebounce[model] = now
+	lastNotedHit = now
 	local where = partName or "Body"
 	local meters = 0
 	local root = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
 	local camera = workspace.CurrentCamera
 	if root and camera then
 		meters = math.floor((root.Position - camera.CFrame.Position).Magnitude * 0.28 + 0.5)
+	end
+	local before = healthSnap and healthSnap[model]
+	if type(before) ~= "number" then
+		before = modelHp(model)
+	end
+	healthHold = healthHold or {}
+	healthHold[model] = now + 0.55
+	local popPos = root and (root.Position + Vector3.new(-0.6, 2.2, 0))
+	local headshot = string.lower(where) == "head"
+	if popPos and type(before) == "number" then
+		task.delay(0.22, function()
+			if not model.Parent or not popPos then
+				return
+			end
+			local after = modelHp(model)
+			if type(after) == "number" and before - after >= 1 then
+				healthSnap[model] = after
+				pushDamagePop(popPos, tostring(math.floor(before - after + 0.5)), headshot)
+			end
+		end)
+	end
+	if root then
+		sprayBlood(root.Position)
 	end
 	if flagBool("Hit_Enabled") then
 		local humanoid = model:FindFirstChildOfClass("Humanoid")
@@ -2317,6 +2535,9 @@ task.spawn(function()
 	local oldBullet
 	oldBullet = hookfunction(bullet.CreateBullet, function(a1, a2, a3, a4, aimPart, a6, ammoType, a8, a9)
 		if not silentOn() or typeof(aimPart) ~= "Instance" then
+			if typeof(aimPart) == "Instance" and onLocalShot then
+				onLocalShot(aimPart, nil)
+			end
 			return oldBullet(a1, a2, a3, a4, aimPart, a6, ammoType, a8, a9)
 		end
 		local chance = flagNum("SA_Hitchance", 100)
@@ -2389,7 +2610,7 @@ task.spawn(function()
 		end
 		silentPart = target
 		if onLocalShot then
-			onLocalShot(aimPart)
+			onLocalShot(aimPart, targetPosition + drop)
 		end
 		return oldBullet(a1, a2, a3, a4, {
 			CFrame = CFrame.new(origin, targetPosition + drop),
@@ -3877,6 +4098,7 @@ function stepQuestPins()
 		questReadout.Text = table.concat(lines, "\n")
 		if questPanel then
 			questPanel.Visible = true
+			paintBack(questPanel, Library.Flags["QuestBg"] ~= false, 0, Color3.fromRGB(12, 12, 12))
 		end
 	end
 end
@@ -4004,6 +4226,7 @@ function drawActors(camera, origin, active)
 	for _, entry in actorCache or {} do
 		local model = entry.model
 		if model and model.Parent then
+			rememberHealth(model)
 			local isBoss = entry.kind == "boss"
 			local enabled = isBoss and flagBool("BossESPEnabled") or (not isBoss and flagBool("AIESPEnabled"))
 			if enabled then
@@ -4019,6 +4242,9 @@ function drawActors(camera, origin, active)
 				if pos then
 					local dist = (pos - origin).Magnitude
 					local limit = rangeStuds(prefix .. "MaxDistance", isBoss and 800 or 400)
+					if scopedIn() then
+						limit = math.max(limit, 500 / 0.28)
+					end
 					if dist <= limit then
 						local chams = flagBool(prefix .. "Chams")
 						local mark = model:FindFirstChild("MidnightMark")
@@ -4060,6 +4286,12 @@ function drawActors(camera, origin, active)
 									x, y, w, h = vehicleBox(model, camera)
 								else
 									x, y, w, h = box2d(model, camera)
+									if not x then
+										local anchor = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
+										if anchor and anchor:IsA("BasePart") then
+											x, y, w, h = fallbackBox(camera, anchor.Position)
+										end
+									end
 								end
 								if not x then
 									hidePack(pack)
@@ -4147,6 +4379,7 @@ function drawWorldEsp(camera, doScan)
 		local bosses = quickBosses()
 		liveBosses = bosses
 		bossReadout.Parent.Visible = trackBoss
+		paintBack(bossReadout.Parent, Library.Flags["BossBg"] ~= false, 0, Color3.fromRGB(12, 12, 12))
 		if trackBoss then
 			local lines = {}
 			for _, boss in BOSS_LIST do
@@ -4547,12 +4780,11 @@ do
 	cardVis = Instance.new("Frame")
 	cardVis.Position = UDim2.new(0, 8, 1, -34)
 	cardVis.Size = UDim2.new(1, -16, 0, 14)
-	cardVis.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	cardVis.BackgroundTransparency = 1
 	cardVis.BorderSizePixel = 0
 	cardVis.Parent = cardPanel
 	local visStroke = Instance.new("UIStroke")
-	visStroke.Color = Color3.fromRGB(255, 255, 255)
-	visStroke.Thickness = 1
+	visStroke.Transparency = 1
 	visStroke.Parent = cardVis
 	cardVisText = Instance.new("TextLabel")
 	cardVisText.BackgroundTransparency = 1
@@ -4633,6 +4865,12 @@ function updateTargetCard(model)
 		return
 	end
 	cardPanel.Visible = true
+	cardPanel.BackgroundColor3 = flagColor("Status_Color", Color3.fromRGB(0, 0, 0))
+	cardPanel.BackgroundTransparency = Library.Flags["Status_Bg"] == false and 1 or (math.clamp(flagNum("Status_Transparency", 15), 0, 90) / 100)
+	local cardStroke = cardPanel:FindFirstChildOfClass("UIStroke")
+	if cardStroke then
+		cardStroke.Transparency = Library.Flags["Status_Bg"] == false and 1 or 0
+	end
 	if cardUser ~= player then
 		cardUser = player
 		cardAvatar.Image = ""
@@ -4662,7 +4900,7 @@ function updateTargetCard(model)
 		cardVis.Visible = showState
 		if showState then
 			local seen = canSee(model, workspace.CurrentCamera)
-			cardVisText.Text = seen and "Visible" or "Hidden"
+			cardVisText.Text = seen and "VISIBLE" or "HIDDEN"
 			cardVisText.TextColor3 = seen and Color3.fromRGB(80, 220, 90) or Color3.fromRGB(255, 70, 70)
 		end
 	end
@@ -5063,6 +5301,9 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 	local showSkeleton = espOn and flagBool("PlayersSkeleton")
 	local showCheat = espOn and flagBool("PlayersCheater")
 	local limit = maxStuds()
+	if scopedIn() then
+		limit = math.max(limit, 500 / 0.28)
+	end
 	local origin = camera and camera.CFrame.Position
 	local detected = {}
 	local staff = {}
@@ -5089,6 +5330,9 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 		local root = character and rootPart(character)
 		local dist = (root and origin) and (root.Position - origin).Magnitude or math.huge
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+		if character and player ~= LocalPlayer then
+			rememberHealth(character)
+		end
 		local alive = character and character.Parent and (not humanoid or humanoid.Health > 0)
 		local onEsp = player ~= LocalPlayer and espOn and alive and dist <= limit
 		local kd = nil
@@ -5176,6 +5420,9 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 				end
 			else
 			local x, y, w, h = box2d(character, camera)
+			if not x and root then
+				x, y, w, h = fallbackBox(camera, root.Position)
+			end
 			if not x then
 				if pack then
 					hidePack(pack)
@@ -5363,6 +5610,11 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 		lookList.TextColor3 = flagColor("LookColor", Color3.fromRGB(255, 214, 64))
 		if lookFrame then
 			lookFrame.Visible = lookList.Text ~= ""
+			lookFrame.BackgroundTransparency = Library.Flags["LookBg"] == false and 1 or 0.2
+			local edge = lookFrame:FindFirstChildOfClass("UIStroke")
+			if edge then
+				edge.Transparency = Library.Flags["LookBg"] == false and 1 or 0
+			end
 		end
 	end
 
@@ -5417,6 +5669,7 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 			selfStats.Text = string.format("kd%s\nreports %d", myKd and string.format("%.2f", myKd) or "--", reports or 0)
 			if selfStats.Parent then
 				selfStats.Parent.Visible = true
+				paintBack(selfStats.Parent, Library.Flags["SelfBg"] ~= false, 0, Color3.fromRGB(12, 12, 12))
 			end
 		elseif selfStats.Parent then
 			selfStats.Parent.Visible = false
@@ -5458,6 +5711,7 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 		hitLog.TextColor3 = flagColor("Hit_Color", Color3.fromRGB(255, 255, 255))
 		if hitBack then
 			hitBack.Visible = hitLog.Text ~= ""
+			hitBack.BackgroundTransparency = Library.Flags["Hit_Bg"] == false and 1 or 0.2
 			if not hitBack:GetAttribute("Dragged") then
 				hitBack.Position = UDim2.new(0.5, 0, 1, -250)
 			end
@@ -5466,9 +5720,12 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 end)
 
 targetSection(ESP, "Boss", 1, "Boss", Color3.fromRGB(255, 80, 80), Color3.fromRGB(255, 200, 80), false)
-ESP:Section({ Name = "Boss Tracker", Side = 1 }):Toggle({ Name = "Show Spawned", Flag = "BossTracker", Default = true, Callback = none })
+local BossTrack = ESP:Section({ Name = "Boss Tracker", Side = 1 })
+BossTrack:Toggle({ Name = "Show Spawned", Flag = "BossTracker", Default = true, Callback = none })
+BossTrack:Toggle({ Name = "Background", Flag = "BossBg", Default = true, Callback = none })
 local QuestEsp = ESP:Section({ Name = "Quests", Side = 1 })
 QuestEsp:Toggle({ Name = "Quest ESP", Flag = "QuestESP", Default = false, Callback = none })
+QuestEsp:Toggle({ Name = "Background", Flag = "QuestBg", Default = true, Callback = none })
 QuestEsp:Label("Color"):Colorpicker({ Name = "Quest Color", Flag = "QuestColor", Default = Color3.fromRGB(255, 214, 80), Callback = none })
 QuestEsp:Slider({ Name = "Max Distance", Flag = "QuestMaxDistance", Min = 0, Default = 400, Max = 2000, Suffix = "m", Decimals = 1, Callback = none })
 targetSection(ESP, "Bots", 2, "AI", Color3.fromRGB(255, 120, 80), Color3.fromRGB(255, 220, 120), false)
@@ -5589,7 +5846,28 @@ ItemEsp:Button({
 	end,
 })
 
-ESP:Section({ Name = "Map", Side = 1 }):Toggle({ Name = "ESP Map", Flag = "EspMap", Default = false, Callback = none })
+local MapEsp = ESP:Section({ Name = "Map", Side = 1 })
+mapKeyOn = true
+MapEsp:Toggle({ Name = "ESP Map", Flag = "EspMap", Default = false, Callback = function(on)
+	mapKeyOn = on and true or false
+end })
+MapEsp:Dropdown({ Name = "Key Mode", Flag = "Map_KeyMode", Default = "Always", Items = { "Hold", "Toggle", "Always" }, Callback = none })
+MapEsp:Label("Keybind", "Left"):Keybind({
+	Name = "Map ESP Key",
+	Flag = "Map_Key",
+	Default = Enum.KeyCode.M,
+	Mode = "Toggle",
+	Callback = function(state)
+		if Library.Flags["EspMap"] ~= true then
+			return
+		end
+		if type(state) == "boolean" then
+			mapKeyOn = state
+		else
+			mapKeyOn = not mapKeyOn
+		end
+	end,
+})
 
 local Ambience = Render:Section({ Name = "Ambience", Side = 1 })
 Ambience:Toggle({ Name = "Enabled", Flag = "Amb_Enabled", Default = false, Callback = none })
@@ -5836,6 +6114,7 @@ extra:Toggle({ Name = "Remove Screen Effects", Flag = "NoScreenEffects", Default
 extra:Toggle({ Name = "No Visor", Flag = "NoVisor", Default = false, Callback = none })
 extra:Toggle({ Name = "Hide Server Info", Flag = "HideServerInfo", Default = false, Callback = none })
 extra:Toggle({ Name = "Visor Indicator", Flag = "VisorIndicator", Default = false, Callback = none })
+extra:Toggle({ Name = "Visor Background", Flag = "VisorBg", Default = true, Callback = none })
 extra:Toggle({ Name = "Crosshair", Flag = "Crosshair", Default = false, Callback = none })
 extra:Slider({ Name = "Crosshair Size", Flag = "CrossSize", Min = 2, Default = 8, Max = 24, Suffix = "px", Decimals = 1, Callback = none })
 extra:Slider({ Name = "Crosshair Gap", Flag = "CrossGap", Min = 0, Default = 4, Max = 20, Suffix = "px", Decimals = 1, Callback = none })
@@ -6459,6 +6738,100 @@ function playShotSound(id, volume, pitch)
 	end)
 end
 
+function sprayBlood(pos)
+	if typeof(pos) ~= "Vector3" then
+		return
+	end
+	for index = 1, 7 do
+		local drop = Instance.new("Part")
+		drop.Name = "MidnightBlood"
+		drop.Shape = Enum.PartType.Ball
+		drop.Material = Enum.Material.Neon
+		drop.Color = index % 2 == 0 and Color3.fromRGB(90, 0, 0) or Color3.fromRGB(140, 8, 8)
+		drop.Size = Vector3.new(0.18, 0.18, 0.18)
+		drop.Anchored = false
+		drop.CanCollide = false
+		drop.CanQuery = false
+		drop.CanTouch = false
+		drop.Position = pos + Vector3.new(0, 1.2, 0)
+		drop.Parent = workspace
+		drop.AssemblyLinearVelocity = Vector3.new(math.random(-14, 14), math.random(6, 18), math.random(-14, 14))
+		task.delay(0.4, function()
+			drop:Destroy()
+		end)
+	end
+end
+
+function pushDamagePop(pos, text, head)
+	hitPops = hitPops or {}
+	if #hitPops > 8 then
+		table.remove(hitPops, 1)
+	end
+	hitPops[#hitPops + 1] = { pos = pos, text = text, t = os.clock(), head = head }
+end
+
+function drawDamagePops(camera)
+	if type(Drawing) ~= "table" then
+		return
+	end
+	if not damageTexts then
+		damageTexts = {}
+		for _ = 1, 16 do
+			local label = Drawing.new("Text")
+			label.Visible = false
+			label.Center = true
+			label.Outline = true
+			label.OutlineColor = Color3.new(0, 0, 0)
+			label.Font = 2
+			damageTexts[#damageTexts + 1] = label
+		end
+	end
+	local used = 0
+	local now = os.clock()
+	if hitPops then
+		for index = #hitPops, 1, -1 do
+			local pop = hitPops[index]
+			local age = now - pop.t
+			if age > 1.45 then
+				table.remove(hitPops, index)
+			else
+				local screen = camera:WorldToViewportPoint(pop.pos + Vector3.new(0, age * 1.6, 0))
+				if screen.Z > 0 then
+					local text = pop.text
+					local mid = math.max(1, math.floor(#text / 2))
+					local leftText = string.sub(text, 1, mid)
+					local rightText = string.sub(text, mid + 1)
+					if rightText == "" then
+						rightText = leftText
+					end
+					local split = math.clamp((age - 0.55) / 0.7, 0, 1)
+					local gap = split * 16
+					local size = pop.head and 22 or 18
+					local color = pop.head and Color3.fromRGB(255, 70, 70) or Color3.fromRGB(255, 255, 255)
+					local fade = 1 - math.clamp((age - 0.95) / 0.5, 0, 1)
+					local base = Vector2.new(screen.X - 10, screen.Y - 22)
+					local halves = split <= 0 and { { text, base } } or { { leftText, base + Vector2.new(-gap, split * 8) }, { rightText, base + Vector2.new(gap + 6, split * -4) } }
+					for _, half in halves do
+						used += 1
+						local label = damageTexts[used]
+						if label then
+							label.Visible = true
+							label.Text = half[1]
+							label.Position = half[2]
+							label.Size = size
+							label.Color = color
+							label.Transparency = fade
+						end
+					end
+				end
+			end
+		end
+	end
+	for index = used + 1, #damageTexts do
+		damageTexts[index].Visible = false
+	end
+end
+
 function showImpact(pos)
 	if impactPart and impactPart.Parent then
 		impactPart.Position = pos
@@ -6480,6 +6853,7 @@ function showImpact(pos)
 end
 
 function drawHitFx(camera)
+	drawDamagePops(camera)
 	if flagBool("Hit_Marker") and type(Drawing) == "table" and hitMarkerUntil and os.clock() < hitMarkerUntil then
 		if not hitMarks then
 			hitMarks = {}
@@ -6552,13 +6926,52 @@ function drawTracer(from, to)
 	end)
 end
 
-function onLocalShot(part)
+function onLocalShot(part, targetPos)
 	lastShot = os.clock()
 	watchShot = false
 	lastHitPart = (silentPart and silentPart.Name) or "Body"
-	if flagBool("Tracer_Enabled") and part then
-		drawTracer(part.Position, part.Position + part.CFrame.LookVector * 900)
+	if flagBool("Shoot_Enabled") then
+		playShotSound(LASER_ID, 0.55, 1.35)
+		local gun = LocalPlayer.Character and heldGun(LocalPlayer.Character)
+		if gun then
+			for _, sound in gun:GetDescendants() do
+				if sound:IsA("Sound") and sound.Playing then
+					local soundName = string.lower(sound.Name)
+					local skip = string.find(soundName, "reload", 1, true) or string.find(soundName, "equip", 1, true) or string.find(soundName, "inspect", 1, true)
+					if not skip then
+						sound:Stop()
+					end
+				end
+			end
+		end
 	end
+	if flagBool("Tracer_Enabled") and part and part:IsA("BasePart") then
+		local dest = targetPos
+		if typeof(dest) ~= "Vector3" then
+			dest = part.Position + part.CFrame.LookVector * 450
+		end
+		drawTracer(part.Position, dest)
+	end
+end
+
+function rememberHealth(model)
+	if not model then
+		return
+	end
+	if healthHold and healthHold[model] and os.clock() < healthHold[model] then
+		return
+	end
+	local humanoid = model:FindFirstChildOfClass("Humanoid")
+	local hp = humanoid and humanoid.Health
+	if type(hp) ~= "number" then
+		return
+	end
+	healthSnap = healthSnap or {}
+	local prev = healthSnap[model]
+	if type(prev) == "number" and prev - hp >= 1 then
+		return
+	end
+	healthSnap[model] = hp
 end
 
 function modelHp(model)
@@ -6905,7 +7318,7 @@ function warmMapStream()
 		local center = Vector3.new(208, 40, -203)
 		for x = -2, 2 do
 			for z = -2, 2 do
-				if not flagBool("EspMap") then
+				if not mapEspOn() then
 					mapWarm = false
 					return
 				end
@@ -6999,7 +7412,7 @@ function runEspMap()
 		espMapRunning = false
 		return
 	end
-	while flagBool("EspMap") do
+	while mapEspOn() do
 		pcall(warmMapStream)
 		pcall(updateEspMap)
 		task.wait(0.15)
@@ -7231,11 +7644,11 @@ function installSwimHooks()
 		end
 		local instantShot = Library.Flags["SA_NoDrag"] == true and silentOn() and silentPart and silentPart.Parent and shotInstant and os.clock() - shotInstant < 0.25
 		if method == "Raycast" and instantShot and typeof(args[1]) == "Vector3" and typeof(args[2]) == "Vector3" then
-			local traced = debug.traceback()
-			local bulletRay = string.find(traced, "Bullet", 1, true) ~= nil
+			local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+			local bulletRay = root and (args[1] - root.Position).Magnitude < 12 and args[2].Magnitude > 25
 			if not bulletRay then
-				local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-				bulletRay = root and (args[1] - root.Position).Magnitude < 10 and args[2].Magnitude > 25
+				local traced = debug.traceback()
+				bulletRay = string.find(traced, "Bullet", 1, true) ~= nil
 			end
 			if bulletRay then
 				args[2] = silentPart.Position - args[1]
@@ -7254,18 +7667,28 @@ function installSwimHooks()
 			end
 			return oldName(self, unpack(args))
 		end
-		if method == "FireServer" and typeof(self) == "Instance" and self.Name == "ProjectileInflict" and Library.Flags["SA_NoDrag"] == true and silentOn() then
-			local traced = debug.traceback()
-			local fromController = string.find(traced, "CharacterController", 1, true) ~= nil
-			local fromBullet = string.find(traced, "Bullet", 1, true) ~= nil
-			if fromController and not fromBullet then
-				return coroutine.yield()
+		if method == "FireServer" and typeof(self) == "Instance" and self.Name == "ProjectileInflict" then
+			local part = args[1]
+			if typeof(part) == "Instance" then
+				local model = part:FindFirstAncestorOfClass("Model")
+				if model then
+					noteHit(model, part.Name, true)
+				end
 			end
-			local packet = bulletInfos and (bulletInfos[args[3]] or bulletInfos[args[2]] or bulletInfos[args[1]])
-			if type(packet) == "table" and type(packet[2]) == "number" then
-				args[4] = packet[2] + 5
+			if Library.Flags["SA_NoDrag"] == true and silentOn() then
+				local traced = debug.traceback()
+				local fromController = string.find(traced, "CharacterController", 1, true) ~= nil
+				local fromBullet = string.find(traced, "Bullet", 1, true) ~= nil
+				if fromController and not fromBullet then
+					return coroutine.yield()
+				end
+				local packet = bulletInfos and (bulletInfos[args[3]] or bulletInfos[args[2]] or bulletInfos[args[1]])
+				if type(packet) == "table" and type(packet[2]) == "number" then
+					args[4] = packet[2] + 5
+					return oldName(self, unpack(args))
+				end
 			end
-			return oldName(self, unpack(args))
+			return oldName(self, ...)
 		end
 		return oldName(self, ...)
 	end
@@ -7659,6 +8082,7 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 	applyUtility(camera)
 
 	checkHits()
+	paintKeybindModes()
 	gunClock += dt
 	if gunClock > 0.5 then
 		gunClock = 0
@@ -8052,12 +8476,13 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 			end
 		end
 		visorLabel.Visible = true
+		visorLabel.BackgroundTransparency = Library.Flags["VisorBg"] == false and 1 or 0.25
 		visorLabel.Text = down and "visor on" or "visor off"
 		visorLabel.TextColor3 = down and Color3.fromRGB(80, 255, 140) or Color3.fromRGB(255, 80, 80)
 	elseif visorLabel then
 		visorLabel.Visible = false
 	end
-	if flagBool("EspMap") then
+	if mapEspOn() then
 		if not espMapRunning then
 			espMapRunning = true
 			task.spawn(runEspMap)
