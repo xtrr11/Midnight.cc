@@ -378,7 +378,7 @@ SilentAim:Toggle({
 	Default = false,
 	Callback = none
 })
-SilentAim:Label("Hitscan while on. Real speed and drop come back when off.")
+SilentAim:Label("Instant hit on the real bullet id. Ammo stats stay real.")
 SilentAim:Label("Visible Color", "Left"):Colorpicker({
 	Name = "SA Visible Color",
 	Flag = "SA_TargetVisible",
@@ -3594,7 +3594,13 @@ function syncInstantAmmo()
 	shared.MidnightAmmoSnap = shared.MidnightAmmoSnap or {}
 	local On = flagBool("SA_InstantBypass")
 	local KeepDrag = v0.Flags.SA_NoDrag ~= false
+	local Bypass = nil
 	
+	if type(shared) == "table" then
+		shared.MidnightBypass = shared.MidnightBypass or {}
+		Bypass = shared.MidnightBypass
+		Bypass.fast = false
+	end
 	for _, child in AmmoTypes:GetChildren() do
 		local Snap = shared.MidnightAmmoSnap[child]
 		
@@ -3611,29 +3617,30 @@ function syncInstantAmmo()
 			}
 			shared.MidnightAmmoSnap[child] = Snap
 		end
-		if On then
-			if (type(Snap.drop) == "number" or type(child:GetAttribute("ProjectileDrop")) == "number") and child:GetAttribute("ProjectileDrop") ~= 0 then
-				child:SetAttribute("ProjectileDrop", 0)
-			end
+		if type(Snap.drop) == "number" and child:GetAttribute("ProjectileDrop") ~= Snap.drop then
+			child:SetAttribute("ProjectileDrop", Snap.drop)
+		end
+		if type(Snap.vel) == "number" and child:GetAttribute("MuzzleVelocity") ~= Snap.vel then
+			child:SetAttribute("MuzzleVelocity", Snap.vel)
+		end
+		if KeepDrag and not On then
 			if (type(Snap.drag) == "number" or type(child:GetAttribute("Drag")) == "number") and child:GetAttribute("Drag") ~= 0 then
 				child:SetAttribute("Drag", 0)
 			end
-			if type(Snap.vel) == "number" and child:GetAttribute("MuzzleVelocity") ~= 100000 then
-				child:SetAttribute("MuzzleVelocity", 100000)
-			end
-		else
-			if type(Snap.drop) == "number" and child:GetAttribute("ProjectileDrop") ~= Snap.drop then
-				child:SetAttribute("ProjectileDrop", Snap.drop)
-			end
-			if type(Snap.vel) == "number" and child:GetAttribute("MuzzleVelocity") ~= Snap.vel then
-				child:SetAttribute("MuzzleVelocity", Snap.vel)
-			end
-			if KeepDrag then
-				if (type(Snap.drag) == "number" or type(child:GetAttribute("Drag")) == "number") and child:GetAttribute("Drag") ~= 0 then
-					child:SetAttribute("Drag", 0)
+		elseif type(Snap.drag) == "number" and child:GetAttribute("Drag") ~= Snap.drag then
+			child:SetAttribute("Drag", Snap.drag)
+		end
+	end
+	if Bypass then
+		Bypass.fast = On
+		
+		if Bypass.consumed then
+			local Clock = os.clock()
+			
+			for i, value in Bypass.consumed do
+				if Clock - value > 2 then
+					Bypass.consumed[i] = nil
 				end
-			elseif type(Snap.drag) == "number" and child:GetAttribute("Drag") ~= Snap.drag then
-				child:SetAttribute("Drag", Snap.drag)
 			end
 		end
 	end
@@ -4375,10 +4382,6 @@ task.spawn(function()
 		
 		if SAInstantBypass then
 			ProjectileDropAttribute = 0
-			MuzzleVelocityAttribute = 100000
-			if syncInstantAmmo then
-				syncInstantAmmo()
-			end
 		end
 		local Position = v586.Position
 		local Position1 = p204.Position
@@ -4399,13 +4402,85 @@ task.spawn(function()
 		SilentTarget = v586
 		pcall(onLocalShot, p204, NewPosition)
 		
-		return callOld(p200, p201, p202, p203, { CFrame = CFrame.new(Position1, NewPosition) }, p205, ChildName, p207, p208)
+		if SAInstantBypass and type(shared) == "table" then
+			local Bypass = shared.MidnightBypass or {}
+			
+			shared.MidnightBypass = Bypass
+			Bypass.on = true
+			Bypass.fast = true
+			Bypass.part = v586
+			Bypass.origin = Position1
+			Bypass.sent = false
+			Bypass.id = nil
+			Bypass["until"] = os.clock() + 0.4
+		end
+		local Packed = table.pack(callOld(p200, p201, p202, p203, { CFrame = CFrame.new(Position1, NewPosition) }, p205, ChildName, p207, p208))
+		
+		if SAInstantBypass and type(shared) == "table" then
+			pcall(function()
+				local Bypass = shared.MidnightBypass
+				
+				if not Bypass or Bypass.sent then return end
+				local Part = Bypass.part
+				local Id = Bypass.id
+				
+				if typeof(Part) ~= "Instance" or not Part.Parent or type(Id) ~= "number" then return end
+				local Remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+				local ProjectileInflict = Remotes and Remotes:FindFirstChild("ProjectileInflict")
+				
+				if not ProjectileInflict then return end
+				local HitPart = Part
+				local HitPos = Part.Position
+				local Origin = Bypass.origin
+				
+				if typeof(Origin) == "Vector3" then
+					local Delta = Part.Position - Origin
+					
+					if Delta.Magnitude > 0.1 then
+						local RaycastParams1 = RaycastParams.new()
+						
+						RaycastParams1.FilterType = Enum.RaycastFilterType.Exclude
+						local Filter = {}
+						local Character = LocalPlayer.Character
+						
+						if Character then
+							Filter[1] = Character
+						end
+						local CurrentCamera = workspace.CurrentCamera
+						local ViewModel = CurrentCamera and (CurrentCamera:FindFirstChild("ViewModel") or CurrentCamera:FindFirstChild("Viewmodel"))
+						
+						if ViewModel then
+							Filter[#Filter + 1] = ViewModel
+						end
+						RaycastParams1.FilterDescendantsInstances = Filter
+						RaycastParams1.IgnoreWater = true
+						pcall(function()
+							RaycastParams1.CollisionGroup = "WeaponRay"
+						end)
+						local RaycastResult = workspace:Raycast(Origin, Delta.Unit * (Delta.Magnitude + 6), RaycastParams1)
+						
+						if RaycastResult and RaycastResult.Instance and Part.Parent and RaycastResult.Instance:IsDescendantOf(Part.Parent) then
+							HitPart = RaycastResult.Instance
+							HitPos = RaycastResult.Position
+						end
+					end
+				end
+				Bypass.busy = true
+				Bypass.sent = true
+				Bypass.consumed = Bypass.consumed or {}
+				Bypass.consumed[Id] = os.clock()
+				ProjectileInflict:FireServer(HitPart, HitPart.CFrame:ToObjectSpace(CFrame.new(HitPos)), Id, tick())
+				Bypass.busy = false
+			end)
+		end
+		return table.unpack(Packed, 1, Packed.n)
 	end)
 	
 	if type(shared) == "table" then
 		shared.MidnightBulletOrig = Callback
 		shared.MidnightBulletHooked = true
 	end
+	pcall(installBypassHook)
 end)
 local Panel = nil
 local Label = nil
@@ -10885,7 +10960,84 @@ task.spawn(function()
 	task.defer(installLiveGun)
 end)
 
+function installBypassHook()
+	if type(shared) ~= "table" or shared.MidnightBypassHooked or type(hookmetamethod) ~= "function" then return end
+	shared.MidnightBypass = shared.MidnightBypass or {}
+	local function wrap(Callback)
+		if type(newcclosure) == "function" then
+			return newcclosure(Callback)
+		end
+		return Callback
+	end
+	local Old = nil
+	local Ok, _ = pcall(function()
+		Old = hookmetamethod(game, "__namecall", wrap(function(self, ...)
+			local Bypass = shared.MidnightBypass
+			
+			if type(Bypass) ~= "table" or Bypass.busy then
+				return Old(self, ...)
+			end
+			local Method = getnamecallmethod()
+			
+			if Method == "GetAttribute" and Bypass.fast and typeof(self) == "Instance" then
+				local Name = ...
+				local Parent = self.Parent
+				
+				if type(Name) == "string" and Parent and Parent.Name == "AmmoTypes" then
+					if Name == "ProjectileDrop" or Name == "Drag" then
+						return 0
+					end
+					if Name == "MuzzleVelocity" then
+						local Real = Old(self, Name)
+						
+						if type(Real) ~= "number" or Real < 50 then
+							Real = 900
+						end
+						return math.clamp(Real * 12, 3000, 9000)
+					end
+				end
+			elseif Method == "InvokeServer" and Bypass.on and typeof(self) == "Instance" and self.Name == "FireProjectile" then
+				local _, Id = ...
+				
+				if type(Id) == "number" then
+					Bypass.id = Id
+				end
+			elseif Method == "FireServer" and typeof(self) == "Instance" and self.Name == "ProjectileInflict" then
+				local Args = { ... }
+				local Id = Args[3]
+				
+				if type(Id) == "number" and Bypass.consumed and Bypass.consumed[Id] and os.clock() - Bypass.consumed[Id] < 0.25 then
+					return nil
+				end
+				if Bypass.on and os.clock() < (Bypass["until"] or 0) and typeof(Bypass.part) == "Instance" and Bypass.part.Parent then
+					local Part = Bypass.part
+					
+					Args[1] = Part
+					Args[2] = Part.CFrame:ToObjectSpace(CFrame.new(Part.Position))
+					Bypass.sent = true
+					Bypass.consumed = Bypass.consumed or {}
+					
+					if type(Args[3]) == "number" then
+						Bypass.consumed[Args[3]] = os.clock()
+					end
+					return Old(self, table.unpack(Args))
+				end
+			end
+			return Old(self, ...)
+		end))
+	end)
+	
+	if Ok and type(Old) == "function" then
+		shared.MidnightBypassHooked = true
+		
+		if type(shared.MidnightOldNamecall) ~= "function" then
+			shared.MidnightOldNamecall = Old
+		end
+	end
+end
+
 function installSwimHooks()
+	installBypassHook()
 	if type(shared) ~= "table" then return end
 	function shared.MidnightNameFire(p356, ...)
 		local MidnightOldNamecallFunction = shared.MidnightOldNamecall
