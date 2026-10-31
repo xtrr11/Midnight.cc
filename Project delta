@@ -1,5 +1,5 @@
--- [[ lunaux-decompiler.dev | v1.4.7 | discord.gg/2mJUD4XDDT ]]
--- [[ Luau version 6 | Types version 3 | took 340.3ms ]]
+-- midnight
+-- build
 
 local v0 = loadstring(game:HttpGet("https://raw.githubusercontent.com/i77lhm/Libraries/refs/heads/main/Utopia/Library.lua"))()
 v0.Theme.Accent = Color3.fromRGB(255, 255, 255)
@@ -350,6 +350,12 @@ SilentAim:Toggle({
 	Default = false,
 	Callback = none
 })
+SilentAim:Toggle({
+	Name = "Wallbang",
+	Flag = "SA_Wallbang",
+	Default = false,
+	Callback = none
+})
 SilentAim:Slider({
 	Name = "Hitchance",
 	Flag = "SA_Hitchance",
@@ -368,17 +374,33 @@ SilentAim:Toggle({
 })
 SilentAim:Toggle({
 	Name = "Instant Bullet",
-	Flag = "SA_NoDrag",
-	Default = true,
-	Callback = none
-})
-SilentAim:Toggle({
-	Name = "Instant Bypass",
 	Flag = "SA_InstantBypass",
 	Default = false,
 	Callback = none
 })
-SilentAim:Label("Instant hit on the real bullet id. Ammo stats stay real.")
+SilentAim:Toggle({
+	Name = "Manipulation",
+	Flag = "Manip_Enabled",
+	Default = false,
+	Callback = none
+})
+SilentAim:Label("Manip Key", "Left"):Keybind({
+	Name = "Manip Key",
+	Flag = "ManipKey",
+	Default = Enum.KeyCode.G,
+	Mode = "Hold",
+	Callback = none
+})
+SilentAim:Slider({
+	Name = "Manip Range",
+	Flag = "ManipRange",
+	Min = 4,
+	Default = 10,
+	Max = 18,
+	Suffix = " studs",
+	Decimals = 1,
+	Callback = none
+})
 SilentAim:Label("Visible Color", "Left"):Colorpicker({
 	Name = "SA Visible Color",
 	Flag = "SA_TargetVisible",
@@ -557,40 +579,96 @@ HitFeedback:Dropdown({
 	Flag = "Hit_Sound",
 	Default = "Neverlose",
 	Items = {
-		"Bameware", "Bell", "Bubble", "Pick", "Pop", "Rust", "Sans", "Fart", "Big",
-		"Vine", "Bruh", "Skeet", "Neverlose", "Fatality", "Bonk", "Minecraft"
+		"Bell", "Bubble", "Pop", "Rust", "Skeet", "Neverlose", "Bonk", "Minecraft", "Sparkle"
 	},
-	Callback = none
+	Callback = function(Value)
+		task.defer(function()
+			if type(previewHit) == "function" then
+				previewHit(Value)
+			end
+		end)
+	end
+})
+HitFeedback:Button({
+	Name = "Preview Sound",
+	Callback = function()
+		task.defer(function()
+			if type(previewHit) == "function" then
+				previewHit(v0.Flags.Hit_Sound or "Neverlose")
+			end
+		end)
+	end
+})
+HitFeedback:Button({
+	Name = "Next Sound",
+	Callback = function()
+		local List = { "Bell", "Bubble", "Pop", "Rust", "Skeet", "Neverlose", "Bonk", "Minecraft", "Sparkle" }
+		local Current = v0.Flags.Hit_Sound or "Neverlose"
+		local Index = 1
+		
+		for i, Name in List do
+			if Name == Current then
+				Index = i
+				break
+			end
+		end
+		local Next = List[Index % #List + 1]
+		local SetFlag = v0.SetFlags and v0.SetFlags.Hit_Sound
+		
+		if SetFlag then
+			pcall(SetFlag, Next)
+		else
+			v0.Flags.Hit_Sound = Next
+		end
+		if type(previewHit) == "function" then
+			task.defer(previewHit, Next)
+		end
+	end
 })
 HitFeedback:Dropdown({
 	Name = "Head Sound",
 	Flag = "Hit_Head",
 	Default = "Neverlose",
 	Items = {
-		"Bameware", "Bell", "Bubble", "Pick", "Pop", "Rust", "Sans", "Fart", "Big",
-		"Vine", "Bruh", "Skeet", "Neverlose", "Fatality", "Bonk", "Minecraft"
+		"Bell", "Bubble", "Pop", "Rust", "Skeet", "Neverlose", "Bonk", "Minecraft", "Sparkle"
 	},
-	Callback = none
+	Callback = function(Value)
+		task.defer(function()
+			if type(previewHit) == "function" then
+				previewHit(Value)
+			end
+		end)
+	end
 })
 HitFeedback:Dropdown({
 	Name = "Body Sound",
 	Flag = "Hit_Body",
 	Default = "Neverlose",
 	Items = {
-		"Bameware", "Bell", "Bubble", "Pick", "Pop", "Rust", "Sans", "Fart", "Big",
-		"Vine", "Bruh", "Skeet", "Neverlose", "Fatality", "Bonk", "Minecraft"
+		"Bell", "Bubble", "Pop", "Rust", "Skeet", "Neverlose", "Bonk", "Minecraft", "Sparkle"
 	},
-	Callback = none
+	Callback = function(Value)
+		task.defer(function()
+			if type(previewHit) == "function" then
+				previewHit(Value)
+			end
+		end)
+	end
 })
 HitFeedback:Dropdown({
 	Name = "Kill Sound",
 	Flag = "Hit_Kill",
 	Default = "Bonk",
 	Items = {
-		"Bameware", "Bell", "Bubble", "Pick", "Pop", "Rust", "Sans", "Fart", "Big",
-		"Vine", "Bruh", "Skeet", "Neverlose", "Fatality", "Bonk", "Minecraft"
+		"Bell", "Bubble", "Pop", "Rust", "Skeet", "Neverlose", "Bonk", "Minecraft", "Sparkle"
 	},
-	Callback = none
+	Callback = function(Value)
+		task.defer(function()
+			if type(previewHit) == "function" then
+				previewHit(Value)
+			end
+		end)
+	end
 })
 HitFeedback:Slider({
 	Name = "Hit Volume",
@@ -660,6 +738,13 @@ HitFeedback:Toggle({
 	Default = false,
 	Callback = none
 })
+HitFeedback:Dropdown({
+	Name = "Tracer Style",
+	Flag = "Tracer_Style",
+	Default = "Beam",
+	Items = { "Beam", "Lightning", "Neon" },
+	Callback = none
+})
 HitFeedback:Label("Tracer Color", "Left"):Colorpicker({
 	Name = "Tracer Color",
 	Flag = "Tracer_Color",
@@ -686,6 +771,18 @@ HitFeedback:Slider({
 	Decimals = 1,
 	Callback = none
 })
+HitFeedback:Toggle({
+	Name = "Kill Lightning",
+	Flag = "KillLightning",
+	Default = false,
+	Callback = none
+})
+HitFeedback:Toggle({
+	Name = "Kill Sparkle",
+	Flag = "KillSparkle",
+	Default = false,
+	Callback = none
+})
 local OmniSprint = Movement:Section({ Name = "Omni Sprint", Side = 1 })
 OmniSprint:Toggle({
 	Name = "Enabled",
@@ -701,6 +798,12 @@ OmniSprint:Slider({
 	Max = 20,
 	Suffix = " studs",
 	Decimals = 1,
+	Callback = none
+})
+OmniSprint:Toggle({
+	Name = "Sprint While Aiming",
+	Flag = "SprintAim",
+	Default = false,
 	Callback = none
 })
 OmniSprint:Toggle({
@@ -753,6 +856,78 @@ Extra:Toggle({
 Extra:Toggle({
 	Name = "Jesus",
 	Flag = "Jesus_Enabled",
+	Default = false,
+	Callback = none
+})
+Extra:Toggle({
+	Name = "Sky Peek",
+	Flag = "SkyPeek",
+	Default = false,
+	Callback = none
+})
+Extra:Label("Sky Key", "Left"):Keybind({
+	Name = "Sky Key",
+	Flag = "SkyKey",
+	Default = Enum.KeyCode.X,
+	Mode = "Hold",
+	Callback = none
+})
+Extra:Slider({
+	Name = "Sky Height",
+	Flag = "SkyHeight",
+	Min = 8,
+	Default = 35,
+	Max = 80,
+	Suffix = " studs",
+	Decimals = 1,
+	Callback = none
+})
+Extra:Slider({
+	Name = "Sky Time",
+	Flag = "SkyTime",
+	Min = 0.15,
+	Default = 0.4,
+	Max = 3,
+	Suffix = "s",
+	Decimals = 0.05,
+	Callback = none
+})
+Extra:Toggle({
+	Name = "Underground Resolver",
+	Flag = "UnderEnable",
+	Default = false,
+	Callback = none
+})
+Extra:Label("Under Key", "Left"):Keybind({
+	Name = "Under Key",
+	Flag = "UnderKey",
+	Default = Enum.KeyCode.Z,
+	Mode = "Hold",
+	Callback = none
+})
+Extra:Slider({
+	Name = "Under Depth",
+	Flag = "UnderDepth",
+	Min = 6,
+	Default = 12,
+	Max = 36,
+	Suffix = " studs",
+	Decimals = 1,
+	Callback = none
+})
+Extra:Slider({
+	Name = "Under Time",
+	Flag = "UnderTime",
+	Min = 0.2,
+	Default = 0.45,
+	Max = 1.2,
+	Suffix = "s",
+	Decimals = 0.05,
+	Callback = none
+})
+Extra:Toggle({
+	Name = "Anti Kick",
+	Flag = "AntiKick",
 	Default = false,
 	Callback = none
 })
@@ -836,7 +1011,7 @@ AntiAim:Label("Walks backwards with the head down.")
 AntiAim:Toggle({
 	Name = "Show Server Position",
 	Flag = "AA_ShowServer",
-	Default = true,
+	Default = false,
 	Callback = none
 })
 
@@ -896,7 +1071,8 @@ function targetSection(p9, Name, Side, Text, Default, Default1, p15)
 				"Glass",
 				"Neon",
 				"Glow",
-				"Smooth"
+				"Smooth",
+				"Sparkle"
 			},
 			Callback = none
 		})
@@ -1188,11 +1364,36 @@ end
 function flagNum(p19, p20)
 	local Flag = v0.Flags[p19]
 	
+	if type(Flag) == "string" then
+		Flag = tonumber(Flag)
+	elseif type(Flag) == "table" then
+		Flag = tonumber(Flag.Value or Flag[1])
+	end
 	return if type(Flag) == "number" and Flag == Flag and -math.huge < Flag and Flag < math.huge then Flag else p20
 end
 
 function flagColor(p21, p22)
 	return asColor(v0.Flags[p21], p22)
+end
+
+function flagText(Name, Fallback)
+	local Flag = v0.Flags[Name]
+	
+	if type(Flag) == "string" and Flag ~= "" then
+		return Flag
+	end
+	if type(Flag) == "table" then
+		if type(Flag.Name) == "string" and Flag.Name ~= "" then
+			return Flag.Name
+		end
+		if type(Flag.Value) == "string" and Flag.Value ~= "" then
+			return Flag.Value
+		end
+		if type(Flag[1]) == "string" and Flag[1] ~= "" then
+			return Flag[1]
+		end
+	end
+	return Fallback
 end
 
 function isWhitelisted(Player)
@@ -1288,7 +1489,7 @@ function paintKeybindModes()
 	local config = {
 		["Silent Aim Key"] = v0.Flags.SA_KeyMode or "Always",
 		["Camera Aim Key"] = v0.Flags.Cam_KeyMode or "Always",
-		["Map ESP Key"] = v0.Flags.Map_KeyMode or "Always"
+		["Map ESP Key"] = v0.Flags.Map_KeyMode or "Toggle"
 	}
 	
 	for i, Mode in config do
@@ -1550,6 +1751,40 @@ function applyForce(Part, Color, p42, p43)
 	pcall(function()
 		Part.MaterialVariant = ""
 	end)
+	local Spark = Part:FindFirstChild("MidnightSparkle")
+	
+	if P42 == "Sparkle" then
+		ForceField = Enum.Material.Neon
+		Part.Material = ForceField
+		Part.Transparency = (1 - ClampedValueRatio) * 0.25
+		
+		if not Spark then
+			Spark = Instance.new("ParticleEmitter")
+			Spark.Name = "MidnightSparkle"
+			Spark.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+			Spark.Rate = 22
+			Spark.Lifetime = NumberRange.new(0.35, 0.8)
+			Spark.Speed = NumberRange.new(1.4, 3.2)
+			Spark.SpreadAngle = Vector2.new(180, 180)
+			Spark.LightEmission = 1
+			Spark.Drag = 1
+			Spark.Rotation = NumberRange.new(0, 360)
+			Spark.RotSpeed = NumberRange.new(-80, 80)
+			Spark.Size = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.28),
+				NumberSequenceKeypoint.new(1, 0)
+			})
+			Spark.Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0, 0.15),
+				NumberSequenceKeypoint.new(1, 1)
+			})
+			Spark.Parent = Part
+		end
+		Spark.Color = ColorSequence.new(Color)
+		Spark.Enabled = true
+	elseif Spark then
+		Spark:Destroy()
+	end
 	
 	if Part:IsA("MeshPart") then
 		Part.TextureID = ""
@@ -1642,6 +1877,11 @@ function showOriginal(Parent)
 			if Entry.Mesh and Entry.MeshTexture ~= nil then
 				Entry.Mesh.TextureId = Entry.MeshTexture
 			end
+			local Spark = Parent:FindFirstChild("MidnightSparkle")
+			
+			if Spark then
+				Spark:Destroy()
+			end
 			for _, surface in Entry.Surfaces do
 				if surface then
 					surface.Parent = Parent
@@ -1691,6 +1931,11 @@ local function restorePart(Parent)
 			end
 			if Entry.Mesh and Entry.MeshTexture ~= nil then
 				Entry.Mesh.TextureId = Entry.MeshTexture
+			end
+			local Spark = Parent:FindFirstChild("MidnightSparkle")
+			
+			if Spark then
+				Spark:Destroy()
 			end
 			for _, surface in Entry.Surfaces do
 				if surface then
@@ -2195,15 +2440,43 @@ local list1 = {
 	{ "Torso", "Right Leg" }
 }
 
+function cachedPart(Bag, Model, Name)
+	local Part = Bag[Name]
+	
+	if typeof(Part) == "Instance" and Part.Parent then
+		return Part
+	end
+	if Part == false and os.clock() < (Bag[Name .. "#"] or 0) then
+		return nil
+	end
+	Part = Model:FindFirstChild(Name)
+	
+	if not (Part and Part:IsA("BasePart")) then
+		Part = Model:FindFirstChild(Name, true)
+	end
+	if Part and Part:IsA("BasePart") then
+		Bag[Name] = Part
+		
+		return Part
+	end
+	Bag[Name] = false
+	Bag[Name .. "#"] = os.clock() + 2
+	
+	return nil
+end
+
 function drawSkeleton(p73, Object, Camera, Color, p77)
 	local Bones = p73.bones
 	
 	if p77 then
 		local Count = 0
+		local Bag = p73.partBag or {}
+		
+		p73.partBag = Bag
 		
 		for _, value in Object:FindFirstChild("UpperTorso") and list or list1 do
-			local Child = Object:FindFirstChild(value[1]) or Object:FindFirstChild(value[1], true)
-			local Child1 = Object:FindFirstChild(value[2]) or Object:FindFirstChild(value[2], true)
+			local Child = cachedPart(Bag, Object, value[1])
+			local Child1 = cachedPart(Bag, Object, value[2])
 			local Bone = Bones[Count + 1]
 			local Bone1 = Bones[Count + 2]
 			Count += 2
@@ -2258,6 +2531,9 @@ function drawBody(p78, Object, Camera, Color, p82)
 	if not Limbs then return end
 	if p82 then
 		local Count = 0
+		local Bag = p78.partBag or {}
+		
+		p78.partBag = Bag
 		
 		for _, ChildName in {
 			"Head", "UpperTorso", "LowerTorso", "Torso", "LeftUpperArm", "LeftLowerArm",
@@ -2265,7 +2541,7 @@ function drawBody(p78, Object, Camera, Color, p82)
 			"LeftLowerLeg", "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot",
 			"Left Arm", "Right Arm", "Left Leg", "Right Leg"
 		} do
-			local Child = Object:FindFirstChild(ChildName) or Object:FindFirstChild(ChildName, true)
+			local Child = cachedPart(Bag, Object, ChildName)
 			
 			if Child and Child:IsA("BasePart") and Count < #Limbs then
 				Count += 1
@@ -2534,7 +2810,17 @@ function roleIsStaff(Text, p104)
 end
 
 function staffOf(Player)
+	local Cached = t6[Player]
+	
+	if type(Cached) == "table" and os.clock() - (Cached.t or 0) < 4 then
+		return Cached.v
+	end
 	if Player.UserId == game.CreatorId or Player.UserId == game.PrivateServerOwnerId then
+		t6[Player] = {
+			t = os.clock(),
+			v = "Owner"
+		}
+		
 		return "Owner"
 	end
 	local Attribute = nil
@@ -2543,19 +2829,32 @@ function staffOf(Player)
 	} do
 		Attribute = Player:GetAttribute(AttributeName)
 		
-		if Attribute == true then
-			return AttributeName
-		end
-		if type(Attribute) == "string" and Attribute ~= "" then
-			return Attribute
-		elseif type(Attribute) == "number" and Attribute > 0 then
-			return AttributeName
+		if Attribute == true or (type(Attribute) == "string" and Attribute ~= "") or (type(Attribute) == "number" and Attribute > 0) then
+			t6[Player] = {
+				t = os.clock(),
+				v = type(Attribute) == "string" and Attribute or AttributeName
+			}
+			
+			return t6[Player].v
 		end
 	end
-	local Entry = t6[Player]
+	local Entry = nil
+	
+	if type(Cached) == "table" then
+		Entry = Cached.role
+		if Entry == nil then
+			Entry = false
+		end
+	else
+		Entry = Cached
+	end
 	
 	if Entry == nil then
-		t6[Player] = false
+		t6[Player] = {
+			t = os.clock(),
+			v = nil,
+			role = false
+		}
 		task.spawn(function()
 			local Success, Result = pcall(function()
 				return Player:GetRoleInGroup(3765739)
@@ -2565,13 +2864,25 @@ function staffOf(Player)
 			end)
 			
 			if Success and roleIsStaff(Result, Success1 and Result1 or 0) then
-				t6[Player] = Result
+				t6[Player] = {
+					t = os.clock(),
+					v = Result,
+					role = Result
+				}
 			end
 		end)
 		
 		return nil
 	else
-		return if Entry == false then nil else Entry
+		local Value = if Entry == false then nil else Entry
+		
+		t6[Player] = {
+			t = os.clock(),
+			v = Value,
+			role = Entry
+		}
+		
+		return Value
 	end
 end
 
@@ -2631,26 +2942,29 @@ function box2d(Object, Camera)
 	if not RootPartResult then
 		return nil
 	end
-	local Head = Object:FindFirstChild("Head")
+	boxBags = boxBags or setmetatable({}, { __mode = "k" })
+	local Bag = boxBags[Object]
 	
-	if not Head or not Head:IsA("BasePart") then
-		Head = Object:FindFirstChild("Head", true)
+	if not Bag then
+		Bag = {}
+		boxBags[Object] = Bag
 	end
-	local NewPosition = Head and Head:IsA("BasePart") and Head.Position + Vector3.new(0, math.max(Head.Size.Y, 1) * 0.55, 0) or RootPartResult.Position + Vector3.new(0, 2.6, 0)
-	local PositionDelta = RootPartResult.Position - Vector3.new(0, 3, 0)
-	local LeftFoot = Object:FindFirstChild("LeftFoot") or (Object:FindFirstChild("RightFoot") or (Object:FindFirstChild("Left Leg") or Object:FindFirstChild("Right Leg")))
-	
-	if not LeftFoot or not LeftFoot:IsA("BasePart") then
-		LeftFoot = Object:FindFirstChild("LeftFoot", true) or Object:FindFirstChild("RightFoot", true)
-	end
-	if LeftFoot and LeftFoot:IsA("BasePart") then
-		PositionDelta = LeftFoot.Position - Vector3.new(0, LeftFoot.Size.Y * 0.45, 0)
-	end
+	local Head = cachedPart(Bag, Object, "Head")
+	local NewPosition = Head and Head.Position + Vector3.new(0, math.max(Head.Size.Y, 1) * 0.55, 0) or RootPartResult.Position + Vector3.new(0, 2.6, 0)
+	local LeftFoot = cachedPart(Bag, Object, "LeftFoot") or cachedPart(Bag, Object, "RightFoot") or cachedPart(Bag, Object, "Left Leg") or cachedPart(Bag, Object, "Right Leg")
+	local PositionDelta = LeftFoot and LeftFoot.Position - Vector3.new(0, LeftFoot.Size.Y * 0.45, 0) or RootPartResult.Position - Vector3.new(0, 3, 0)
 	local ViewportPoint = Camera:WorldToViewportPoint(NewPosition)
 	local ViewportPoint1 = Camera:WorldToViewportPoint(PositionDelta)
+	local HeadOk = ViewportPoint.Z > 0
+	local FootOk = ViewportPoint1.Z > 0
 	
-	if ViewportPoint.Z < 0.05 or ViewportPoint1.Z < 0.05 then
+	if not HeadOk and not FootOk then
 		return nil
+	end
+	if not HeadOk then
+		ViewportPoint = Vector3.new(ViewportPoint1.X, ViewportPoint1.Y - 48, ViewportPoint1.Z)
+	elseif not FootOk then
+		ViewportPoint1 = Vector3.new(ViewportPoint.X, ViewportPoint.Y + 64, ViewportPoint.Z)
 	end
 	local Magnitude = math.abs(ViewportPoint1.Y - ViewportPoint.Y)
 	local ScaledX = (ViewportPoint.X + ViewportPoint1.X) * 0.5
@@ -3096,6 +3410,81 @@ function canPenetrate(NewPosition, p146)
 	return false
 end
 
+function canWallbang(Origin, Part)
+	if typeof(Origin) ~= "Vector3" or typeof(Part) ~= "Instance" or not Part:IsA("BasePart") then
+		return false
+	end
+	wallCache = wallCache or {}
+	local Cached = wallCache[Part]
+	
+	if Cached and os.clock() - Cached.t < 0.35 and (Cached.from - Origin).Magnitude < 6 then
+		return Cached.ok
+	end
+	local Distance = (Part.Position - Origin).Magnitude
+	local Ok = false
+	
+	if Distance <= maxStuds() and Distance >= 2 and not silentVisible(Origin, Part) then
+		local Params = RaycastParams.new()
+		
+		Params.FilterType = Enum.RaycastFilterType.Exclude
+		Params.FilterDescendantsInstances = { LocalPlayer.Character, workspace.CurrentCamera }
+		Params.IgnoreWater = true
+		local Soft = {
+			Wood = true,
+			WoodPlanks = true,
+			Glass = true,
+			Ice = true,
+			Fabric = true,
+			Cardboard = true,
+			Foil = true
+		}
+		local Pos = Origin
+		local Left = Part.Position - Origin
+		local Walls = 0
+		
+		Ok = true
+		for _ = 1, 3 do
+			if Left.Magnitude < 0.4 then
+				break
+			end
+			local Hit = workspace:Raycast(Pos, Left, Params)
+			
+			if not Hit or Hit.Instance:IsDescendantOf(Part.Parent) then
+				break
+			end
+			if Hit.Instance:IsA("Terrain") or not Soft[Hit.Material.Name] then
+				Ok = false
+				
+				break
+			end
+			local Dir = Left.Unit
+			local Back = workspace:Raycast(Hit.Position + Dir * 3, -Dir * 3, Params)
+			local Thick = Back and (Back.Position - Hit.Position).Magnitude or 0.4
+			
+			if Thick > 2 then
+				Ok = false
+				
+				break
+			end
+			Walls += 1
+			
+			if Walls > 1 then
+				Ok = false
+				
+				break
+			end
+			Pos = Hit.Position + Dir * (Thick + 0.15)
+			Left = Part.Position - Pos
+		end
+		if Walls < 1 then
+			Ok = false
+		end
+	end
+	wallCache[Part] = { t = os.clock(), from = Origin, ok = Ok }
+	
+	return Ok
+end
+
 function sameClan(Player)
 	clanCache = clanCache or {}
 	local Clan = clanCache[Player]
@@ -3354,8 +3743,9 @@ function considerSilent(p152, Camera, p154, _, p156, p157, p158)
 		return p156, p157
 	end
 	local SilentVisibleResult = silentVisible(p154, p152, p158)
+	local ThroughWall = flagBool("SA_Wallbang") and canWallbang(p154, p152) or flagBool("SA_Autowall") and canPenetrate(p154, p152)
 	
-	if not flagBool("SA_ForceHit") and not SilentVisibleResult and (not flagBool("SA_Autowall") or not canPenetrate(p154, p152)) and flagBool("SA_VisibleCheck") then
+	if not flagBool("SA_ForceHit") and not SilentVisibleResult and not ThroughWall and flagBool("SA_VisibleCheck") then
 		return p156, p157
 	end
 	local ViewportPoint = Camera:WorldToViewportPoint(p152.Position)
@@ -3514,42 +3904,59 @@ function noteHit(Character, p164, p165)
 			if type(ModelHpResult) == "number" and HealthSnapEntry - ModelHpResult >= 1 then
 				healthSnap[Character] = ModelHpResult
 				pushDamagePop(NewPosition, tostring(math.floor(HealthSnapEntry - ModelHpResult + 0.5)), IsHead)
+				
+				if ModelHpResult <= 0 then
+					local Root = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
+					
+					if Root then
+						strikeLightning(Root.Position)
+						burstSparkle(Root.Position)
+					end
+				end
 			end
 		end)
 	end
 	if HumanoidRootPart then
 		sprayBlood(HumanoidRootPart.Position)
 	end
-	if flagBool("Hit_Enabled") then
+	if flagBool("Hit_Notify") or flagBool("Hit_Enabled") or flagBool("Hit_Marker") or flagBool("Hit_Flash") or flagBool("Hit_Impact") then
 		local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-		local HitSound = v0.Flags.Hit_Sound
-		local HitPitchRatio = flagNum("Hit_Pitch", 10) / 10
-		local HitKill = nil
 		
-		if Humanoid and Humanoid.Health <= 0 then
-			HitKill = v0.Flags.Hit_Kill or HitSound
-		elseif string.lower(Text) == "head" then
-			HitKill = v0.Flags.Hit_Head or HitSound
-			HitPitchRatio *= 1.15
-		else
-			HitKill = v0.Flags.Hit_Body or HitSound
-		end
-		if type(HitKill) == "table" then
-			HitKill = HitKill.Name or HitKill[1]
-		end
-		playShotSound(HIT_IDS[HitKill] or HIT_IDS.Neverlose, flagNum("Hit_Volume", 100) / 100, HitPitchRatio)
-	end
-	if flagBool("Hit_Notify") then
-		pushHit(string.format("%s   %s   %dm", Character.Name, Text, Floored))
-	end
-	if flagBool("Hit_Marker") then
-		hitMarkerUntil = os.clock() + 0.12
-	end
-	if flagBool("Hit_Flash") then
-		hitFlashUntil = os.clock() + 0.08
-	end
-	if flagBool("Hit_Impact") and HumanoidRootPart then
-		showImpact(HumanoidRootPart.Position)
+		task.delay(0.5, function()
+			if not Character.Parent then return end
+			local NowHp = modelHp(Character)
+			
+			if type(HealthSnapEntry) == "number" and type(NowHp) == "number" and HealthSnapEntry - NowHp < 1 then
+				return
+			end
+			if flagBool("Hit_Notify") then
+				pushHit(string.format("%s   %s   %dm", Character.Name, Text, Floored))
+			end
+			if flagBool("Hit_Enabled") then
+				local HitSound = flagText("Hit_Sound", "Neverlose")
+				local HitPitchRatio = flagNum("Hit_Pitch", 10) / 10
+				local HitKill = nil
+				
+				if type(NowHp) == "number" and NowHp <= 0 or Humanoid and Humanoid.Health <= 0 then
+					HitKill = flagText("Hit_Kill", HitSound)
+				elseif string.lower(Text) == "head" then
+					HitKill = flagText("Hit_Head", HitSound)
+					HitPitchRatio *= 1.15
+				else
+					HitKill = flagText("Hit_Body", HitSound)
+				end
+				playShotSound(HIT_IDS[HitKill] or HIT_IDS.Neverlose, flagNum("Hit_Volume", 100) / 100, HitPitchRatio)
+			end
+			if flagBool("Hit_Marker") then
+				hitMarkerUntil = os.clock() + 0.12
+			end
+			if flagBool("Hit_Flash") then
+				hitFlashUntil = os.clock() + 0.08
+			end
+			if flagBool("Hit_Impact") and HumanoidRootPart then
+				showImpact(HumanoidRootPart.Position)
+			end
+		end)
 	end
 end
 
@@ -3559,6 +3966,8 @@ function syncSpread()
 	local AmmoTypes = game:GetService("ReplicatedStorage"):FindFirstChild("AmmoTypes")
 	
 	if not AmmoTypes then return end
+	if os.clock() - (spreadSyncAt or 0) < 0.25 then return end
+	spreadSyncAt = os.clock()
 	spreadBase = spreadBase or {}
 	local NoSpreadEnabled = flagBool("NoSpread_Enabled")
 	
@@ -3593,7 +4002,6 @@ function syncInstantAmmo()
 	if not AmmoTypes or type(shared) ~= "table" then return end
 	shared.MidnightAmmoSnap = shared.MidnightAmmoSnap or {}
 	local On = flagBool("SA_InstantBypass")
-	local KeepDrag = v0.Flags.SA_NoDrag ~= false
 	local Bypass = nil
 	
 	if type(shared) == "table" then
@@ -3601,34 +4009,33 @@ function syncInstantAmmo()
 		Bypass = shared.MidnightBypass
 		Bypass.fast = false
 	end
-	for _, child in AmmoTypes:GetChildren() do
-		local Snap = shared.MidnightAmmoSnap[child]
-		
-		if not Snap then
-			local Vel = child:GetAttribute("MuzzleVelocity")
+	if os.clock() - (ammoSyncAt or 0) > 0.2 then
+		ammoSyncAt = os.clock()
+		for _, child in AmmoTypes:GetChildren() do
+			local Snap = shared.MidnightAmmoSnap[child]
 			
-			if type(Vel) == "number" and Vel >= 20000 then
-				Vel = nil
+			if not Snap then
+				local Vel = child:GetAttribute("MuzzleVelocity")
+				
+				if type(Vel) == "number" and Vel >= 2500 then
+					Vel = nil
+				end
+				Snap = {
+					vel = Vel,
+					drop = child:GetAttribute("ProjectileDrop"),
+					drag = child:GetAttribute("Drag")
+				}
+				if type(Snap.drop) == "number" and Snap.drop == 0 and type(Snap.vel) ~= "number" then
+					Snap.drop = nil
+				end
+				shared.MidnightAmmoSnap[child] = Snap
 			end
-			Snap = {
-				vel = Vel,
-				drop = child:GetAttribute("ProjectileDrop"),
-				drag = child:GetAttribute("Drag")
-			}
-			shared.MidnightAmmoSnap[child] = Snap
-		end
-		if type(Snap.drop) == "number" and child:GetAttribute("ProjectileDrop") ~= Snap.drop then
-			child:SetAttribute("ProjectileDrop", Snap.drop)
-		end
-		if type(Snap.vel) == "number" and child:GetAttribute("MuzzleVelocity") ~= Snap.vel then
-			child:SetAttribute("MuzzleVelocity", Snap.vel)
-		end
-		if KeepDrag and not On then
-			if (type(Snap.drag) == "number" or type(child:GetAttribute("Drag")) == "number") and child:GetAttribute("Drag") ~= 0 then
-				child:SetAttribute("Drag", 0)
+			if type(Snap.drop) == "number" and child:GetAttribute("ProjectileDrop") ~= Snap.drop then
+				child:SetAttribute("ProjectileDrop", Snap.drop)
 			end
-		elseif type(Snap.drag) == "number" and child:GetAttribute("Drag") ~= Snap.drag then
-			child:SetAttribute("Drag", Snap.drag)
+			if type(Snap.vel) == "number" and child:GetAttribute("MuzzleVelocity") ~= Snap.vel then
+				child:SetAttribute("MuzzleVelocity", Snap.vel)
+			end
 		end
 	end
 	if Bypass then
@@ -3640,6 +4047,24 @@ function syncInstantAmmo()
 			for i, value in Bypass.consumed do
 				if Clock - value > 2 then
 					Bypass.consumed[i] = nil
+				end
+			end
+		end
+		if Bypass.hold then
+			local Clock = os.clock()
+			
+			for i, value in Bypass.hold do
+				if Clock - value > 3 then
+					Bypass.hold[i] = nil
+				end
+			end
+		end
+		if Bypass.done then
+			local Clock = os.clock()
+			
+			for i, value in Bypass.done do
+				if Clock - value > 3 then
+					Bypass.done[i] = nil
 				end
 			end
 		end
@@ -4192,6 +4617,137 @@ function holdingHeal()
 	return false
 end
 
+function burstSparkle(Position)
+	if not flagBool("KillSparkle") or typeof(Position) ~= "Vector3" then return end
+	if sparkleAt and os.clock() - sparkleAt < 0.45 then return end
+	sparkleAt = os.clock()
+	local Host = Instance.new("Part")
+	Host.Name = "MidnightSparkBomb"
+	Host.Anchored = true
+	Host.CanCollide = false
+	Host.CanQuery = false
+	Host.CanTouch = false
+	Host.Transparency = 1
+	Host.Size = Vector3.new(1, 1, 1)
+	Host.CFrame = CFrame.new(Position + Vector3.new(0, 1.5, 0))
+	Host.Parent = workspace
+	local Emitter = Instance.new("ParticleEmitter")
+	Emitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+	Emitter.Rate = 0
+	Emitter.Lifetime = NumberRange.new(0.35, 0.9)
+	Emitter.Speed = NumberRange.new(14, 26)
+	Emitter.SpreadAngle = Vector2.new(180, 180)
+	Emitter.LightEmission = 1
+	Emitter.Drag = 2
+	Emitter.Rotation = NumberRange.new(0, 360)
+	Emitter.RotSpeed = NumberRange.new(-180, 180)
+	Emitter.Size = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.7),
+		NumberSequenceKeypoint.new(1, 0)
+	})
+	Emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
+		NumberSequenceKeypoint.new(1, 1)
+	})
+	Emitter.Color = ColorSequence.new(Color3.fromRGB(255, 230, 140), Color3.fromRGB(255, 255, 255))
+	Emitter.Parent = Host
+	Emitter:Emit(90)
+	pcall(playShotSound, HIT_IDS.Sparkle, 0.85, 1)
+	task.delay(1.2, function()
+		Host:Destroy()
+	end)
+end
+
+function callingIsInventory()
+	if type(getcallingscript) ~= "function" then
+		return false
+	end
+	local Script = nil
+	local Ok = pcall(function()
+		Script = getcallingscript()
+	end)
+	
+	if not Ok or typeof(Script) ~= "Instance" then
+		return false
+	end
+	local Full = string.lower(Script:GetFullName())
+	
+	return string.find(Full, "inventory", 1, true) or string.find(Full, "loot", 1, true) or string.find(Full, "backpack", 1, true)
+end
+
+function lootCircle(Object)
+	local Name = string.lower(Object.Name)
+	
+	if string.find(Name, "circle", 1, true) or string.find(Name, "radial", 1, true) or Name == "dragcircle" or Name == "holdcircle" or Name == "lootcircle" then
+		return true
+	end
+	local ParentName = Object.Parent and string.lower(Object.Parent.Name) or ""
+	
+	return (string.find(ParentName, "loot", 1, true) or string.find(ParentName, "drag", 1, true)) and (Name == "fill" or Name == "progress" or string.find(Name, "hold", 1, true))
+end
+
+function fireSlotLoot(Slot)
+	if typeof(Slot) ~= "Instance" then return end
+	local Remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+	local Quick = Remotes and Remotes:FindFirstChild("QuickLoot")
+	
+	if not Quick then return end
+	local Item = Slot:FindFirstChild("Item") or Slot:FindFirstChild("ItemValue")
+	
+	pcall(function()
+		Quick:FireServer(Slot.Name)
+	end)
+	
+	if Item and Item:IsA("ObjectValue") and Item.Value then
+		pcall(function()
+			Quick:FireServer(Item.Value)
+		end)
+	end
+end
+
+function pumpLootCircles()
+	local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	local Main = PlayerGui and PlayerGui:FindFirstChild("MainGui")
+	
+	if not Main then return end
+	local MainFrame = Main:FindFirstChild("MainFrame")
+	
+	if MainFrame and MainFrame:IsA("GuiObject") and not MainFrame.Visible then return end
+	local Now = os.clock()
+	
+	if Now - (lootPump or 0) < 0.08 then return end
+	lootPump = Now
+	lootSeen = lootSeen or {}
+	
+	for _, Object in Main:GetDescendants() do
+		if Object:IsA("GuiObject") and lootCircle(Object) then
+			local Active = Object.Visible and Object.AbsoluteSize.X > 6
+			local Id = Object:GetFullName()
+			
+			if Active and not lootSeen[Id] then
+				local Slot = Object.Parent
+				local Guard = 0
+				
+				while Slot and Guard < 5 and not (Slot:FindFirstChild("Item") or Slot:FindFirstChild("ItemValue")) do
+					Slot = Slot.Parent
+					Guard += 1
+				end
+				if Slot and Slot:IsA("GuiObject") then
+					fireSlotLoot(Slot)
+				end
+				pcall(function()
+					Object.Size = UDim2.fromScale(1, 1)
+				end)
+			end
+			lootSeen[Id] = Active
+		end
+	end
+end
+
+function applyInstantLoot()
+	return
+end
+
 function applyInstantHeal()
 	if flagBool("InstantHeal") then
 		if os.clock() - (healPatchAt or 0) > 0.75 then
@@ -4261,24 +4817,22 @@ function applyInstantHeal()
 end
 
 function applyNoFall()
-	if not flagBool("NoFallDamage_Enabled") then return end
 	local Character = LocalPlayer.Character
 	local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
 	local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
 	
 	if not Humanoid or not HumanoidRootPart then return end
+	local Guard = fallGuard and os.clock() < fallGuard
+	local Peeking = peekState ~= nil
+	
+	if not flagBool("NoFallDamage_Enabled") and not Guard and not Peeking then return end
 	Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
 	Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+	local Velocity = HumanoidRootPart.AssemblyLinearVelocity
 	
-	if HumanoidRootPart.AssemblyLinearVelocity.Y > -60 then return end
-	local RaycastParams1 = RaycastParams.new()
-	RaycastParams1.FilterType = Enum.RaycastFilterType.Exclude
-	RaycastParams1.FilterDescendantsInstances = { Character }
-	RaycastParams1.IgnoreWater = true
-	local RaycastResult = workspace:Raycast(HumanoidRootPart.Position, Vector3.new(0, -6, 0), RaycastParams1)
-	
-	if RaycastResult and RaycastResult.Normal.Y > 0.4 then
-		Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
+	if Velocity.Y < -55 then
+		HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(Velocity.X, -15, Velocity.Z)
+		HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
 	end
 end
 
@@ -4334,7 +4888,36 @@ task.spawn(function()
 		shared.MidnightShoot = nil
 	end
 	Callback = hookfunction(Result.CreateBullet, function(p200, p201, p202, p203, p204, p205, ChildName, p207, p208)
+		local shotMarked = false
 		local function callOld(...)
+			if not shotMarked and typeof(p204) == "Instance" and p204:IsA("BasePart") then
+				shotMarked = true
+				local Look = p204.CFrame.LookVector
+				local Origin = p204.Position
+				local HitPos = Origin + Look * 450
+				
+				pcall(function()
+					local Params = RaycastParams.new()
+					Params.FilterType = Enum.RaycastFilterType.Exclude
+					local Ignore = {}
+					
+					if LocalPlayer.Character then
+						Ignore[1] = LocalPlayer.Character
+					end
+					local Camera = workspace.CurrentCamera
+					
+					if Camera then
+						Ignore[#Ignore + 1] = Camera
+					end
+					Params.FilterDescendantsInstances = Ignore
+					local Hit = workspace:Raycast(Origin, Look * 900, Params)
+					
+					if Hit then
+						HitPos = Hit.Position
+					end
+				end)
+				pcall(onLocalShot, p204, HitPos)
+			end
 			return Callback(...)
 		end
 		
@@ -4375,103 +4958,138 @@ task.spawn(function()
 		if type(ProjectileDropAttribute) ~= "number" or type(MuzzleVelocityAttribute) ~= "number" then
 			return callOld(p200, p201, p202, p203, p204, p205, ChildName, p207, p208)
 		end
-		if v0.Flags.SA_NoDrag ~= false and not flagBool("SA_InstantBypass") then
-			Child:SetAttribute("Drag", 0)
-		end
 		local SAInstantBypass = flagBool("SA_InstantBypass")
 		
-		if SAInstantBypass then
-			ProjectileDropAttribute = 0
+		if type(shared) == "table" and type(shared.MidnightAmmoSnap) == "table" then
+			local Snap = shared.MidnightAmmoSnap[Child]
+			
+			if type(Snap) == "table" then
+				if type(Snap.vel) == "number" and Snap.vel > 80 and Snap.vel < 5000 then
+					MuzzleVelocityAttribute = Snap.vel
+				end
+				if type(Snap.drop) == "number" then
+					ProjectileDropAttribute = Snap.drop
+				end
+			end
 		end
+		pcall(function()
+			Child:SetAttribute("Drag", 0)
+		end)
 		local Position = v586.Position
 		local Position1 = p204.Position
 		
-		if v0.Flags.SA_Prediction ~= false then
-			local Velocity = v586.Velocity
+		if SAInstantBypass then
+			Position = v586.Position
+		elseif v0.Flags.SA_Prediction ~= false then
+			local Velocity = v586.AssemblyLinearVelocity
 			
+			if typeof(Velocity) ~= "Vector3" or Velocity.Magnitude < 0.5 then
+				Velocity = v586.Velocity
+			end
+			if typeof(Velocity) ~= "Vector3" or Velocity.Magnitude < 0.5 then
+				local Model = v586:FindFirstAncestorOfClass("Model")
+				local Root = Model and Model:FindFirstChild("HumanoidRootPart")
+				local RootMove = Root and Root.AssemblyLinearVelocity
+				
+				Velocity = typeof(RootMove) == "Vector3" and RootMove.Magnitude >= 0.5 and RootMove or Root and Root.Velocity or Vector3.zero
+			end
 			if typeof(Velocity) ~= "Vector3" then
 				Velocity = Vector3.zero
 			end
-			Position = v586.Position + Velocity * flightTime(v586.Position - Position1, Vector3.yAxis * (ProjectileDropAttribute * 2), MuzzleVelocityAttribute)
+			if Velocity.Magnitude > 32 then
+				Velocity = Velocity.Unit * 32
+			end
+			local Speed = MuzzleVelocityAttribute
+			
+			if type(Speed) ~= "number" or Speed < 80 or Speed > 5000 then
+				Speed = 900
+			end
+			Position = Position + Velocity * ((v586.Position - Position1).Magnitude / Speed)
 		end
-		local NewPosition = Position + projectileDrop1(Position1, Position, MuzzleVelocityAttribute, ProjectileDropAttribute)
+		local NewPosition = Position
 		
-		if (NewPosition - Position1).Magnitude < 0.05 then
-			Position1 = p204.Position
+		if not SAInstantBypass and ProjectileDropAttribute > 0.05 then
+			NewPosition = Position + projectileDrop1(Position1, Position, MuzzleVelocityAttribute, ProjectileDropAttribute)
 		end
+		local AimCF = CFrame.new(Position1, NewPosition)
+		local fakeAim = {
+			CFrame = AimCF,
+			LookVector = AimCF.LookVector,
+			Position = Position1
+		}
 		SilentTarget = v586
+		shotMarked = true
 		pcall(onLocalShot, p204, NewPosition)
 		
+		if flagBool("SA_Wallbang") and canWallbang(Position1, v586) and type(shared) == "table" then
+			shared.MidnightWallWait = {
+				part = v586,
+				until_ = os.clock() + 0.6,
+				tick = tick()
+			}
+		end
+		
+		local RealVel = MuzzleVelocityAttribute
+		
+		if type(shared) == "table" and type(shared.MidnightAmmoSnap) == "table" then
+			local Snap = shared.MidnightAmmoSnap[Child]
+			
+			if type(Snap) == "table" and type(Snap.vel) == "number" and Snap.vel > 80 and Snap.vel < 5000 then
+				RealVel = Snap.vel
+			end
+		end
+		if RealVel > 2500 then
+			RealVel = RealVel / 12
+		end
 		if SAInstantBypass and type(shared) == "table" then
 			local Bypass = shared.MidnightBypass or {}
 			
 			shared.MidnightBypass = Bypass
 			Bypass.on = true
+			Bypass.capturing = true
 			Bypass.fast = true
 			Bypass.part = v586
 			Bypass.origin = Position1
+			Bypass.realVel = RealVel
+			Bypass.fireTick = tick()
+			Bypass.far = false
 			Bypass.sent = false
 			Bypass.id = nil
-			Bypass["until"] = os.clock() + 0.4
+			Bypass.seen = nil
+			Bypass["until"] = os.clock() + 2
 		end
-		local Packed = table.pack(callOld(p200, p201, p202, p203, { CFrame = CFrame.new(Position1, NewPosition) }, p205, ChildName, p207, p208))
+		local Packed
+		local CallOk, CallErr = pcall(function()
+			if type(shared) == "table" then
+				shared.MidnightHipPos = NewPosition
+			end
+			Packed = table.pack(callOld(p200, p201, p202, p203, fakeAim, p205, ChildName, p207, p208))
+		end)
+		
+		if type(shared) == "table" then
+			shared.MidnightHipPos = nil
+			shared.MidnightWallPen = nil
+		end
 		
 		if SAInstantBypass and type(shared) == "table" then
-			pcall(function()
-				local Bypass = shared.MidnightBypass
-				
-				if not Bypass or Bypass.sent then return end
-				local Part = Bypass.part
-				local Id = Bypass.id
-				
-				if typeof(Part) ~= "Instance" or not Part.Parent or type(Id) ~= "number" then return end
-				local Remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
-				local ProjectileInflict = Remotes and Remotes:FindFirstChild("ProjectileInflict")
-				
-				if not ProjectileInflict then return end
-				local HitPart = Part
-				local HitPos = Part.Position
-				local Origin = Bypass.origin
-				
-				if typeof(Origin) == "Vector3" then
-					local Delta = Part.Position - Origin
-					
-					if Delta.Magnitude > 0.1 then
-						local RaycastParams1 = RaycastParams.new()
-						
-						RaycastParams1.FilterType = Enum.RaycastFilterType.Exclude
-						local Filter = {}
-						local Character = LocalPlayer.Character
-						
-						if Character then
-							Filter[1] = Character
-						end
-						local CurrentCamera = workspace.CurrentCamera
-						local ViewModel = CurrentCamera and (CurrentCamera:FindFirstChild("ViewModel") or CurrentCamera:FindFirstChild("Viewmodel"))
-						
-						if ViewModel then
-							Filter[#Filter + 1] = ViewModel
-						end
-						RaycastParams1.FilterDescendantsInstances = Filter
-						RaycastParams1.IgnoreWater = true
-						pcall(function()
-							RaycastParams1.CollisionGroup = "WeaponRay"
-						end)
-						local RaycastResult = workspace:Raycast(Origin, Delta.Unit * (Delta.Magnitude + 6), RaycastParams1)
-						
-						if RaycastResult and RaycastResult.Instance and Part.Parent and RaycastResult.Instance:IsDescendantOf(Part.Parent) then
-							HitPart = RaycastResult.Instance
-							HitPos = RaycastResult.Position
-						end
+			local Bypass = shared.MidnightBypass
+			
+			if type(Bypass) == "table" then
+				Bypass.capturing = false
+				task.delay(0.4, function()
+					if shared.MidnightBypass == Bypass then
+						Bypass.on = false
 					end
-				end
-				Bypass.busy = true
-				Bypass.sent = true
-				Bypass.consumed = Bypass.consumed or {}
-				Bypass.consumed[Id] = os.clock()
-				ProjectileInflict:FireServer(HitPart, HitPart.CFrame:ToObjectSpace(CFrame.new(HitPos)), Id, tick())
-				Bypass.busy = false
-			end)
+				end)
+			end
+			if CallOk then
+				pcall(queueInstantHits)
+				task.delay(0.05, queueInstantHits)
+				task.delay(0.15, queueInstantHits)
+			end
+		end
+		if not CallOk then
+			error(CallErr, 0)
 		end
 		return table.unpack(Packed, 1, Packed.n)
 	end)
@@ -4481,6 +5099,13 @@ task.spawn(function()
 		shared.MidnightBulletHooked = true
 	end
 	pcall(installBypassHook)
+	pcall(installSpeedHook)
+	pcall(installRealBallistics)
+	pcall(installInstantSpeed)
+	pcall(installInstantFix)
+	pcall(installFastGate)
+	pcall(installWallShot)
+	pcall(installHipAim)
 end)
 local Panel = nil
 local Label = nil
@@ -4660,7 +5285,12 @@ end
 
 function frameModel(Parent, Object)
 	return (pcall(function()
+		local Was = Object.Archivable
+		
+		Object.Archivable = true
 		local ObjectClone = Object:Clone()
+		
+		Object.Archivable = Was
 		
 		for _, descendant in ObjectClone:GetDescendants() do
 			if descendant:IsA("LuaSourceContainer") or descendant:IsA("Sound") or descendant:IsA("BillboardGui") or descendant:IsA("SurfaceGui") then
@@ -4728,6 +5358,8 @@ function frameModel(Parent, Object)
 		Camera.CFrame = CFrame.new(Y + Vector3.new(X, X * 0.35, X), Y)
 		Camera.Parent = Parent
 		Parent.CurrentCamera = Camera
+		Parent.Ambient = Color3.new(1, 1, 1)
+		Parent.LightColor = Color3.new(1, 1, 1)
 	end))
 end
 
@@ -5676,13 +6308,116 @@ function isFrozenPlayerCopy(Model)
 end
 
 function isAiBody(p252)
-	if typeof(p252) == "Instance" then
-		local Name = p252.Name
-		
-		return not Players:FindFirstChild(Name) and (not string.match(Name, "%d") and not string.find(Name, "_", 1, true))
-	else
+	if typeof(p252) ~= "Instance" then
 		return false
 	end
+	if p252:FindFirstAncestor("AiZones") or p252:FindFirstAncestor("Bots") or p252:FindFirstAncestor("AI") then
+		return true
+	end
+	local Name = p252.Name
+	local Humanoid = p252:FindFirstChildOfClass("Humanoid")
+	
+	if Players:FindFirstChild(Name) then
+		return false
+	end
+	if Humanoid and type(Humanoid.DisplayName) == "string" and Players:FindFirstChild(Humanoid.DisplayName) then
+		return false
+	end
+	local Lowered = string.lower(Name)
+	
+	return string.find(Lowered, "soldier", 1, true) or string.find(Lowered, "bandit", 1, true) or string.find(Lowered, "guard", 1, true) or string.find(Lowered, "scav", 1, true) or string.find(Lowered, "bot", 1, true) or string.find(Lowered, "zombie", 1, true)
+end
+
+function corpseAnchor(Model)
+	if typeof(Model) ~= "Instance" then
+		return nil
+	end
+	local Part = Model:FindFirstChild("UpperTorso") or Model:FindFirstChild("Torso") or Model:FindFirstChild("Head") or Model:FindFirstChild("HumanoidRootPart")
+	
+	if Part and Part:IsA("BasePart") then
+		return Part
+	end
+	return nil
+end
+
+function refreshCorpseList()
+	if not corpseWatch then
+		corpseWatch = true
+		task.defer(function()
+			local Dropped = workspace:FindFirstChild("DroppedItems") or workspace:WaitForChild("DroppedItems", 8)
+			
+			if not Dropped then return end
+			Dropped.DescendantAdded:Connect(function(Inst)
+				if Inst:IsA("Humanoid") or Inst.Name == "UpperTorso" or Inst.Name == "Torso" or Inst.Name == "Head" then
+					corpseScanAt = 0
+				end
+			end)
+		end)
+	end
+	if not (flagBool("CorpseESPEnabled") or flagBool("CorpseAI")) then
+		corpseCache = {}
+		
+		return
+	end
+	if corpseCache and os.clock() - (corpseScanAt or 0) < 0.25 then return end
+	corpseScanAt = os.clock()
+	local Seen = {}
+	local List = {}
+	local function consider(Model)
+		if Seen[Model] or typeof(Model) ~= "Instance" or not Model:IsA("Model") or Model == LocalPlayer.Character then return end
+		local ParentModel = Model.Parent
+		
+		if ParentModel and ParentModel:IsA("Model") and corpseAnchor(ParentModel) then return end
+		local Anchor = corpseAnchor(Model)
+		
+		if not Anchor then return end
+		local Dropped = workspace:FindFirstChild("DroppedItems")
+		local InDrop = Dropped and Model:IsDescendantOf(Dropped)
+		local Humanoid = Model:FindFirstChildOfClass("Humanoid")
+		local Dead = Humanoid and Humanoid.Health <= 0
+		
+		if not InDrop and not Dead then return end
+		local Owner = Players:GetPlayerFromCharacter(Model)
+		
+		if Owner and Owner.Character == Model and Humanoid and Humanoid.Health > 0 then return end
+		Seen[Model] = true
+		local Ai = isAiBody(Model)
+		
+		if Ai and not flagBool("CorpseAI") then return end
+		if not Ai and not flagBool("CorpseESPEnabled") then return end
+		List[#List + 1] = {
+			model = Model,
+			kind = "corpse",
+			ai = Ai,
+			label = if Ai then Model.Name .. " body" else Model.Name .. "'s corpse"
+		}
+	end
+	local DroppedItems = workspace:FindFirstChild("DroppedItems")
+	
+	if DroppedItems then
+		for _, Model in DroppedItems:GetDescendants() do
+			if Model:IsA("Model") then
+				consider(Model)
+			end
+		end
+	end
+	for _, FolderName in { "Bodies", "Corpses", "Ragdolls", "Dead" } do
+		local Folder = workspace:FindFirstChild(FolderName)
+		
+		if Folder then
+			for _, Model in Folder:GetDescendants() do
+				if Model:IsA("Model") then
+					consider(Model)
+				end
+			end
+		end
+	end
+	for _, Player in Players:GetPlayers() do
+		if Player ~= LocalPlayer and Player.Character then
+			consider(Player.Character)
+		end
+	end
+	corpseCache = List
 end
 
 function wantCorpse(p253)
@@ -5795,7 +6530,7 @@ function refreshWorld()
 				
 				if DroppedItems then
 					for _, Model in DroppedItems:GetChildren() do
-						if Model:IsA("Model") and (Model:FindFirstChild("UpperTorso") or Model:FindFirstChildOfClass("Humanoid")) and wantCorpse(Model) then
+						if Model:IsA("Model") and corpseAnchor(Model) and wantCorpse(Model) then
 							local IsAiBody1 = isAiBody(Model)
 							scanFound[#scanFound + 1] = {
 								model = Model,
@@ -5852,7 +6587,7 @@ function refreshWorld()
 				end
 			end
 		end
-		local Count = 120
+		local Count = 40
 		local Cat = nil
 		while Count > 0 and #scanStack > 0 do
 			Count -= 1
@@ -5934,7 +6669,7 @@ function refreshWorld()
 							humanoid = Humanoid
 						}
 					end
-				elseif (flagBool("CorpseESPEnabled") or flagBool("CorpseAI")) and (Humanoid and Removed:FindFirstChild("UpperTorso") and workspace:FindFirstChild("DroppedItems") and (Removed:IsDescendantOf(workspace.DroppedItems) and wantCorpse(Removed))) then
+				elseif (flagBool("CorpseESPEnabled") or flagBool("CorpseAI")) and corpseAnchor(Removed) and workspace:FindFirstChild("DroppedItems") and Removed:IsDescendantOf(workspace.DroppedItems) and wantCorpse(Removed) then
 					local IsAiBody2 = isAiBody(Removed)
 					scanFound[#scanFound + 1] = {
 						model = Removed,
@@ -6527,7 +7262,12 @@ function drawActors(Camera, p271, p272)
 				
 				if IsBoss and flagBool("BossESPEnabled") or not IsBoss and flagBool("AIESPEnabled") then
 					local Boss = if IsBoss then "Boss" else "AI"
-					local HumanoidRootPart = Model:FindFirstChild("HumanoidRootPart") or Model:FindFirstChild("Head")
+					local HumanoidRootPart = value.root
+					
+					if typeof(HumanoidRootPart) ~= "Instance" or not HumanoidRootPart.Parent then
+						HumanoidRootPart = Model:FindFirstChild("HumanoidRootPart") or Model:FindFirstChild("Head")
+						value.root = HumanoidRootPart
+					end
 					local Position = HumanoidRootPart and (HumanoidRootPart:IsA("BasePart") and HumanoidRootPart.Position)
 					
 					if not Position then
@@ -6541,11 +7281,13 @@ function drawActors(Camera, p271, p272)
 						local Distance = (Position - p271).Magnitude
 						local RangeStudsResult = rangeStuds(Boss .. "MaxDistance", if IsBoss then 800 else 400)
 						
-						if scopedIn() then
-							RangeStudsResult = math.max(RangeStudsResult, 1785.7142857142856)
-						end
 						if Distance <= RangeStudsResult then
-							local MidnightMark = Model:FindFirstChild("MidnightMark")
+							local MidnightMark = value.mark
+							
+							if typeof(MidnightMark) ~= "Instance" or not MidnightMark.Parent then
+								MidnightMark = Model:FindFirstChild("MidnightMark")
+								value.mark = MidnightMark
+							end
 							
 							if flagBool(Boss .. "Chams") then
 								if not MidnightMark then
@@ -6554,6 +7296,7 @@ function drawActors(Camera, p271, p272)
 									MidnightMark.Adornee = Model
 									MidnightMark.Parent = Model
 									MidnightMark.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+									value.mark = MidnightMark
 								end
 								MidnightMark.Enabled = true
 								MidnightMark.FillColor = flagColor(Boss .. "ChamsColor1", Color3.fromRGB(255, 160, 80))
@@ -6723,12 +7466,16 @@ function drawWorldEsp(Camera, p274)
 				actorCache = {}
 			end
 		end
+		refreshCorpseList()
 		Count1 = 0
 		local Position = Camera.CFrame.Position
 		local t = {}
 		drawActors(Camera, Position, t)
+		local WorldLists = { t9, corpseCache }
 		
-		for _, value2 in t9 do
+		for _, WorldList in WorldLists do
+		for _, value2 in WorldList or {} do
+			if WorldList == t9 and value2.kind == "corpse" then continue end
 			local IsAi = value2.kind == "ai" or value2.kind == "boss"
 			local Model = nil
 			
@@ -6737,20 +7484,38 @@ function drawWorldEsp(Camera, p274)
 				IsAi = isFrozenPlayerCopy(Model) or (not Model or not Model.Parent) and typeof(value2.pos) ~= "Vector3"
 			end
 			if not IsAi then
-				local HumanoidRootPart = Model and (Model.Parent and (Model:FindFirstChild("HumanoidRootPart") or Model:FindFirstChild("Head")))
-				
-				if value2.kind == "corpse" and Model then
-					HumanoidRootPart = Model:FindFirstChild("UpperTorso") or HumanoidRootPart
-				end
 				local Pos = typeof(value2.pos) == "Vector3" and value2.pos or nil
+				local HumanoidRootPart = value2.anchor
 				
-				if HumanoidRootPart and HumanoidRootPart:IsA("BasePart") then
+				if not Pos and Model and Model.Parent then
+					if typeof(HumanoidRootPart) ~= "Instance" or not HumanoidRootPart.Parent then
+						if value2.kind == "corpse" then
+							HumanoidRootPart = corpseAnchor(Model)
+						else
+							HumanoidRootPart = Model:FindFirstChild("HumanoidRootPart") or Model:FindFirstChild("Head")
+						end
+						value2.anchor = HumanoidRootPart
+					end
+					if HumanoidRootPart and HumanoidRootPart:IsA("BasePart") then
+						Pos = HumanoidRootPart.Position
+					else
+						local Success1, Result1 = pcall(Model.GetPivot, Model)
+						
+						if Success1 and typeof(Result1) == "CFrame" then
+							value2.pos = Result1.Position
+							Pos = Result1.Position
+						end
+					end
+				elseif HumanoidRootPart and HumanoidRootPart:IsA("BasePart") and HumanoidRootPart.Parent then
 					Pos = HumanoidRootPart.Position
-				elseif Model and Model.Parent and not Pos then
-					local Success1, Result1 = pcall(Model.GetPivot, Model)
-					Pos = if Success1 and typeof(Result1) == "CFrame" then Result1.Position else instancePoint(Model)
 				end
 				if Pos then
+					if (Pos - Position):Dot(Camera.CFrame.LookVector) < 0 then
+						if value2.mark and value2.mark.Parent then
+							value2.mark.Enabled = false
+						end
+						continue
+					end
 					local Distance = (Pos - Position).Magnitude
 					local RangeStudsResult = 1200
 					local _Color3 = Color3.fromRGB(255, 220, 120)
@@ -6783,7 +7548,12 @@ function drawWorldEsp(Camera, p274)
 						_Color3 = flagColor(value2.cat .. "Color", Color3.fromRGB(235, 255, 240))
 						RangeStudsResult = rangeStuds(value2.cat .. "MaxDistance", 150)
 					end
-					local MidnightMark = Model:FindFirstChild("MidnightMark")
+					local MidnightMark = value2.mark
+					
+					if typeof(MidnightMark) ~= "Instance" or not MidnightMark.Parent then
+						MidnightMark = Model and Model:FindFirstChild("MidnightMark")
+						value2.mark = MidnightMark
+					end
 					
 					if AIChams and Distance <= RangeStudsResult then
 						if not MidnightMark then
@@ -6792,6 +7562,7 @@ function drawWorldEsp(Camera, p274)
 							MidnightMark.Adornee = Model
 							MidnightMark.Parent = Model
 							MidnightMark.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+							value2.mark = MidnightMark
 						end
 						MidnightMark.Enabled = true
 						MidnightMark.FillColor = flagColor(if value2.kind == "boss" then "BossChamsColor1" else "AIChamsColor1", _Color3)
@@ -6847,6 +7618,7 @@ function drawWorldEsp(Camera, p274)
 				end
 			end
 		end
+		end
 		if flagBool("ExfilESPEnabled") then
 			local IsExfilName = v0.Flags.ExfilName ~= false
 			local IsExfilDistance = v0.Flags.ExfilDistance ~= false
@@ -6860,30 +7632,42 @@ function drawWorldEsp(Camera, p274)
 					local ExfilNameColor = flagColor("ExfilNameColor", Color3.fromRGB(80, 220, 140))
 					local ExfilMaxDistance = rangeStuds("ExfilMaxDistance", 1000)
 					
-					for _, child in exitFolder:GetChildren() do
-						local Success, Result = pcall(function()
-							return child:GetPivot().Position
-						end)
+					if os.clock() - (exitScanAt or 0) > 2 or not exitPoints then
+						exitScanAt = os.clock()
+						exitPoints = {}
 						
-						if Success and Result then
-							local Distance = (Result - Position).Magnitude
+						for _, child in exitFolder:GetChildren() do
+							local Success, Result = pcall(function()
+								return child:GetPivot().Position
+							end)
 							
-							if Distance <= ExfilMaxDistance then
-								local ViewportPosition2, OnScreen2 = Camera:WorldToViewportPoint(Result)
-								local ViewportSize = Camera.ViewportSize
+							if Success and typeof(Result) == "Vector3" then
+								exitPoints[#exitPoints + 1] = {
+									name = child.Name,
+									pos = Result
+								}
+							end
+						end
+					end
+					for _, child in exitPoints do
+						local Result = child.pos
+						local Distance = (Result - Position).Magnitude
+						
+						if Distance <= ExfilMaxDistance then
+							local ViewportPosition2, OnScreen2 = Camera:WorldToViewportPoint(Result)
+							local ViewportSize = Camera.ViewportSize
+							
+							if OnScreen2 and (ViewportPosition2.Z > 0.4 and ViewportPosition2.X > 0 and ViewportPosition2.X < ViewportSize.X and ViewportPosition2.Y > 0 and ViewportPosition2.Y < ViewportSize.Y) then
+								local NextWorldDrawResult = nextWorldDraw()
 								
-								if OnScreen2 and (ViewportPosition2.Z > 0.4 and ViewportPosition2.X > 0 and ViewportPosition2.X < ViewportSize.X and ViewportPosition2.Y > 0 and ViewportPosition2.Y < ViewportSize.Y) then
-									local NextWorldDrawResult = nextWorldDraw()
-									
-									if NextWorldDrawResult then
-										local Floored = math.floor(Distance * 0.28 + 0.5)
-										NextWorldDrawResult.text.Visible = true
-										NextWorldDrawResult.text.Size = math.clamp(flagNum("EspTextSize", 13), 8, 28)
-										NextWorldDrawResult.text.Text = if IsExfilName and IsExfilDistance then string.format("%s  [%dm]", child.Name, Floored) elseif IsExfilDistance then string.format("[%dm]", Floored) else child.Name
-										NextWorldDrawResult.text.Color = ExfilNameColor
-										NextWorldDrawResult.text.Position = Vector2.new(ViewportPosition2.X, ViewportPosition2.Y)
-										NextWorldDrawResult.box.Visible = false
-									end
+								if NextWorldDrawResult then
+									local Floored = math.floor(Distance * 0.28 + 0.5)
+									NextWorldDrawResult.text.Visible = true
+									NextWorldDrawResult.text.Size = math.clamp(flagNum("EspTextSize", 13), 8, 28)
+									NextWorldDrawResult.text.Text = if IsExfilName and IsExfilDistance then string.format("%s  [%dm]", child.name, Floored) elseif IsExfilDistance then string.format("[%dm]", Floored) else child.name
+									NextWorldDrawResult.text.Color = ExfilNameColor
+									NextWorldDrawResult.text.Position = Vector2.new(ViewportPosition2.X, ViewportPosition2.Y)
+									NextWorldDrawResult.box.Visible = false
 								end
 							end
 						end
@@ -7107,7 +7891,7 @@ MidnightTarget.Parent = CoreGui1
 cardPanel = Instance.new("Frame")
 cardPanel.AnchorPoint = Vector2.new(0.5, 1)
 cardPanel.Position = UDim2.new(0.5, 0, 1, -118)
-cardPanel.Size = UDim2.fromOffset(300, 122)
+cardPanel.Size = UDim2.fromOffset(340, 140)
 cardPanel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 cardPanel.BackgroundTransparency = 0.15
 cardPanel.BorderSizePixel = 0
@@ -7161,7 +7945,7 @@ cardKdText = row(2, "kd")
 cardTimeText = row(3, "play time")
 cardReportText = row(4, "reports")
 cardVis = Instance.new("Frame")
-cardVis.Position = UDim2.new(0, 8, 1, -34)
+cardVis.Position = UDim2.new(0, 8, 1, -50)
 cardVis.Size = UDim2.new(1, -16, 0, 14)
 cardVis.BackgroundTransparency = 1
 cardVis.BorderSizePixel = 0
@@ -7173,11 +7957,46 @@ cardVisText = Instance.new("TextLabel")
 cardVisText.BackgroundTransparency = 1
 cardVisText.Size = UDim2.fromScale(1, 1)
 cardVisText.Font = Enum.Font.Code
-cardVisText.TextSize = 11
-cardVisText.Text = "Visible"
+cardVisText.TextSize = 12
+cardVisText.Text = "VISIBLE"
 cardVisText.TextColor3 = Color3.fromRGB(80, 220, 90)
+cardVisText.TextXAlignment = Enum.TextXAlignment.Left
+cardVisText.Size = UDim2.new(0.34, 0, 1, 0)
 cardVisText.TextStrokeTransparency = 0
 cardVisText.Parent = cardVis
+cardWallText = Instance.new("TextLabel")
+cardWallText.BackgroundTransparency = 1
+cardWallText.Position = UDim2.new(0.33, 0, 0, 0)
+cardWallText.Size = UDim2.new(0.34, 0, 1, 0)
+cardWallText.Font = Enum.Font.Code
+cardWallText.TextSize = 12
+cardWallText.TextXAlignment = Enum.TextXAlignment.Center
+cardWallText.Text = "NO WALL"
+cardWallText.TextColor3 = Color3.fromRGB(255, 70, 70)
+cardWallText.TextStrokeTransparency = 0
+cardWallText.Parent = cardVis
+cardManipText = Instance.new("TextLabel")
+cardManipText.BackgroundTransparency = 1
+cardManipText.Position = UDim2.new(0.66, 0, 0, 0)
+cardManipText.Size = UDim2.new(0.34, 0, 1, 0)
+cardManipText.Font = Enum.Font.Code
+cardManipText.TextSize = 12
+cardManipText.TextXAlignment = Enum.TextXAlignment.Right
+cardManipText.Text = "NO MANIP"
+cardManipText.TextColor3 = Color3.fromRGB(255, 70, 70)
+cardManipText.TextStrokeTransparency = 0
+cardManipText.Parent = cardVis
+cardUnder = Instance.new("TextLabel")
+cardUnder.BackgroundTransparency = 1
+cardUnder.Position = UDim2.new(0, 8, 1, -34)
+cardUnder.Size = UDim2.new(1, -16, 0, 14)
+cardUnder.Font = Enum.Font.Code
+cardUnder.TextSize = 12
+cardUnder.TextXAlignment = Enum.TextXAlignment.Left
+cardUnder.Text = "NO UNDER"
+cardUnder.TextColor3 = Color3.fromRGB(255, 70, 70)
+cardUnder.TextStrokeTransparency = 0
+cardUnder.Parent = cardPanel
 cardBar = Instance.new("Frame")
 cardBar.Position = UDim2.new(0, 8, 1, -16)
 cardBar.Size = UDim2.new(1, -16, 0, 8)
@@ -7236,6 +8055,142 @@ lookList.Text = ""
 lookList.Parent = lookFrame
 dragOverlay(lookFrame)
 
+function manipPoint(Model)
+	if not Model then return nil end
+	manipCache = manipCache or {}
+	local Cached = manipCache[Model]
+	
+	if Cached and os.clock() - Cached.t < 0.2 then
+		return Cached.point
+	end
+	local Head = Model:FindFirstChild("Head") or rootPart(Model)
+	local Root = peekRoot()
+	
+	if not Head or not Root then
+		manipCache[Model] = { t = os.clock(), point = nil }
+		
+		return nil
+	end
+	local Radius = math.clamp(flagNum("ManipRange", 10), 4, 18)
+	local From = Root.Position + Vector3.new(0, 1.5, 0)
+	local Goal = Head.Position
+	local Dirs = {
+		Vector3.new(1, 0, 0),
+		Vector3.new(-1, 0, 0),
+		Vector3.new(0, 0, 1),
+		Vector3.new(0, 0, -1),
+		Vector3.new(0, 1, 0),
+		Vector3.new(0, -0.6, 0),
+		Vector3.new(1, 0.4, 0),
+		Vector3.new(-1, 0.4, 0),
+		Vector3.new(0, 0.4, 1),
+		Vector3.new(0, 0.4, -1)
+	}
+	
+	RaycastParams1.FilterDescendantsInstances = { LocalPlayer.Character, Model }
+	local Found = nil
+	
+	for _, Dir in Dirs do
+		local Unit = Dir.Magnitude > 0 and Dir.Unit or Dir
+		local Point = From + Unit * Radius
+		local Wall = workspace:Raycast(From, Point - From, RaycastParams1)
+		
+		if Wall and (Wall.Position - From).Magnitude < Radius - 1.2 then
+			continue
+		end
+		local Seen = workspace:Raycast(Point, Goal - Point, RaycastParams1)
+		
+		if not Seen or Seen.Instance:IsDescendantOf(Model) then
+			Found = Point
+			
+			break
+		end
+	end
+	manipCache[Model] = { t = os.clock(), point = Found }
+	
+	return Found
+end
+
+function applyManip(allowStep)
+	if peekState then
+		if manipState and allowStep ~= false then
+			local Root = peekRoot()
+			
+			if Root and manipState.origin then
+				Root.CFrame = manipState.origin
+				dampLand(Root)
+			end
+			manipState = nil
+		end
+		
+		return
+	end
+	local Root = peekRoot()
+	
+	if not Root then
+		manipState = nil
+		
+		return
+	end
+	local Held = flagBool("Manip_Enabled") and keyHeld("ManipKey")
+	
+	if not Held then
+		if manipState and allowStep ~= false then
+			Root.CFrame = manipState.origin
+			dampLand(Root)
+			fallGuard = os.clock() + 0.6
+			local Humanoid = Root.Parent and Root.Parent:FindFirstChildOfClass("Humanoid")
+			
+			if Humanoid then
+				Humanoid.AutoRotate = true
+			end
+			manipState = nil
+		end
+		
+		return
+	end
+	local Part = SilentTarget
+	local Model = typeof(Part) == "Instance" and Part:FindFirstAncestorOfClass("Model")
+	local Point = manipState and manipState.point
+	
+	if typeof(Point) ~= "Vector3" then
+		Point = Model and manipPoint(Model)
+		
+		if typeof(Point) ~= "Vector3" then return end
+		manipState = { origin = Root.CFrame, point = Point }
+	end
+	local Head = Model and (Model:FindFirstChild("Head") or Part) or Part
+	local LookAt = typeof(Head) == "Instance" and Head:IsA("BasePart") and Head.Position or Point + Vector3.new(0, 0, -1)
+	local Flat = Vector3.new(LookAt.X, Point.Y, LookAt.Z)
+	
+	if (Flat - Point).Magnitude < 0.25 then
+		Flat = Point + Vector3.new(0, 0, -1)
+	end
+	Root.CFrame = CFrame.lookAt(Point, Flat)
+	dampLand(Root)
+	local Humanoid = Root.Parent and Root.Parent:FindFirstChildOfClass("Humanoid")
+	
+	if Humanoid then
+		Humanoid.AutoRotate = false
+	end
+end
+
+function canUnder(Character)
+	local Root = peekRoot()
+	local Head = Character and (Character:FindFirstChild("Head") or rootPart(Character))
+	
+	if not Root or not Head then
+		return false
+	end
+	local Depth = math.clamp(flagNum("UnderDepth", 12), 6, 36)
+	local From = Root.Position + Vector3.new(0, -Depth + 1.5, 0)
+	
+	RaycastParams1.FilterDescendantsInstances = { LocalPlayer.Character }
+	local Hit = workspace:Raycast(From, Head.Position - From, RaycastParams1)
+	
+	return not Hit or Hit.Instance:IsDescendantOf(Character)
+end
+
 function updateTargetCard(Character)
 	if not cardPanel then return end
 	local Player = Character and Players:GetPlayerFromCharacter(Character)
@@ -7280,14 +8235,27 @@ function updateTargetCard(Character)
 	cardHp.Text = string.format("%d/%d", math.floor(Health + 0.5), math.floor(MaxHealth + 0.5))
 	
 	if cardVis then
-		local IsTargetState = v0.Flags.TargetState ~= false
-		cardVis.Visible = IsTargetState
-		
-		if IsTargetState then
-			local CanSee1 = canSee(Character, workspace.CurrentCamera)
-			cardVisText.Text = if CanSee1 then "VISIBLE" else "HIDDEN"
-			cardVisText.TextColor3 = CanSee1 and Color3.fromRGB(80, 220, 90) or Color3.fromRGB(255, 70, 70)
+		if os.clock() - (cardScanAt or 0) > 0.25 or cardScanUser ~= Player then
+			cardScanAt = os.clock()
+			cardScanUser = Player
+			local Cam = workspace.CurrentCamera
+			local WallPart = Character:FindFirstChild("Head") or Character:FindFirstChild("HumanoidRootPart")
+			
+			cardSee = canSee(Character, Cam)
+			cardWallOn = Cam and WallPart and flagBool("SA_Wallbang") and canWallbang(Cam.CFrame.Position, WallPart) or false
+			cardManipOn = manipPoint(Character) ~= nil
+			cardUnderOn = canUnder(Character)
 		end
+		cardVis.Visible = true
+		cardVisText.Visible = true
+		cardVisText.Text = if cardSee then "VISIBLE" else "HIDDEN"
+		cardVisText.TextColor3 = cardSee and Color3.fromRGB(80, 220, 90) or Color3.fromRGB(255, 70, 70)
+		cardWallText.Text = if cardWallOn then "WALL" else "NO WALL"
+		cardWallText.TextColor3 = cardWallOn and Color3.fromRGB(80, 220, 90) or Color3.fromRGB(255, 70, 70)
+		cardManipText.Text = if cardManipOn then "MANIP" else "NO MANIP"
+		cardManipText.TextColor3 = cardManipOn and Color3.fromRGB(80, 220, 90) or Color3.fromRGB(255, 70, 70)
+		cardUnder.Text = if cardUnderOn then "UNDER" else "NO UNDER"
+		cardUnder.TextColor3 = cardUnderOn and Color3.fromRGB(80, 220, 90) or Color3.fromRGB(255, 70, 70)
 	end
 end
 
@@ -7296,7 +8264,7 @@ function visorOf(Player)
 	local Text = "v:" .. Player.Name
 	local State = stateCache[Text]
 	
-	if State and os.clock() - State.t < 0.35 then
+	if State and os.clock() - State.t < 1.2 then
 		return State.v
 	end
 	local function asDown(Text)
@@ -7391,7 +8359,7 @@ function aimingOf(p284, Object)
 	local Text = "a:" .. p284.Name
 	local State = stateCache[Text]
 	
-	if State and os.clock() - State.t < 0.15 then
+	if State and os.clock() - State.t < 0.6 then
 		return State.v
 	end
 	local Flag = false
@@ -7757,24 +8725,28 @@ if not shared.MidnightFall then
 		if syncInstantAmmo then
 			syncInstantAmmo()
 		end
-		if syncSpread then
-			syncSpread()
-		end
 		if applyNoFall then
 			applyNoFall()
 		end
 		if applyInstantHeal then
 			applyInstantHeal()
 		end
+		if applyInstantLoot then
+			applyInstantLoot()
+		end
 	end)
 end
 RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, function(DeltaTime)
-	local identGetter = getthreadidentity or getidentity
-	local identSetter = setthreadidentity or setidentity
-	if type(identGetter) == "function" and type(identSetter) == "function" then
-		local ok, id = pcall(identGetter)
-		if not ok or type(id) ~= "number" or id < 3 then
-			pcall(identSetter, 8)
+	if flagBool("SprintAim") then
+		local Character = LocalPlayer.Character
+		local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+		
+		if Humanoid and Humanoid.MoveDirection.Magnitude > 0.05 and game:GetService("UserInputService"):IsKeyDown(Enum.KeyCode.LeftShift) then
+			local Aiming = game:GetService("UserInputService"):IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or Humanoid:GetAttribute("Aiming") == true or Humanoid:GetAttribute("IsAiming") == true or Humanoid:GetAttribute("ADS") == true
+			
+			if Aiming then
+				Humanoid.WalkSpeed = math.clamp(flagNum("OmniSprintSpeed", 18), 16, 22)
+			end
 		end
 	end
 	local Defaults = {}
@@ -7782,7 +8754,7 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 	
 	if CurrentCamera then
 		worldTick = (worldTick or 0) + (DeltaTime or 0)
-		local IsWorldTickAbove = worldTick > 0.4
+		local IsWorldTickAbove = worldTick > 0.45
 		
 		if IsWorldTickAbove then
 			worldTick = 0
@@ -7790,7 +8762,12 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 		drawWorldEsp(CurrentCamera, IsWorldTickAbove)
 	end
 	if aimOn() and CurrentCamera then
-		SilentTarget = getSilentTarget()
+		local AimFresh = cameraOn() or os.clock() - (aimScanAt or 0) > 0.12
+		
+		if AimFresh then
+			aimScanAt = os.clock()
+			SilentTarget = getSilentTarget()
+		end
 		
 		if SilentTarget then
 			noteAimMotion(SilentTarget)
@@ -7799,14 +8776,17 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 		aimChamModel = Model
 		aimChamColor = flagColor("SA_TargetVisible", Color3.fromRGB(80, 255, 120))
 		
-		if Model and not canSee(Model, CurrentCamera) then
+		if AimFresh and Model and not canSee(Model, CurrentCamera) then
 			aimChamColor = flagColor("SA_TargetHidden", Color3.fromRGB(255, 70, 70))
 		end
 		paintAim()
 		updateTargetCard(Model)
 		drawOriginMark(nil, nil, false)
 	elseif flagBool("SA_Autoshoot") and autoKeyOn and CurrentCamera then
-		SilentTarget = getSilentTarget()
+		if os.clock() - (aimScanAt or 0) > 0.12 then
+			aimScanAt = os.clock()
+			SilentTarget = getSilentTarget()
+		end
 		
 		if SilentTarget then
 			noteAimMotion(SilentTarget)
@@ -7855,10 +8835,6 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 	local PlayersSkeleton = PlayersESPEnabled and flagBool("PlayersSkeleton")
 	local PlayersCheater = PlayersESPEnabled and flagBool("PlayersCheater")
 	local MaxStudsResult = maxStuds()
-	
-	if scopedIn() then
-		MaxStudsResult = math.max(MaxStudsResult, 1785.7142857142856)
-	end
 	local Position = CurrentCamera and CurrentCamera.CFrame.Position
 	local List = {}
 	local Count = 0
@@ -7895,7 +8871,7 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 		if player ~= LocalPlayer and (v0.Flags.PlayersKD ~= false or PlayersCheater) then
 			local Kd = kdCache and kdCache[player]
 			
-			if Kd and os.clock() - Kd.t < 2 then
+			if Kd and os.clock() - Kd.t < 8 then
 				KdOfResult = Kd.v
 			else
 				KdOfResult = kdOf(player)
@@ -7917,7 +8893,7 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 		local IsKdOfResultAbove1_1 = PlayersCheater and IsKdOfResultAbove1
 		local StaffOfResult = if player == LocalPlayer then nil else staffOf(player) or nil
 		
-		if StaffOfResult then
+		if type(StaffOfResult) == "string" and StaffOfResult ~= "" then
 			List[#List + 1] = player.Name .. " (" .. StaffOfResult .. ")"
 		end
 		if flagBool("LookAtYou") and (player ~= LocalPlayer and Inverted and Character and Position and Magnitude < 400) then
@@ -7971,7 +8947,7 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 			clearHighlight(Character)
 		end
 		if IsMaxStudsResultAbove and CurrentCamera and RootPartResult then
-			if CurrentCamera:WorldToViewportPoint(RootPartResult.Position).Z < 0.15 then
+			if CurrentCamera:WorldToViewportPoint(RootPartResult.Position).Z < 0 then
 				if Entry then
 					hidePack(Entry)
 				end
@@ -8188,7 +9164,8 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 	end
 	syncChams(Defaults)
 	
-	if Panel and CurrentCamera then
+	if Panel and CurrentCamera and os.clock() - (invFrameAt or 0) > 0.12 then
+		invFrameAt = os.clock()
 		if flagBool("Inv_Enabled") then
 			local ClosestInvTargetResult, ClosestInvTargetResult2, ClosestInvTargetResult3 = closestInvTarget(CurrentCamera)
 			
@@ -8259,6 +9236,9 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 			Parent.AutomaticSize = Enum.AutomaticSize.X
 			Parent.ClipsDescendants = false
 		end
+	end
+	if hitLog or flagBool("Hit_Notify") then
+		ensureHitLog()
 	end
 	if hitLog then
 		local List2 = {}
@@ -8570,19 +9550,21 @@ ItemESP:Button({
 	end
 })
 local Map = ESP:Section({ Name = "Map", Side = 1 })
-mapKeyOn = true
+mapKeyOn = false
 Map:Toggle({
 	Name = "ESP Map",
 	Flag = "EspMap",
 	Default = false,
 	Callback = function(Value)
-		mapKeyOn = if Value then true else false
+		if not Value then
+			mapKeyOn = false
+		end
 	end
 })
 Map:Dropdown({
 	Name = "Key Mode",
 	Flag = "Map_KeyMode",
-	Default = "Always",
+	Default = "Toggle",
 	Items = { "Hold", "Toggle", "Always" },
 	Callback = none
 })
@@ -8669,6 +9651,51 @@ Ambience:Toggle({
 	Name = "No Shadows",
 	Flag = "NoShadows",
 	Default = false,
+	Callback = none
+})
+Ambience:Toggle({
+	Name = "RGB World",
+	Flag = "RgbWorld",
+	Default = false,
+	Callback = none
+})
+Ambience:Slider({
+	Name = "RGB Speed",
+	Flag = "RgbSpeed",
+	Min = 1,
+	Default = 8,
+	Max = 24,
+	Decimals = 1,
+	Callback = none
+})
+Ambience:Slider({
+	Name = "RGB Brightness",
+	Flag = "RgbBright",
+	Min = 10,
+	Default = 70,
+	Max = 100,
+	Suffix = "%",
+	Decimals = 1,
+	Callback = none
+})
+Ambience:Toggle({
+	Name = "Skybox",
+	Flag = "SkyEnabled",
+	Default = false,
+	Callback = none
+})
+Ambience:Dropdown({
+	Name = "Skybox",
+	Flag = "Skybox",
+	Default = "Default",
+	Items = {
+		"Default",
+		"Thunderstorm",
+		"Night",
+		"Sunrise",
+		"Space",
+		"Galaxy"
+	},
 	Callback = none
 })
 Ambience:Toggle({
@@ -8825,47 +9852,6 @@ Utility:Toggle({
 	Flag = "AntiAFK",
 	Default = false,
 	Callback = none
-})
-Utility:Toggle({
-	Name = "Trash Talk",
-	Flag = "TrashTalk",
-	Default = false,
-	Callback = none
-})
-Utility:Label("Trash Key", "Left"):Keybind({
-	Name = "Trash Key",
-	Flag = "TrashKey",
-	Default = Enum.KeyCode.Y,
-	Mode = "Toggle",
-	Callback = function()
-		if v0.Flags.TrashTalk ~= true then return end
-		local list = {
-			"nice try",
-			"stay down",
-			"midnight.cc",
-			"unlucky",
-			"too slow"
-		}
-		local Entry = list[math.random(1, #list)]
-		local TextChannels = game:GetService("TextChatService"):FindFirstChild("TextChannels")
-		local RBXGeneral = TextChannels and TextChannels:FindFirstChild("RBXGeneral")
-		
-		if RBXGeneral then
-			pcall(function()
-				RBXGeneral:SendAsync(Entry)
-			end)
-			
-			return
-		end
-		local DefaultChatSystemChatEvents = game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
-		local SayMessageRequest = DefaultChatSystemChatEvents and DefaultChatSystemChatEvents:FindFirstChild("SayMessageRequest")
-		
-		if SayMessageRequest then
-			pcall(function()
-				SayMessageRequest:FireServer(Entry, "All")
-			end)
-		end
-	end
 })
 local ServerScan = Misc:Section({ Name = "Server Scan", Side = 2 })
 ServerScan:Slider({
@@ -9140,14 +10126,10 @@ Camera:Toggle({
 	Flag = "ThirdPerson",
 	Default = false,
 	Callback = function(Value)
-		thirdKeyOn = if Value then true else false
+		if not Value then
+			thirdKeyOn = false
+		end
 	end
-})
-Camera:Toggle({
-	Name = "Show Character",
-	Flag = "ThirdShow",
-	Default = false,
-	Callback = none
 })
 Camera:Slider({
 	Name = "Offset X",
@@ -9252,6 +10234,50 @@ Camera:Label("Crosshair Color"):Colorpicker({
 	Name = "Cross Color",
 	Flag = "CrossColor",
 	Default = Color3.fromRGB(255, 255, 255),
+	Callback = none
+})
+Camera:Slider({
+	Name = "Crosshair Thickness",
+	Flag = "CrossThick",
+	Min = 1,
+	Default = 1,
+	Max = 6,
+	Suffix = "px",
+	Decimals = 1,
+	Callback = none
+})
+Camera:Toggle({
+	Name = "Crosshair Dot",
+	Flag = "CrossDot",
+	Default = false,
+	Callback = none
+})
+Camera:Toggle({
+	Name = "Crosshair Outline",
+	Flag = "CrossOutline",
+	Default = false,
+	Callback = none
+})
+Camera:Toggle({
+	Name = "Spin",
+	Flag = "CrossSpin",
+	Default = false,
+	Callback = none
+})
+Camera:Slider({
+	Name = "Spin Speed",
+	Flag = "CrossSpinSpeed",
+	Min = 20,
+	Default = 140,
+	Max = 420,
+	Decimals = 1,
+	Callback = none
+})
+Camera:Dropdown({
+	Name = "Crosshair Style",
+	Flag = "CrossStyle",
+	Default = "Cross",
+	Items = { "Cross", "X", "Dot", "Circle" },
 	Callback = none
 })
 local Whitelist = Settings:Section({ Name = "Whitelist", Side = 1 })
@@ -9415,38 +10441,53 @@ function saveConfigString()
 	return HttpService:JSONEncode(SaveValueResults)
 end
 
+function keyForConfig(Entry)
+	local Key = Entry.Key
+	local Mode = Entry.Mode
+	
+	if typeof(Key) == "EnumItem" then
+		Key = tostring(Key)
+	elseif type(Key) == "string" and not string.find(Key, "Enum.", 1, true) then
+		local EnumItem = Enum.KeyCode[Key] or Enum.UserInputType[Key]
+		
+		if typeof(EnumItem) == "EnumItem" then
+			Key = tostring(EnumItem)
+		end
+	end
+	if type(Key) ~= "string" or Key == "" or Key == "nil" then
+		return nil
+	end
+	return { Key = Key, Mode = Mode }
+end
+
 function applyConfig(Input)
 	local Data = HttpService:JSONDecode(Input)
 	
 	if type(Data) ~= "table" then return end
 	for i, entry in Data do
+		if i == "Configs List" or i == "Config Name" or i == "InstantLoot" then
+			continue
+		end
 		local SetFlag = v0.SetFlags[i]
 		
 		if SetFlag and (type(entry) ~= "number" or entry == entry) then
-			if type(entry) == "table" and entry.Key then
-				local Key = entry.Key
-				pcall(function()
-					Key = Enum.KeyCode[entry.Key]
-				end)
-				pcall(SetFlag, { Key = Key, Mode = entry.Mode })
-			else
-				local Key = type
-				Key = Key(entry)
-				
-				if Key == "table" then
-					Key = entry.Color
+			pcall(function()
+				if type(entry) == "table" and entry.Key then
+					local Key = keyForConfig(entry)
 					
 					if Key then
-						Key = pcall
-						Key(SetFlag, entry.Color, entry.Alpha)
-						continue
+						SetFlag(Key)
 					end
+				elseif type(entry) == "table" and entry.Color then
+					SetFlag(entry.Color, entry.Alpha)
+				else
+					SetFlag(entry)
 				end
-				Key = pcall
-				Key(SetFlag, entry)
-			end
+			end)
 		end
 	end
+	thirdKeyOn = false
+	mapKeyOn = false
 end
 
 function chosenName()
@@ -9526,15 +10567,22 @@ Configs:Button({
 			return
 		end
 		writefile("Midnight.cc/Configs" .. "/autoload.txt", ChosenNameResult)
-		local Success1, _ = pcall(applyConfig, Result)
-		
-		if Success1 then
-			v0:Notification("Loaded " .. ChosenNameResult, 3, Color3.fromRGB(255, 255, 255))
+		task.delay(0.25, function()
+			local Success1, _ = pcall(applyConfig, Result)
 			
-			return
-		else
-			v0:Notification("Load failed", 3, Color3.fromRGB(255, 80, 80))
-		end
+			thirdKeyOn = false
+			mapKeyOn = false
+			task.delay(0.2, function()
+				thirdKeyOn = false
+				mapKeyOn = false
+			end)
+			
+			if Success1 then
+				v0:Notification("Loaded " .. ChosenNameResult, 3, Color3.fromRGB(255, 255, 255))
+			else
+				v0:Notification("Load failed", 3, Color3.fromRGB(255, 80, 80))
+			end
+		end)
 	end
 }):SubButton({
 	Name = "Save Config",
@@ -9657,16 +10705,40 @@ function keyHeld(p305)
 	local KeyCodeEntry = nil
 	
 	if type(Flag) == "table" then
-		KeyCodeEntry = Flag.Key or Flag.Value
+		if Flag.Mode == "Always" then
+			return true
+		end
+		if Flag.Mode == "Toggle" then
+			return Flag.Toggled == true
+		end
+		KeyCodeEntry = Flag.Key or Flag.Value or Flag.KeyCode
 	elseif typeof(Flag) == "EnumItem" then
 		KeyCodeEntry = Flag
 	end
-	if typeof(KeyCodeEntry) ~= "EnumItem" and type(KeyCodeEntry) == "string" then
-		pcall(function()
-			KeyCodeEntry = Enum.KeyCode[KeyCodeEntry]
-		end)
+	if type(KeyCodeEntry) == "string" then
+		local Kind, Item = string.match(KeyCodeEntry, "^Enum%.(%w+)%.(.+)$")
+		
+		if Kind == "KeyCode" then
+			KeyCodeEntry = Enum.KeyCode[Item]
+		elseif Kind == "UserInputType" then
+			KeyCodeEntry = Enum.UserInputType[Item]
+		else
+			KeyCodeEntry = Enum.KeyCode[KeyCodeEntry] or Enum.UserInputType[KeyCodeEntry]
+		end
 	end
-	return typeof(KeyCodeEntry) == "EnumItem" and (if KeyCodeEntry.EnumType == Enum.UserInputType then UserInputService:IsMouseButtonPressed(KeyCodeEntry) else UserInputService:IsKeyDown(KeyCodeEntry))
+	if typeof(KeyCodeEntry) ~= "EnumItem" then
+		return false
+	end
+	local Down = false
+	
+	pcall(function()
+		if KeyCodeEntry.EnumType == Enum.UserInputType then
+			Down = UserInputService:IsMouseButtonPressed(KeyCodeEntry)
+		else
+			Down = UserInputService:IsKeyDown(KeyCodeEntry)
+		end
+	end)
+	return Down
 end
 
 local Hui2 = nil
@@ -9812,26 +10884,237 @@ function armPart(p312)
 	return string.find(Lowered, "arm", 1, true) or (string.find(Lowered, "hand", 1, true) or string.find(Lowered, "sleeve", 1, true))
 end
 
+function normName(Text)
+	return string.lower(string.gsub(tostring(Text or ""), "[^%w]", ""))
+end
+
+function isWeaponPart(Name)
+	local Clean = normName(Name)
+	
+	if Clean == "" then
+		return true
+	end
+	local Parts = {
+		"receiver", "stock", "magazine", "mag", "handle", "barrel", "grip", "handguard",
+		"muzzle", "brake", "suppressor", "sight", "optic", "rail", "pump", "bolt",
+		"trigger", "dustcover", "assembly", "chassis", "forend", "forestock", "buffer",
+		"gasblock", "gastube", "charging", "selector", "pistolgrip", "mount", "adapter",
+		"flashhider", "hider", "frontsight", "rearsight", "iron", "dustcover", "front",
+		"upper", "lower", "dust", "cover", "pin", "screw", "spring", "bodykit"
+	}
+	
+	for _, Part in Parts do
+		if Clean == Part or #Part >= 6 and string.find(Clean, Part, 1, true) then
+			return true
+		end
+	end
+	return false
+end
+
+function skinRoots()
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local List = {}
+	local Seen = {}
+	local function push(Object)
+		if Object and not Seen[Object] then
+			Seen[Object] = true
+			List[#List + 1] = Object
+		end
+	end
+	
+	for _, Name in { "Skins", "Skin", "Cosmetics", "Clothing", "Clothes", "Armor", "Gear", "ItemsList" } do
+		push(ReplicatedStorage:FindFirstChild(Name))
+	end
+	local Items = ReplicatedStorage:FindFirstChild("ItemsList")
+	
+	if Items then
+		for _, Child in Items:GetChildren() do
+			push(Child)
+		end
+	end
+	return List
+end
+
+function findItemFolder(ItemName)
+	local Want = normName(ItemName)
+	
+	if Want == "" then
+		return nil
+	end
+	skinFolderCache = skinFolderCache or {}
+	skinFolderMiss = skinFolderMiss or {}
+	local Cached = skinFolderCache[Want]
+	
+	if Cached == false and os.clock() - (skinFolderMiss[Want] or 0) < 2 then
+		return nil
+	end
+	if typeof(Cached) == "Instance" and Cached.Parent then
+		return Cached
+	end
+	local Fuzzy = nil
+	
+	for _, Root in skinRoots() do
+		for _, Child in Root:GetChildren() do
+			if normName(Child.Name) == Want then
+				skinFolderCache[Want] = Child
+				
+				return Child
+			end
+		end
+		for _, Child in Root:GetDescendants() do
+			if Child ~= Root and (Child:IsA("Folder") or Child:IsA("Model") or Child:IsA("Configuration")) and normName(Child.Name) == Want then
+				skinFolderCache[Want] = Child
+				
+				return Child
+			end
+		end
+		if not Fuzzy then
+			for _, Child in Root:GetChildren() do
+				local Clean = normName(Child.Name)
+				
+				if #Clean >= 4 and (string.find(Clean, Want, 1, true) or string.find(Want, Clean, 1, true)) then
+					Fuzzy = Child
+					break
+				end
+			end
+		end
+	end
+	skinFolderCache[Want] = Fuzzy or false
+	
+	if not Fuzzy then
+		skinFolderMiss[Want] = os.clock()
+	end
+	return Fuzzy
+end
+
+function kindMatch(Name, Kind)
+	local Lower = string.lower(Name)
+	
+	if Kind == "Armor" then
+		return string.find(Lower, "armor", 1, true) or string.find(Lower, "armour", 1, true) or string.find(Lower, "helmet", 1, true) or string.find(Lower, "vest", 1, true) or string.find(Lower, "rig", 1, true) or string.find(Lower, "plate", 1, true) or string.find(Lower, "mask", 1, true) or string.find(Lower, "altyn", 1, true) or string.find(Lower, "pad", 1, true) or string.find(Lower, "carrier", 1, true)
+	end
+	if Kind == "Clothes" then
+		return string.find(Lower, "shirt", 1, true) or string.find(Lower, "pant", 1, true) or string.find(Lower, "glove", 1, true) or string.find(Lower, "boot", 1, true) or string.find(Lower, "jacket", 1, true) or string.find(Lower, "cloth", 1, true) or string.find(Lower, "uniform", 1, true) or string.find(Lower, "hoodie", 1, true) or string.find(Lower, "gorka", 1, true) or string.find(Lower, "jean", 1, true) or string.find(Lower, "balaclava", 1, true) or string.find(Lower, "sleeve", 1, true)
+	end
+	return false
+end
+
+WEAPON_SKINS = {
+	"AKMN", "M4A1", "AS Val", "FN-FAL", "MP5SD", "SVD", "Mosin-Nagant",
+	"PPSH-41", "PKM", "Saiga 12", "SKS", "R700", "IZh-81", "IZh-12",
+	"MK23", "MP443", "Groza", "ADAR", "TFZ-0"
+}
+
+function itemsForKind(Kind)
+	if Kind ~= "Clothes" and Kind ~= "Armor" then
+		return WEAPON_SKINS
+	end
+	local List = {}
+	local Seen = {}
+	local function push(Name)
+		if type(Name) ~= "string" or Name == "" or Seen[Name] or isWeaponPart(Name) then return end
+		if not kindMatch(Name, Kind) then return end
+		Seen[Name] = true
+		List[#List + 1] = Name
+	end
+	
+	for _, Root in skinRoots() do
+		for _, Child in Root:GetChildren() do
+			push(Child.Name)
+		end
+	end
+	local Profile = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
+	Profile = Profile and Profile:FindFirstChild(LocalPlayer.Name)
+	
+	if Profile then
+		for _, Bucket in { "Clothing", "Equipment", "Inventory" } do
+			local Folder = Profile:FindFirstChild(Bucket)
+			
+			if Folder then
+				for _, Child in Folder:GetChildren() do
+					push(Child.Name)
+				end
+			end
+		end
+	end
+	table.sort(List)
+	
+	if #List == 0 then
+		if Kind == "Clothes" then
+			return { "Shirt", "Pants", "Gloves", "Boots", "Jacket" }
+		end
+		return { "Helmet", "Vest", "Armor", "Rig" }
+	end
+	return List
+end
+
+function refreshSkinGunItems()
+	if not skinGunDrop then return end
+	local Kind = flagText("SkinKind", "Weapon")
+	local Items = itemsForKind(Kind)
+	
+	if not pcall(function()
+		skinGunDrop:Refresh(Items, true)
+	end) then
+		pcall(function()
+			skinGunDrop:SetItems(Items)
+		end)
+	end
+	local Current = flagText("SkinGun", Items[1] or "")
+	local Found = false
+	
+	for _, Name in Items do
+		if Name == Current then
+			Found = true
+			break
+		end
+	end
+	if not Found and Items[1] then
+		v0.Flags.SkinGun = Items[1]
+	end
+end
+
+function skinNodes(Folder)
+	local Pool = Folder:FindFirstChild("Skins") or Folder:FindFirstChild("Skin") or Folder
+	local List = {}
+	
+	for _, Child in Pool:GetChildren() do
+		if Child == Folder then continue end
+		if isWeaponPart(Child.Name) then continue end
+		if Child:IsA("LuaSourceContainer") or Child:IsA("Attachment") or Child:IsA("Sound") or Child:IsA("BasePart") or Child:IsA("Decal") or Child:IsA("Texture") or Child:IsA("ParticleEmitter") then continue end
+		if Child.Name == "ItemProperties" or Child.Name == "Attachments" or Child.Name == "SettingsModule" then continue end
+		if Child:IsA("Folder") or Child:IsA("Model") or Child:IsA("Configuration") or Child:IsA("StringValue") or Child:IsA("ObjectValue") then
+			local Clean = normName(Child.Name)
+			local Gun = false
+			
+			for _, Name in WEAPON_SKINS do
+				if normName(Name) == Clean then
+					Gun = true
+					break
+				end
+			end
+			if not Gun then
+				List[#List + 1] = Child
+			end
+		end
+	end
+	return List
+end
+
 function skinsFor(ChildName)
 	local Names = { "None" }
-	local Skins = game:GetService("ReplicatedStorage"):FindFirstChild("Skins")
+	local Folder = findItemFolder(ChildName)
 	
-	if not Skins or ChildName == "" then
+	if not Folder then
 		return Names
 	end
-	local ChildName1 = Skins:FindFirstChild(ChildName)
-	
-	if ChildName1 then
-		for _, child in ChildName1:GetChildren() do
-			Names[#Names + 1] = child.Name
-		end
-		return Names
-	else
-		for _, child1 in Skins:GetChildren() do
-			Names[#Names + 1] = child1.Name
-		end
-		return Names
+	for _, Child in skinNodes(Folder) do
+		Names[#Names + 1] = Child.Name
 	end
+	if #Names == 1 then
+		Names[#Names + 1] = Folder.Name
+	end
+	return Names
 end
 
 function pushSkinList(p314)
@@ -9845,33 +11128,305 @@ function pushSkinList(p314)
 	end
 end
 
-function applyHeldSkin(ChildName, p316)
-	local Players = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
-	local Name = Players and Players:FindFirstChild(LocalPlayer.Name)
+function applyHeldSkin(ChildName, p316, Kind)
+	local PlayersFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
+	local Name = PlayersFolder and PlayersFolder:FindFirstChild(LocalPlayer.Name)
 	
 	if not Name then return end
-	for _, ChildName2 in { "Inventory", "Equipment" } do
-		local Child = Name:FindFirstChild(ChildName2)
-		local ChildName1 = Child and Child:FindFirstChild(ChildName)
+	local Want = normName(ChildName)
+	local Buckets = { "Inventory", "Equipment", "Clothing" }
+	
+	if Kind == "Clothes" then
+		Buckets = { "Clothing", "Inventory", "Equipment" }
+	elseif Kind == "Armor" then
+		Buckets = { "Equipment", "Clothing", "Inventory" }
+	end
+	local function paint(Node)
+		local ItemProperties = Node:FindFirstChild("ItemProperties")
 		
-		if ChildName1 then
-			local ItemProperties = ChildName1:FindFirstChild("ItemProperties")
-			
-			if ItemProperties then
-				ItemProperties:SetAttribute("Skin", if p316 == "None" then nil else p316 or nil)
+		if ItemProperties then
+			ItemProperties:SetAttribute("Skin", if p316 == "None" or p316 == nil then nil else p316)
+		end
+		local Attachments = Node:FindFirstChild("Attachments")
+		
+		if Attachments and (Kind == nil or Kind == "Weapon") then
+			for _, Descendant in Attachments:GetDescendants() do
+				local ItemProperties1 = Descendant:FindFirstChild("ItemProperties")
+				
+				if ItemProperties1 and not isWeaponPart(Descendant.Name) then
+					ItemProperties1:SetAttribute("Skin", if p316 == "None" or p316 == nil then nil else p316)
+				end
 			end
-			local Attachments = ChildName1:FindFirstChild("Attachments")
+		end
+	end
+	
+	for _, BucketName in Buckets do
+		local Bucket = Name:FindFirstChild(BucketName)
+		
+		if Bucket then
+			local Exact = Bucket:FindFirstChild(ChildName)
 			
-			if Attachments then
-				for _, descendant in Attachments:GetDescendants() do
-					local ItemProperties1 = descendant:FindFirstChild("ItemProperties")
+			if Exact then
+				paint(Exact)
+			else
+				for _, Child in Bucket:GetChildren() do
+					local Clean = normName(Child.Name)
 					
-					if ItemProperties1 then
-						ItemProperties1:SetAttribute("Skin", if p316 == "None" then nil else p316 or nil)
+					if Clean == Want or #Want >= 4 and string.find(Clean, Want, 1, true) then
+						paint(Child)
 					end
 				end
 			end
 		end
+	end
+	local Camera = workspace.CurrentCamera
+	local ViewModel = Camera and (Camera:FindFirstChild("ViewModel") or Camera:FindFirstChild("Viewmodel"))
+	local Folder = findItemFolder(ChildName)
+	local SkinNode = Folder and p316 and (Folder:FindFirstChild(p316) or Folder:FindFirstChild(p316, true))
+	
+	if ViewModel and SkinNode and p316 ~= "None" then
+		local Texture = ""
+		local Color = nil
+		local function readTex(Part)
+			if Part:IsA("MeshPart") and Part.TextureID ~= "" then
+				return Part.TextureID, Part.Color
+			end
+			local Mesh = Part:FindFirstChildOfClass("SpecialMesh")
+			
+			if Mesh and Mesh.TextureId ~= "" then
+				return Mesh.TextureId, Part.Color
+			end
+			local Decal = Part:FindFirstChildOfClass("Decal")
+			
+			if Decal and Decal.Texture ~= "" then
+				return Decal.Texture, Part.Color
+			end
+		end
+		
+		for _, Part in SkinNode:GetDescendants() do
+			if Part:IsA("BasePart") then
+				Texture, Color = readTex(Part)
+				
+				if Texture ~= "" then
+					break
+				end
+			end
+		end
+		if Texture == "" and SkinNode:IsA("BasePart") then
+			Texture, Color = readTex(SkinNode)
+		end
+		if Texture ~= "" then
+			for _, Part in ViewModel:GetDescendants() do
+				if Part:IsA("MeshPart") then
+					Part.TextureID = Texture
+					
+					if Color then
+						Part.Color = Color
+					end
+				end
+				local Mesh = Part:IsA("BasePart") and Part:FindFirstChildOfClass("SpecialMesh")
+				
+				if Mesh then
+					Mesh.TextureId = Texture
+				end
+			end
+		end
+	end
+end
+
+function skinIcon(Object)
+	if typeof(Object) ~= "Instance" then
+		return ""
+	end
+	local Attr = Object:GetAttribute("Icon") or Object:GetAttribute("Image") or Object:GetAttribute("Thumbnail")
+	
+	if type(Attr) == "string" and Attr ~= "" then
+		return Attr
+	end
+	if (Object:IsA("Decal") or Object:IsA("Texture")) and Object.Texture ~= "" then
+		return Object.Texture
+	end
+	if Object:IsA("MeshPart") and Object.TextureID ~= "" then
+		return Object.TextureID
+	end
+	for _, Descendant in Object:GetDescendants() do
+		if (Descendant:IsA("Decal") or Descendant:IsA("Texture")) and Descendant.Texture ~= "" then
+			return Descendant.Texture
+		end
+		if Descendant:IsA("MeshPart") and Descendant.TextureID ~= "" then
+			return Descendant.TextureID
+		end
+		if Descendant:IsA("ImageLabel") and Descendant.Image ~= "" then
+			return Descendant.Image
+		end
+	end
+	return ""
+end
+
+function ensureSkinPanel()
+	if skinGui then return end
+	local Parent = nil
+	
+	pcall(function()
+		Parent = gethui()
+	end)
+	Parent = Parent or game:GetService("CoreGui")
+	skinGui = Instance.new("ScreenGui")
+	skinGui.Name = "MidnightSkins"
+	skinGui.ResetOnSpawn = false
+	skinGui.DisplayOrder = 70
+	skinGui.Parent = Parent
+	local Frame = Instance.new("Frame")
+	Frame.Name = "List"
+	Frame.Size = UDim2.fromOffset(250, 340)
+	Frame.Position = UDim2.new(1, -270, 0.5, -170)
+	Frame.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+	Frame.BorderSizePixel = 0
+	Frame.Parent = skinGui
+	local Corner = Instance.new("UICorner")
+	Corner.CornerRadius = UDim.new(0, 6)
+	Corner.Parent = Frame
+	skinTitle = Instance.new("TextLabel")
+	skinTitle.BackgroundTransparency = 1
+	skinTitle.Position = UDim2.fromOffset(10, 4)
+	skinTitle.Size = UDim2.new(1, -16, 0, 26)
+	skinTitle.Font = Enum.Font.GothamBold
+	skinTitle.TextSize = 14
+	skinTitle.TextXAlignment = Enum.TextXAlignment.Left
+	skinTitle.TextColor3 = Color3.new(1, 1, 1)
+	skinTitle.Text = "Skins"
+	skinTitle.Parent = Frame
+	skinScroll = Instance.new("ScrollingFrame")
+	skinScroll.Name = "Scroll"
+	skinScroll.Position = UDim2.fromOffset(6, 34)
+	skinScroll.Size = UDim2.new(1, -12, 1, -42)
+	skinScroll.BackgroundTransparency = 1
+	skinScroll.BorderSizePixel = 0
+	skinScroll.ScrollBarThickness = 4
+	skinScroll.CanvasSize = UDim2.new()
+	skinScroll.Parent = Frame
+	local Layout = Instance.new("UIListLayout")
+	Layout.Padding = UDim.new(0, 4)
+	Layout.Parent = skinScroll
+end
+
+function drawSkinPanel()
+	if not flagBool("SkinChanger") then
+		if skinGui then
+			skinGui.Enabled = false
+		end
+		return
+	end
+	ensureSkinPanel()
+	skinGui.Enabled = true
+	
+	if os.clock() - (skinListAt or 0) > 1.5 then
+		skinListAt = os.clock()
+		refreshSkinGunItems()
+	end
+	local Kind = flagText("SkinKind", "Weapon")
+	local Gun = flagText("SkinGun", "AKMN")
+	local Folder = findItemFolder(Gun)
+	local Nodes = if Folder then skinNodes(Folder) else {}
+	local Key = Kind .. "|" .. Gun .. "|" .. #Nodes .. "|" .. (Folder and Folder:GetFullName() or "")
+	
+	if skinKey ~= Key then
+		skinKey = Key
+		skinTitle.Text = Kind .. "  " .. Gun
+		
+		for _, Child in skinScroll:GetChildren() do
+			if Child:IsA("TextButton") or Child:IsA("TextLabel") then
+				Child:Destroy()
+			end
+		end
+		local function addRow(Name, Source)
+			local Button = Instance.new("TextButton")
+			Button.Size = UDim2.new(1, -8, 0, 52)
+			Button.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+			Button.Text = ""
+			Button.AutoButtonColor = true
+			Button.Parent = skinScroll
+			local Corner = Instance.new("UICorner")
+			Corner.CornerRadius = UDim.new(0, 4)
+			Corner.Parent = Button
+			local Image = Instance.new("ImageLabel")
+			Image.Size = UDim2.fromOffset(44, 44)
+			Image.Position = UDim2.fromOffset(4, 4)
+			Image.BackgroundColor3 = Color3.fromRGB(42, 36, 28)
+			Image.BorderSizePixel = 0
+			Image.Parent = Button
+			local Icon = ""
+			
+			if Source then
+				Icon = iconOf(Source) or ""
+				
+				if Icon == "" then
+					Icon = skinIcon(Source)
+				end
+			end
+			Image.Image = Icon
+			Button:SetAttribute("SkinIcon", Icon)
+			
+			if Icon == "" and Source then
+				local Preview = nil
+				
+				if Source:IsA("Model") or Source:IsA("BasePart") then
+					Preview = Source
+				else
+					Preview = Source:FindFirstChildWhichIsA("Model", true) or Source:FindFirstChildWhichIsA("BasePart", true)
+				end
+				Preview = Preview or templateFor(Name)
+				
+				if Preview and (Preview:IsA("Model") or Preview:IsA("BasePart") or Preview:FindFirstChildWhichIsA("BasePart", true)) then
+					local Viewport = Instance.new("ViewportFrame")
+					Viewport.Size = UDim2.fromScale(1, 1)
+					Viewport.BackgroundTransparency = 1
+					Viewport.Parent = Image
+					frameModel(Viewport, Preview)
+				end
+			end
+			local Label = Instance.new("TextLabel")
+			Label.BackgroundTransparency = 1
+			Label.Position = UDim2.fromOffset(54, 0)
+			Label.Size = UDim2.new(1, -58, 1, 0)
+			Label.Font = Enum.Font.Gotham
+			Label.TextSize = 14
+			Label.TextXAlignment = Enum.TextXAlignment.Left
+			Label.TextColor3 = Color3.new(1, 1, 1)
+			Label.Text = Name
+			Label.Parent = Button
+			Button.MouseButton1Click:Connect(function()
+				v0.Flags.SkinPick = Name
+				applyHeldSkin(Gun, Name, Kind)
+				skinApplyAt = os.clock()
+			end)
+		end
+		
+		addRow("None", nil)
+		
+		if #Nodes == 0 then
+			local Empty = Instance.new("TextLabel")
+			Empty.BackgroundTransparency = 1
+			Empty.Size = UDim2.new(1, -8, 0, 36)
+			Empty.Font = Enum.Font.Gotham
+			Empty.TextSize = 13
+			Empty.TextColor3 = Color3.fromRGB(180, 180, 180)
+			Empty.Text = "No skins for " .. Gun
+			Empty.Parent = skinScroll
+		else
+			for _, Node in Nodes do
+				addRow(Node.Name, Node)
+			end
+		end
+		local Layout = skinScroll:FindFirstChildOfClass("UIListLayout")
+		
+		skinScroll.CanvasSize = UDim2.fromOffset(0, (Layout and Layout.AbsoluteContentSize.Y or ((#Nodes + 1) * 56)) + 8)
+	end
+	local Picked = flagText("SkinPick", "None")
+	
+	if Picked ~= "None" and os.clock() - (skinApplyAt or 0) > 0.7 then
+		skinApplyAt = os.clock()
+		applyHeldSkin(Gun, Picked, Kind)
 	end
 end
 
@@ -9924,7 +11479,8 @@ HIT_IDS = {
 	Neverlose = "rbxassetid://6534948092",
 	Fatality = "rbxassetid://6534947869",
 	Bonk = "rbxassetid://5766898159",
-	Minecraft = "rbxassetid://4018616850"
+	Minecraft = "rbxassetid://4018616850",
+	Sparkle = "rbxassetid://2865227271"
 }
 LASER_ID = "rbxassetid://130791043"
 healthSnap = {}
@@ -9932,27 +11488,130 @@ lastShot = 0
 gunClock = 0
 
 function playShotSound(SoundId, p318, p319)
-	local HitSound = hitSoundCache and hitSoundCache[SoundId]
-	
-	if not HitSound then
-		hitSoundCache = hitSoundCache or {}
-		HitSound = Instance.new("Sound")
-		HitSound.SoundId = SoundId
-		HitSound.Volume = 1
-		HitSound.Parent = game:GetService("SoundService")
-		hitSoundCache[SoundId] = HitSound
-		pcall(function()
-			game:GetService("ContentProvider"):PreloadAsync({ HitSound })
-		end)
-	end
-	local HitSoundClone = HitSound:Clone()
+	if type(SoundId) ~= "string" or SoundId == "" then return end
+	local HitSoundClone = Instance.new("Sound")
+	HitSoundClone.Name = "MidnightHit"
+	HitSoundClone.SoundId = SoundId
 	HitSoundClone.Volume = p318 or 1
 	HitSoundClone.PlaybackSpeed = p319 or 1
-	HitSoundClone.Parent = game:GetService("SoundService")
-	HitSoundClone:Play()
-	task.delay(2, function()
+	HitSoundClone.RollOffMode = Enum.RollOffMode.Linear
+	HitSoundClone.RollOffMaxDistance = 100000
+	HitSoundClone:SetAttribute("MidnightHit", true)
+	local SoundService = game:GetService("SoundService")
+	
+	HitSoundClone.Parent = workspace.CurrentCamera or SoundService
+	HitSoundClone.PlayOnRemove = false
+	pcall(function()
+		HitSoundClone:Play()
+	end)
+	task.delay(2.5, function()
 		HitSoundClone:Destroy()
 	end)
+end
+
+function previewHit(Value)
+	local Name = Value
+	
+	if type(Value) == "table" then
+		Name = Value.Name or Value.Value or Value[1]
+	end
+	if type(Name) ~= "string" then return end
+	local Id = HIT_IDS[Name]
+	
+	if Id then
+		playShotSound(Id, math.clamp(flagNum("Hit_Volume", 100) / 100, 0.35, 1), flagNum("Hit_Pitch", 10) / 10)
+	end
+end
+
+function isGunshotSound(Sound)
+	if typeof(Sound) ~= "Instance" or not Sound:IsA("Sound") then
+		return false
+	end
+	if Sound:GetAttribute("MidnightHit") or Sound.Name == "MidnightHit" then
+		return false
+	end
+	local Id = tostring(Sound.SoundId)
+	
+	if HIT_IDS then
+		for _, Value in HIT_IDS do
+			if Id == Value then
+				return false
+			end
+		end
+	end
+	local Name = string.lower(Sound.Name)
+	
+	if string.find(Name, "reload", 1, true) or string.find(Name, "equip", 1, true) or string.find(Name, "inspect", 1, true) or string.find(Name, "foot", 1, true) or string.find(Name, "step", 1, true) or string.find(Name, "ui", 1, true) or string.find(Name, "click", 1, true) then
+		return false
+	end
+	local Shot = string.find(Name, "shoot", 1, true) or string.find(Name, "fire", 1, true) or string.find(Name, "shot", 1, true) or string.find(Name, "gun", 1, true) or string.find(Name, "suppressed", 1, true)
+	local Parent = Sound.Parent
+	local Chain = ""
+	local Count = 0
+	
+	while Parent and Count < 6 do
+		Chain ..= " " .. string.lower(Parent.Name)
+		Parent = Parent.Parent
+		Count += 1
+	end
+	local OnGun = string.find(Chain, "viewmodel", 1, true) or string.find(Chain, "viewmodel", 1, true) or string.find(Chain, "weapon", 1, true)
+	local Held = LocalPlayer.Character and heldGun(LocalPlayer.Character)
+	
+	if Held and Sound:IsDescendantOf(Held) then
+		OnGun = true
+	end
+	local Camera = workspace.CurrentCamera
+	local ViewModel = Camera and (Camera:FindFirstChild("ViewModel") or Camera:FindFirstChild("Viewmodel"))
+	
+	if ViewModel and Sound:IsDescendantOf(ViewModel) then
+		OnGun = true
+	end
+	return Shot or OnGun
+end
+
+function muteGunSounds()
+	local Character = LocalPlayer.Character
+	local Camera = workspace.CurrentCamera
+	local function quiet(Object)
+		if not Object then return end
+		for _, Sound in Object:GetDescendants() do
+			if Sound:IsA("Sound") and isGunshotSound(Sound) then
+				if Sound:GetAttribute("MidnightVol") == nil then
+					Sound:SetAttribute("MidnightVol", Sound.Volume)
+				end
+				Sound.Volume = 0
+				
+				if Sound.Playing then
+					Sound:Stop()
+				end
+			end
+		end
+	end
+	
+	quiet(Character and heldGun(Character))
+	quiet(Camera and (Camera:FindFirstChild("ViewModel") or Camera:FindFirstChild("Viewmodel")))
+	quiet(Character)
+end
+
+function restoreGunSounds()
+	local Character = LocalPlayer.Character
+	local Camera = workspace.CurrentCamera
+	local function restore(Object)
+		if not Object then return end
+		for _, Sound in Object:GetDescendants() do
+			if Sound:IsA("Sound") then
+				local Saved = Sound:GetAttribute("MidnightVol")
+				
+				if type(Saved) == "number" then
+					Sound.Volume = Saved
+					Sound:SetAttribute("MidnightVol", nil)
+				end
+			end
+		end
+	end
+	
+	restore(Character)
+	restore(Camera and (Camera:FindFirstChild("ViewModel") or Camera:FindFirstChild("Viewmodel")))
 end
 
 function sprayBlood(p320)
@@ -10125,6 +11784,7 @@ function drawHitFx(Camera)
 				hitFlash.BackgroundColor3 = Color3.new(1, 1, 1)
 				hitFlash.BackgroundTransparency = 0.82
 				hitFlash.BorderSizePixel = 0
+				hitFlash.Active = false
 				hitFlash.Parent = MidnightFlash
 			end
 		end
@@ -10139,27 +11799,144 @@ function drawHitFx(Camera)
 end
 
 function drawTracer(Position, Target)
-	local Z = (Target - Position).Magnitude
+	local Delta = Target - Position
+	local Z = Delta.Magnitude
 	
-	if Z >= 1 then
-		local X = math.clamp(flagNum("Tracer_Thickness", 15) / 100 * 0.4, 0.03, 0.4)
-		local ClampedValue = math.clamp(flagNum("Tracer_Duration", 50) / 100, 0.05, 1.2)
-		local MidnightTracer = Instance.new("Part")
-		MidnightTracer.Name = "MidnightTracer"
-		MidnightTracer.Anchored = true
-		MidnightTracer.CanCollide = false
-		MidnightTracer.CanQuery = false
-		MidnightTracer.Material = Enum.Material.Neon
-		MidnightTracer.Color = flagColor("Tracer_Color", Color3.fromRGB(100, 255, 150))
-		MidnightTracer.Size = Vector3.new(X, X, Z)
-		MidnightTracer.CFrame = CFrame.lookAt(Position, Target) * CFrame.new(0, 0, -Z / 2)
-		MidnightTracer.Parent = workspace
-		task.delay(ClampedValue, function()
-			MidnightTracer:Destroy()
-		end)
-		
-		return
+	if Z < 1 then return end
+	local Dir = Delta.Unit
+	local Origin = Position + Dir * 2.4
+	local EndPos = Target
+	
+	if (EndPos - Origin).Magnitude < 1 then
+		EndPos = Origin + Dir * 12
 	end
+	local Style = v0.Flags.Tracer_Style or "Beam"
+	local Color = flagColor("Tracer_Color", Color3.fromRGB(100, 255, 150))
+	local Life = math.clamp(flagNum("Tracer_Duration", 50) / 100, 0.05, 1.2)
+	local Thick = math.clamp(flagNum("Tracer_Thickness", 15) / 100 * 0.5, 0.04, 0.6)
+	local Folder = Instance.new("Folder")
+	Folder.Name = "MidnightTracer"
+	Folder.Parent = workspace
+	local function segment(A, B, Width)
+		local Length = (B - A).Magnitude
+		
+		if Length < 0.05 then return end
+		local Part = Instance.new("Part")
+		Part.Anchored = true
+		Part.CanCollide = false
+		Part.CanQuery = false
+		Part.CanTouch = false
+		Part.Material = Enum.Material.Neon
+		Part.Color = Color
+		Part.Size = Vector3.new(Width, Width, Length)
+		Part.CFrame = CFrame.lookAt(A, B) * CFrame.new(0, 0, -Length / 2)
+		Part.Parent = Folder
+	end
+	
+	if Style == "Lightning" then
+		local Points = { Origin }
+		local Steps = 7
+		local Span = EndPos - Origin
+		local Side = Dir:Cross(Vector3.yAxis)
+		
+		if Side.Magnitude < 0.1 then
+			Side = Vector3.xAxis
+		else
+			Side = Side.Unit
+		end
+		for i = 1, Steps - 1 do
+			local Base = Origin + Span * (i / Steps)
+			
+			Points[#Points + 1] = Base + Side * (math.random(-16, 16) / 10) + Vector3.yAxis * (math.random(-10, 10) / 10)
+		end
+		Points[#Points + 1] = EndPos
+		
+		for i = 1, #Points - 1 do
+			segment(Points[i], Points[i + 1], Thick * 0.7)
+		end
+	elseif Style == "Neon" then
+		segment(Origin, EndPos, Thick)
+	else
+		local function anchor(Pos)
+			local Part = Instance.new("Part")
+			Part.Anchored = true
+			Part.CanCollide = false
+			Part.CanQuery = false
+			Part.CanTouch = false
+			Part.Transparency = 1
+			Part.Size = Vector3.new(0.2, 0.2, 0.2)
+			Part.CFrame = CFrame.new(Pos)
+			Part.Parent = Folder
+			
+			return Part
+		end
+		local A0 = Instance.new("Attachment")
+		A0.Parent = anchor(Origin)
+		local A1 = Instance.new("Attachment")
+		A1.Parent = anchor(EndPos)
+		local Beam = Instance.new("Beam")
+		Beam.Attachment0 = A0
+		Beam.Attachment1 = A1
+		Beam.Width0 = Thick * 4
+		Beam.Width1 = Thick * 1.4
+		Beam.Color = ColorSequence.new(Color)
+		Beam.LightEmission = 1
+		Beam.FaceCamera = true
+		Beam.Transparency = NumberSequence.new(0.08)
+		Beam.Parent = A0.Parent
+	end
+	task.delay(Life, function()
+		Folder:Destroy()
+	end)
+end
+
+function strikeLightning(Position)
+	if not flagBool("KillLightning") or typeof(Position) ~= "Vector3" then return end
+	if strikeAt and os.clock() - strikeAt < 0.45 then return end
+	strikeAt = os.clock()
+	local Top = Position + Vector3.new(math.random(-10, 10), 150, math.random(-10, 10))
+	local Points = { Top }
+	local Steps = 8
+	
+	for i = 1, Steps - 1 do
+		local Base = Top:Lerp(Position, i / Steps)
+		
+		Points[#Points + 1] = Base + Vector3.new(math.random(-7, 7), 0, math.random(-7, 7))
+	end
+	Points[#Points + 1] = Position
+	local Folder = Instance.new("Folder")
+	Folder.Name = "MidnightBolt"
+	Folder.Parent = workspace
+	
+	for i = 1, #Points - 1 do
+		local A = Points[i]
+		local B = Points[i + 1]
+		local Length = (B - A).Magnitude
+		local Part = Instance.new("Part")
+		Part.Anchored = true
+		Part.CanCollide = false
+		Part.CanQuery = false
+		Part.CanTouch = false
+		Part.Material = Enum.Material.Neon
+		Part.Color = Color3.fromRGB(190, 225, 255)
+		Part.Size = Vector3.new(0.45, 0.45, Length)
+		Part.CFrame = CFrame.lookAt(A, B) * CFrame.new(0, 0, -Length / 2)
+		Part.Parent = Folder
+	end
+	local Flash = Instance.new("Part")
+	Flash.Anchored = true
+	Flash.CanCollide = false
+	Flash.CanQuery = false
+	Flash.CanTouch = false
+	Flash.Material = Enum.Material.Neon
+	Flash.Color = Color3.fromRGB(230, 240, 255)
+	Flash.Shape = Enum.PartType.Ball
+	Flash.Size = Vector3.new(4, 4, 4)
+	Flash.CFrame = CFrame.new(Position + Vector3.new(0, 2, 0))
+	Flash.Parent = Folder
+	task.delay(0.28, function()
+		Folder:Destroy()
+	end)
 end
 
 function onLocalShot(Part, NewPosition)
@@ -10167,7 +11944,9 @@ function onLocalShot(Part, NewPosition)
 	watchShot = false
 	lastHitPart = SilentTarget and SilentTarget.Name or "Body"
 	
-	if flagBool("Shoot_Enabled") then
+	if flagBool("Hit_Enabled") then
+		muteGunSounds()
+	elseif flagBool("Shoot_Enabled") then
 		playShotSound(LASER_ID, 0.55, 1.35)
 		local HeldGunResult = LocalPlayer.Character and heldGun(LocalPlayer.Character)
 		
@@ -10196,8 +11975,7 @@ end
 function rememberHealth(Object)
 	if not Object then return end
 	if healthHold and healthHold[Object] and os.clock() < healthHold[Object] then return end
-	local Humanoid = Object:FindFirstChildOfClass("Humanoid")
-	local Health = Humanoid and Humanoid.Health
+	local Health = modelHp(Object)
 	
 	if type(Health) ~= "number" then return end
 	healthSnap = healthSnap or {}
@@ -10208,6 +11986,12 @@ function rememberHealth(Object)
 		
 		return
 	end
+	healthSnap[Object] = HealthSnapEntry
+	
+	if Object ~= LocalPlayer.Character and os.clock() - (lastShot or 0) < 1.6 then
+		pcall(noteHit, Object, "Body", true)
+	end
+	healthSnap[Object] = Health
 end
 
 function modelHp(Object)
@@ -10238,11 +12022,92 @@ function modelHp(Object)
 	return nil
 end
 
+function ensureHitLog()
+	local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	
+	if hitLog and hitBack and hitBack.Parent and hitBack.Parent.Name == "MidnightHits" and PlayerGui and hitBack.Parent.Parent == PlayerGui then
+		return
+	end
+	local Parent = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	
+	if not Parent then
+		pcall(function()
+			Parent = gethui()
+		end)
+	end
+	if not Parent then
+		pcall(function()
+			Parent = game:GetService("CoreGui")
+		end)
+	end
+	if not Parent then return end
+	local Gui = Parent:FindFirstChild("MidnightHits")
+	
+	if not Gui then
+		Gui = Instance.new("ScreenGui")
+		Gui.Name = "MidnightHits"
+		Gui.ResetOnSpawn = false
+		Gui.IgnoreGuiInset = true
+		Gui.DisplayOrder = 300
+		Gui.Parent = Parent
+	end
+	if not hitBack then
+		hitBack = Instance.new("Frame")
+		hitBack.Name = "HitBack"
+		hitBack.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		hitBack.BackgroundTransparency = 0.2
+		hitBack.BorderSizePixel = 0
+		hitBack.AnchorPoint = Vector2.new(0.5, 1)
+		hitBack.Position = UDim2.new(0.5, 0, 1, -250)
+		hitBack.AutomaticSize = Enum.AutomaticSize.XY
+		hitBack.Visible = false
+		hitBack.ZIndex = 20
+		local Padding = Instance.new("UIPadding")
+		
+		Padding.PaddingLeft = UDim.new(0, 8)
+		Padding.PaddingRight = UDim.new(0, 8)
+		Padding.PaddingTop = UDim.new(0, 4)
+		Padding.PaddingBottom = UDim.new(0, 4)
+		Padding.Parent = hitBack
+	end
+	hitBack.Parent = Gui
+	if not hitLog then
+		hitLog = Instance.new("TextLabel")
+		hitLog.Name = "HitLog"
+		hitLog.BackgroundTransparency = 1
+		hitLog.Font = Enum.Font.Code
+		hitLog.TextSize = 13
+		hitLog.TextXAlignment = Enum.TextXAlignment.Center
+		hitLog.TextYAlignment = Enum.TextYAlignment.Top
+		hitLog.TextColor3 = Color3.fromRGB(255, 255, 255)
+		hitLog.TextStrokeTransparency = 0
+		hitLog.TextStrokeColor3 = Color3.new(0, 0, 0)
+		hitLog.AutomaticSize = Enum.AutomaticSize.XY
+		hitLog.Size = UDim2.fromOffset(0, 0)
+		hitLog.Text = ""
+		hitLog.ZIndex = 21
+	end
+	hitLog.Parent = hitBack
+	pcall(dragOverlay, hitBack)
+end
+
 function pushHit(Text)
+	ensureHitLog()
 	hitFeed = hitFeed or {}
 	hitFeed[#hitFeed + 1] = { text = Text, t = os.clock() }
 	while #hitFeed > 5 do
 		table.remove(hitFeed, 1)
+	end
+	if hitLog and hitBack then
+		local List = {}
+		
+		for i = #hitFeed, 1, -1 do
+			List[#List + 1] = hitFeed[i].text
+		end
+		hitLog.Text = table.concat(List, "\n")
+		hitLog.TextColor3 = flagColor("Hit_Color", Color3.fromRGB(255, 255, 255))
+		hitBack.Visible = true
+		hitBack.BackgroundTransparency = if v0.Flags.Hit_Bg == false then 1 else 0.2
 	end
 end
 
@@ -10251,43 +12116,24 @@ function checkHits() end
 function tuneModule() end
 
 function applyGunMods()
-	local Players = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
-	local Name = Players and Players:FindFirstChild(LocalPlayer.Name)
-	local Inventory = Name and Name:FindFirstChild("Inventory")
-	
-	if Inventory then
-		for _, child in Inventory:GetChildren() do
-			local SettingsModule = child:FindFirstChild("SettingsModule")
-			
-			if SettingsModule and SettingsModule:IsA("ModuleScript") then
-				local Success, Result = pcall(require, SettingsModule)
-				
-				if Success and type(Result) == "table" then
-					tuneModule(Result, SettingsModule)
-				end
-			end
-		end
-	end
 	local HeldGunResult = LocalPlayer.Character and heldGun(LocalPlayer.Character)
 	
 	if HeldGunResult then
-		local SettingsModule = HeldGunResult:FindFirstChild("SettingsModule", true)
-		
-		if SettingsModule and SettingsModule:IsA("ModuleScript") then
-			local Success1, Result1 = pcall(require, SettingsModule)
+		if flagBool("Hit_Enabled") then
+			muteGunSounds()
+		else
+			restoreGunSounds()
 			
-			if Success1 and type(Result1) == "table" then
-				tuneModule(Result1, SettingsModule)
-			end
-		end
-		if flagBool("Shoot_Enabled") then
-			for _, Sound in HeldGunResult:GetDescendants() do
-				if Sound:IsA("Sound") then
-					local Lowered = string.lower(Sound.Name)
-					local FoundAt = string.find(Lowered, "reload", 1, true) or (string.find(Lowered, "aim", 1, true) or (string.find(Lowered, "ads", 1, true) or (string.find(Lowered, "mag", 1, true) or (string.find(Lowered, "bolt", 1, true) or (string.find(Lowered, "equip", 1, true) or (string.find(Lowered, "click", 1, true) or (string.find(Lowered, "dry", 1, true) or string.find(Lowered, "inspect", 1, true))))))))
-					
-					if (string.find(Lowered, "shoot", 1, true) or string.find(Lowered, "fire", 1, true) or string.find(Lowered, "shot", 1, true)) and (not FoundAt and Sound.SoundId ~= LASER_ID) then
-						Sound.SoundId = LASER_ID
+			if flagBool("Shoot_Enabled") then
+				for _, Sound in HeldGunResult:GetDescendants() do
+					if Sound:IsA("Sound") then
+						local Lowered = string.lower(Sound.Name)
+						local Skip = string.find(Lowered, "reload", 1, true) or string.find(Lowered, "aim", 1, true) or string.find(Lowered, "ads", 1, true) or string.find(Lowered, "mag", 1, true) or string.find(Lowered, "bolt", 1, true) or string.find(Lowered, "equip", 1, true) or string.find(Lowered, "click", 1, true) or string.find(Lowered, "dry", 1, true) or string.find(Lowered, "inspect", 1, true)
+						local Shot = string.find(Lowered, "shoot", 1, true) or string.find(Lowered, "fire", 1, true) or string.find(Lowered, "shot", 1, true)
+						
+						if Shot and not Skip and Sound.SoundId ~= LASER_ID then
+							Sound.SoundId = LASER_ID
+						end
 					end
 				end
 			end
@@ -10415,9 +12261,11 @@ function closeEspMap()
 		local MainGui = LocalPlayer.PlayerGui.MainGui
 		MainGui.MainFrame.MapFrame.Visible = false
 		MainGui.ModalButton.Modal = false
-		game:GetService("UserInputService").MouseIconEnabled = false
+		game:GetService("UserInputService").MouseIconEnabled = true
+		game:GetService("UserInputService").MouseBehavior = Enum.MouseBehavior.Default
 	end)
 	espMapMarkers = nil
+	espMapFrame = nil
 	
 	if espMapExtra then
 		for _, value in espMapExtra do
@@ -10429,6 +12277,28 @@ function closeEspMap()
 	espMapExtra = nil
 end
 
+function styleMapName(Label, Text, Color)
+	if not Label then return end
+	Label.Visible = true
+	Label.RichText = false
+	Label.TextScaled = false
+	Label.Text = Text
+	Label.TextSize = 18
+	Label.Font = Enum.Font.GothamBold
+	Label.TextStrokeTransparency = 0
+	Label.TextStrokeColor3 = Color3.new(0, 0, 0)
+	Label.BackgroundTransparency = 1
+	Label.TextXAlignment = Enum.TextXAlignment.Center
+	Label.AnchorPoint = Vector2.new(0.5, 1)
+	Label.Position = UDim2.new(0.5, 0, 0, -1)
+	Label.Size = UDim2.fromOffset(180, 20)
+	Label.ZIndex = 20
+	
+	if typeof(Color) == "Color3" then
+		Label.TextColor3 = Color
+	end
+end
+
 function openEspMap()
 	local MainGui = LocalPlayer.PlayerGui.MainGui
 	local MainFrame = MainGui.MainFrame.MapFrame.MainFrame
@@ -10437,7 +12307,9 @@ function openEspMap()
 	MainFrame.Position = UDim2.new(0.5, 0, 0.49, 0)
 	MainFrame.Parent.Visible = true
 	game:GetService("UserInputService").MouseIconEnabled = true
-	MainGui.ModalButton.Modal = true
+	pcall(function()
+		MainGui.ModalButton.Modal = false
+	end)
 	local Markers = MainFrame:FindFirstChild("Markers")
 	local MarkerDotTemplate = MainFrame:FindFirstChild("MarkerDotTemplate")
 	
@@ -10458,9 +12330,7 @@ function openEspMap()
 		MarkerDotTemplateClone.ImageColor3 = Color
 		
 		if MarkerDotTemplateClone:FindFirstChild("TextLabel") then
-			MarkerDotTemplateClone.TextLabel.Visible = true
-			MarkerDotTemplateClone.TextLabel.Text = LocalPlayer.Name
-			MarkerDotTemplateClone.TextLabel.RichText = false
+			styleMapName(MarkerDotTemplateClone.TextLabel, LocalPlayer.Name, Color)
 		end
 		MarkerDotTemplateClone.Parent = Markers
 		espMapMarkers[LocalPlayer] = MarkerDotTemplateClone
@@ -10607,8 +12477,7 @@ function updateEspMap()
 			Copy.ImageColor3 = Color3.fromRGB(227, 36, 36)
 			
 			if Copy:FindFirstChild("TextLabel") then
-				Copy.TextLabel.Visible = true
-				Copy.TextLabel.Text = player.Name
+				styleMapName(Copy.TextLabel, player.Name, Color3.fromRGB(227, 36, 36))
 			end
 			Copy.Parent = espMapFolder
 			espMapMarkers[player] = Copy
@@ -10639,6 +12508,11 @@ function updateEspMap()
 		if typeof(LastVerifiedPosAttribute) == "Vector3" and espMapMarker.Parent then
 			espMapMarker.Position = UDim2.new(0.5 + (LastVerifiedPosAttribute.X - 208) / SizeRealAttribute, 0, 0.5 + (LastVerifiedPosAttribute.Z + 203) / SizeRealAttribute, 0)
 			espMapMarker.Visible = true
+			local NameLabel = espMapMarker:FindFirstChild("TextLabel")
+			
+			if NameLabel and NameLabel.TextSize < 16 then
+				styleMapName(NameLabel, Player.Name, Player == LocalPlayer and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(227, 36, 36))
+			end
 		elseif espMapMarker.Parent then
 			espMapMarker.Visible = false
 		end
@@ -10722,7 +12596,121 @@ function applyLiveGun(ZeroVectors)
 			end
 		end
 	end
+	if flagBool("InstantAim") then
+		if type(ZeroVectors.AimInSpeed) == "number" then
+			ZeroVectors.AimInSpeed = 0.01
+		end
+		if type(ZeroVectors.AimOutSpeed) == "number" then
+			ZeroVectors.AimOutSpeed = 0.01
+		end
+	end
 end
+
+springClients = {}
+springScan = 0
+
+function zeroSpring(Springs, Name)
+	local Spring = Springs[Name]
+	
+	if type(Spring) ~= "table" then return end
+	local Position = Spring.Position
+	
+	if typeof(Position) == "Vector3" then
+		Spring.Position = Vector3.zero
+		if typeof(Spring.Velocity) == "Vector3" then
+			Spring.Velocity = Vector3.zero
+		end
+		if typeof(Spring.Target) == "Vector3" then
+			Spring.Target = Vector3.zero
+		end
+	elseif typeof(Position) == "CFrame" then
+		Spring.Position = CFrame.identity
+		if typeof(Spring.Target) == "CFrame" then
+			Spring.Target = CFrame.identity
+		end
+	end
+end
+
+function applySpringMods()
+	local Recoil = flagBool("NoRecoil_Enabled")
+	local Sway = flagBool("NoSway_Enabled")
+	local Bob = flagBool("NoBob_Enabled")
+	local Wall = flagBool("NoWallTouch")
+	local Spread = flagBool("NoSpread_Enabled")
+	local Aim = flagBool("InstantAim")
+	local Rapid = flagBool("RapidFire") or flagBool("ForceAuto")
+	
+	if not Recoil and not Sway and not Bob and not Wall and not Spread and not Aim and not Rapid then return end
+	if type(getgc) == "function" and #springClients == 0 and not springBusy and os.clock() - springScan > 90 then
+		springScan = os.clock()
+		springBusy = true
+		task.spawn(function()
+			local Found = {}
+			local Count = 0
+			local Ok, List = pcall(getgc, true)
+			
+			if Ok and type(List) == "table" then
+				for _, Value in List do
+					Count += 1
+					
+					if Count % 350 == 0 then
+						task.wait()
+					end
+					if type(Value) == "table" then
+						local Springs = rawget(Value, "springs")
+						
+						if type(Springs) == "table" and (rawget(Springs, "recoilPos") or rawget(Springs, "recoilRot") or rawget(Springs, "sway") or rawget(Springs, "walkCycle") or rawget(Springs, "wallTouchTilt") or rawget(Springs, "cameraRecoil")) then
+							Found[#Found + 1] = Value
+							
+							if #Found >= 3 then
+								break
+							end
+						end
+					end
+				end
+			end
+			springClients = Found
+			springBusy = false
+		end)
+	end
+	for _, Client in springClients do
+		pcall(applyLiveGun, Client)
+		local Springs = rawget(Client, "springs")
+		
+		if type(Springs) == "table" then
+			if Recoil then
+				zeroSpring(Springs, "recoilPos")
+				zeroSpring(Springs, "recoilRot")
+				zeroSpring(Springs, "cameraRecoil")
+			end
+			if Sway then
+				zeroSpring(Springs, "sway")
+				zeroSpring(Springs, "gunSway")
+				zeroSpring(Springs, "strafeTilt")
+				zeroSpring(Springs, "idleSway")
+				zeroSpring(Springs, "aimSway")
+				zeroSpring(Springs, "cameraSway")
+				zeroSpring(Springs, "lookSway")
+			end
+			if Bob then
+				zeroSpring(Springs, "walkCycle")
+				zeroSpring(Springs, "jumpTilt")
+				zeroSpring(Springs, "sprintCycle")
+			end
+			if Wall then
+				zeroSpring(Springs, "wallTouchTilt")
+			end
+		end
+	end
+end
+
+RunService:BindToRenderStep("MidnightSprings", Enum.RenderPriority.Last.Value, function()
+	pcall(applySpringMods)
+end)
+LocalPlayer.CharacterAdded:Connect(function()
+	springClients = {}
+	springScan = 0
+end)
 
 function compatibleMag(p347)
 	if type(p347) ~= "table" or typeof(p347.itemProperties) ~= "Instance" then
@@ -10776,15 +12764,6 @@ function installLiveGun()
 			end
 		end
 		if v1352 and v1353 and useTypes then break end
-	end
-	if v1352 then
-		local UpdateClientFunction = v1352.updateClient
-		
-		function v1352.updateClient(...)
-			pcall(applyLiveGun, (...))
-			
-			return UpdateClientFunction(...)
-		end
 	end
 	if v1353 then
 		local MagazineFunction = v1353.magazine
@@ -10861,104 +12840,620 @@ task.spawn(function()
 			return ChangeLeanResult
 		end
 	end
-	if Success and type(Result) == "table" and type(Result.updateClient) == "function" then
+	if Success and type(Result) == "table" then
 		fpsModule = Result
-		local UpdateClientFunction = Result.updateClient
-		
-		function Result.updateClient(...)
-			local ZeroVectors = (...)
-			pcall(applyLiveGun, ZeroVectors)
-			local Packed = table.pack(UpdateClientFunction(...))
-			fpsClient = ZeroVectors
-			pcall(function()
-				if type(ZeroVectors) ~= "table" or type(ZeroVectors.springs) ~= "table" then return end
-				local function kill(p355)
-					local Spring = ZeroVectors.springs[p355]
-					
-					if type(Spring) == "table" then
-						Spring.Position = Vector3.zero
-						Spring.Target = Vector3.zero
-					end
-				end
-				
-				if flagBool("NoSway_Enabled") then
-					kill("sway")
-					kill("gunSway")
-					kill("strafeTilt")
-					kill("idleSway")
-					kill("aimSway")
-					kill("cameraSway")
-					kill("lookSway")
-					
-					for i, spring in ZeroVectors.springs do
-						if type(i) == "string" and type(spring) == "table" then
-							local Lowered = string.lower(i)
-							
-							if string.find(Lowered, "sway", 1, true) or string.find(Lowered, "strafe", 1, true) then
-								spring.Position = Vector3.zero
-								spring.Velocity = Vector3.zero
-								spring.Target = Vector3.zero
-							end
-						end
-					end
-					for _, value in {
-						"sway", "aimSway", "gunSway", "Sway", "AimSway", "MouseSway"
-					} do
-						local ZeroVector = ZeroVectors[value]
-						
-						if type(ZeroVector) == "number" then
-							ZeroVectors[value] = 0
-						elseif typeof(ZeroVector) == "Vector3" then
-							ZeroVectors[value] = Vector3.zero
-						end
-					end
-				end
-				if flagBool("NoBob_Enabled") then
-					kill("walkCycle")
-					kill("jumpTilt")
-				end
-				if flagBool("NoBob_Enabled") or flagBool("NoSprintAnim") then
-					kill("sprintCycle")
-					local SprintCycle = ZeroVectors.springs.sprintCycle
-					
-					if flagBool("NoSprintAnim") and type(SprintCycle) == "table" then
-						SprintCycle.Speed = 0
-						SprintCycle.Velocity = Vector3.zero
-					end
-				end
-				if flagBool("NoSprintAnim") then
-					if typeof(ZeroVectors.weaponOffset) == "CFrame" then
-						ZeroVectors.sprintIdleOffset = ZeroVectors.weaponOffset
-					end
-					if type(ZeroVectors.sprintAlpha) == "number" then
-						ZeroVectors.sprintAlpha = 0
-					end
-					local SprintAnim = ZeroVectors.sprintAnim or ZeroVectors.sprintTrack
-					
-					if typeof(SprintAnim) == "Instance" and SprintAnim:IsA("AnimationTrack") then
-						SprintAnim:AdjustWeight(0, 0)
-						SprintAnim:AdjustSpeed(0)
-					end
-				end
-				if flagBool("NoRecoil_Enabled") then
-					kill("recoilPos")
-					kill("recoilRot")
-					kill("cameraRecoil")
-				end
-				if flagBool("NoWallTouch") then
-					kill("wallTouchTilt")
-				end
-				if flagBool("InstantAim") and type(ZeroVectors.AimInSpeed) == "number" then
-					ZeroVectors.AimInSpeed = 0
-					ZeroVectors.AimOutSpeed = 0
-				end
-			end)
-			
-			return table.unpack(Packed, 1, Packed.n)
-		end
 	end
 	task.defer(installLiveGun)
 end)
+
+function watchInstantTracer()
+	return
+end
+
+function queueInstantHits()
+	local Bypass = type(shared) == "table" and shared.MidnightBypass
+	
+	if type(Bypass) ~= "table" or Bypass.sent then return end
+	local Id = Bypass.id
+	
+	if type(Id) ~= "number" then
+		local Seen = Bypass.seen
+		
+		Id = type(Seen) == "table" and Seen[#Seen] or nil
+	end
+	if type(Id) ~= "number" then return end
+	local Part = Bypass.part
+	
+	if typeof(Part) ~= "Instance" or not Part.Parent then return end
+	if not Part:IsA("BasePart") then
+		local Model = Part:IsA("Model") and Part or Part:FindFirstAncestorOfClass("Model")
+		
+		Part = Model and (Model:FindFirstChild("Head") or Model:FindFirstChild("HumanoidRootPart") or Model:FindFirstChildWhichIsA("BasePart"))
+	end
+	if typeof(Part) ~= "Instance" or not Part:IsA("BasePart") or not Part.Parent then return end
+	local Origin = Bypass.origin
+	local HitPos = Part.Position
+	
+	if typeof(Origin) == "Vector3" then
+		local Delta = Part.Position - Origin
+		
+		if Delta.Magnitude > 0.1 then
+			local Params = RaycastParams.new()
+			
+			Params.FilterType = Enum.RaycastFilterType.Exclude
+			local Filter = {}
+			
+			if LocalPlayer.Character then
+				Filter[1] = LocalPlayer.Character
+			end
+			local Camera = workspace.CurrentCamera
+			local ViewModel = Camera and (Camera:FindFirstChild("ViewModel") or Camera:FindFirstChild("Viewmodel"))
+			
+			if ViewModel then
+				Filter[#Filter + 1] = ViewModel
+			end
+			Params.FilterDescendantsInstances = Filter
+			Params.IgnoreWater = true
+			pcall(function()
+				Params.CollisionGroup = "WeaponRay"
+			end)
+			local Hit = workspace:Raycast(Origin, Delta.Unit * (Delta.Magnitude + 4), Params)
+			
+			if Hit and Hit.Instance and Hit.Instance:IsDescendantOf(Part.Parent) then
+				Part = Hit.Instance
+				HitPos = Hit.Position
+			end
+		end
+	end
+	local Remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+	local ProjectileInflict = Remotes and Remotes:FindFirstChild("ProjectileInflict")
+	
+	if not ProjectileInflict or not Part:IsA("BasePart") then return end
+	local Offset = Part.CFrame:ToObjectSpace(CFrame.new(HitPos))
+	local FireTick = Bypass.fireTick
+	
+	if type(FireTick) ~= "number" or FireTick < 100000 then
+		FireTick = tick()
+	end
+	Bypass.sent = true
+	Bypass.done = Bypass.done or {}
+	Bypass.done[Id] = os.clock()
+	
+	if Bypass.hold then
+		Bypass.hold[Id] = nil
+	end
+	Bypass.busy = true
+	pcall(function()
+		ProjectileInflict:FireServer(Part, Offset, Id, FireTick + 5)
+	end)
+	Bypass.busy = false
+end
+
+function peekBypassOn()
+	return peekState ~= nil or type(fallGuard) == "number" and os.clock() < fallGuard or flagBool("UnderEnable") or flagBool("SkyPeek") or flagBool("AntiKick")
+end
+
+function peekRoot()
+	local Character = LocalPlayer.Character
+	
+	return Character and (Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Torso"))
+end
+
+function dampLand(Root)
+	if not Root then return end
+	local Velocity = Root.AssemblyLinearVelocity
+	
+	Root.AssemblyLinearVelocity = Vector3.new(Velocity.X, 0, Velocity.Z)
+	Root.AssemblyAngularVelocity = Vector3.zero
+	local Humanoid = Root.Parent and Root.Parent:FindFirstChildOfClass("Humanoid")
+	
+	if Humanoid then
+		pcall(function()
+			Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+			Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+			local State = Humanoid:GetState()
+			
+			if State == Enum.HumanoidStateType.Freefall or State == Enum.HumanoidStateType.FallingDown then
+				Humanoid:ChangeState(Enum.HumanoidStateType.Running)
+			end
+		end)
+	end
+end
+
+function endPeek(Root)
+	if not peekState or not peekState.origin or not Root then
+		fallGuard = os.clock() + 0.7
+		peekState = nil
+		
+		return
+	end
+	local Goal = peekState.origin.Position
+	local Here = Root.Position
+	local Left = Here.Y - Goal.Y
+	
+	if math.abs(Left) > 3 then
+		local Step = math.clamp(Left, -1.5, 1.5)
+		local Flat = peekState.origin - peekState.origin.Position
+		
+		Root.CFrame = CFrame.new(Goal.X, Here.Y - Step, Goal.Z) * Flat
+		dampLand(Root)
+		
+		return
+	end
+	Root.CFrame = peekState.origin
+	dampLand(Root)
+	fallGuard = os.clock() + 1.6
+	peekState = nil
+end
+
+local underWas = false
+local skyWas = false
+local underEdge = false
+local skyEdge = false
+
+function applyPeeks(allowStep)
+	local Root = peekRoot()
+	
+	if not Root then
+		peekState = nil
+		
+		return
+	end
+	if fallGuard and os.clock() < fallGuard then
+		local Velocity = Root.AssemblyLinearVelocity
+		
+		if Velocity.Y < -55 then
+			Root.AssemblyLinearVelocity = Vector3.new(Velocity.X, -15, Velocity.Z)
+		end
+	end
+	local Now = os.clock()
+	local SkyHeld = flagBool("SkyPeek") and keyHeld("SkyKey")
+	local UnderHeld = flagBool("UnderEnable") and keyHeld("UnderKey")
+	
+	if UnderHeld and not underWas then
+		underEdge = true
+	end
+	if SkyHeld and not skyWas then
+		skyEdge = true
+	end
+	underWas = UnderHeld
+	skyWas = SkyHeld
+	
+	local function heightOf(Kind)
+		if Kind == "under" then
+			return -math.clamp(flagNum("UnderDepth", 12), 6, 36)
+		end
+		return math.clamp(flagNum("SkyHeight", 35), 8, 80)
+	end
+	local function holdAt(Kind)
+		Root.CFrame = peekState.origin * CFrame.new(0, heightOf(Kind), 0)
+		dampLand(Root)
+	end
+	
+	if allowStep == false then
+		if peekState and peekState.phase ~= "return" then
+			holdAt(peekState.kind)
+		end
+		
+		return
+	end
+	local UnderPress = underEdge
+	local SkyPress = skyEdge
+	
+	underEdge = false
+	skyEdge = false
+	
+	local function beginPeek(Kind, Origin)
+		peekState = {
+			origin = Origin,
+			t0 = Now,
+			kind = Kind,
+			phase = "hold"
+		}
+		holdAt(Kind)
+	end
+	
+	if peekState and peekState.phase ~= "return" then
+		if peekState.kind == "under" and SkyPress then
+			beginPeek("sky", peekState.origin)
+			
+			return
+		end
+		if peekState.kind == "sky" and UnderPress then
+			beginPeek("under", peekState.origin)
+			
+			return
+		end
+		local Stay = math.clamp(flagNum(peekState.kind == "under" and "UnderTime" or "SkyTime", 0.4), 0.15, 3)
+		local Held = peekState.kind == "under" and UnderHeld or SkyHeld
+		
+		if peekState.kind == "sky" and SkyHeld then
+			pcall(function()
+				if game:GetService("UserInputService"):IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+					peekState.t0 = Now
+				end
+			end)
+		end
+		if Held and Now - peekState.t0 < Stay then
+			holdAt(peekState.kind)
+			
+			return
+		end
+		peekState.phase = "return"
+	end
+	if peekState and peekState.phase == "return" then
+		if SkyPress or UnderPress then
+			beginPeek(if SkyPress then "sky" else "under", peekState.origin)
+			
+			return
+		end
+		local Goal = peekState.origin.Position
+		local Here = Root.Position
+		local Left = Here.Y - Goal.Y
+		
+		if math.abs(Left) > 2 then
+			local Step = math.clamp(Left, -6, 6)
+			local Flat = peekState.origin - peekState.origin.Position
+			
+			Root.CFrame = CFrame.new(Goal.X, Here.Y - Step, Goal.Z) * Flat
+			dampLand(Root)
+			
+			return
+		end
+		Root.CFrame = peekState.origin
+		dampLand(Root)
+		fallGuard = os.clock() + 1.6
+		peekState = nil
+	end
+	if not peekState and (SkyPress or UnderPress) then
+		beginPeek(if SkyPress and not UnderPress then "sky" else "under", Root.CFrame)
+	end
+end
+
+pcall(function()
+	RunService:UnbindFromRenderStep("MidnightPeekVisual")
+end)
+pcall(function()
+	RunService:UnbindFromRenderStep("MidnightSkyPeek")
+end)
+RunService:BindToRenderStep("MidnightSkyPeek", Enum.RenderPriority.Last.Value, function()
+	pcall(applyPeeks, false)
+	pcall(applyManip, false)
+end)
+if type(shared) ~= "table" or not shared.MidnightPeekHeart then
+	if type(shared) == "table" then
+		shared.MidnightPeekHeart = true
+	end
+	RunService.Heartbeat:Connect(function()
+		task.defer(function()
+			pcall(applyPeeks, true)
+			pcall(applyManip, true)
+		end)
+	end)
+end
+if type(shared) ~= "table" or not shared.MidnightManipHeart then
+	if type(shared) == "table" then
+		shared.MidnightManipHeart = true
+	end
+	RunService.Heartbeat:Connect(function()
+		task.defer(function()
+			pcall(applyManip, true)
+		end)
+	end)
+end
+
+function installHipAim()
+	if type(shared) ~= "table" or shared.MidnightHipHooked or type(hookmetamethod) ~= "function" then return end
+	local Old = nil
+	local function wrap(Callback)
+		if type(newcclosure) == "function" then
+			return newcclosure(Callback)
+		end
+		return Callback
+	end
+	local Ok = pcall(function()
+		Old = hookmetamethod(game, "__index", wrap(function(self, Key)
+			if (Key == "Hit" or Key == "UnitRay") and type(shared) == "table" then
+				local Pos = shared.MidnightHipPos
+				
+				if typeof(Pos) == "Vector3" and Old(self, "ClassName") == "Mouse" then
+					if Key == "Hit" then
+						return CFrame.new(Pos)
+					end
+					local Cam = workspace.CurrentCamera
+					local Origin = Cam and Cam.CFrame.Position or Pos
+					
+					return Ray.new(Origin, Pos - Origin)
+				end
+			end
+			return Old(self, Key)
+		end))
+	end)
+	
+	if Ok and type(Old) == "function" then
+		shared.MidnightHipHooked = true
+	end
+end
+
+function installFastGate()
+	if type(shared) ~= "table" or shared.MidnightFastGate or type(hookmetamethod) ~= "function" then return end
+	local Old = nil
+	local function wrap(Callback)
+		if type(newcclosure) == "function" then
+			return newcclosure(Callback)
+		end
+		return Callback
+	end
+	local Ok = pcall(function()
+		Old = hookmetamethod(game, "__namecall", wrap(function(self, ...)
+			local Method = getnamecallmethod()
+			
+			if Method == "FireServer" or Method == "InvokeServer" or Method == "Kick" or Method == "Play" or Method == "Resume" then
+				return Old(self, ...)
+			end
+			if Method == "GetAttribute" and typeof(self) == "Instance" then
+				local Name = ...
+				local Parent = self.Parent
+				
+				if type(Name) == "string" and Parent and Parent.Name == "AmmoTypes" then
+					if type(shared) == "table" and shared.MidnightWallPen and (Name == "ArmorPen" or Name == "Penetration") then
+						return 48
+					end
+					if flagBool("SA_InstantBypass") then
+						if Name == "MuzzleVelocity" then
+							return 500000
+						end
+						if Name == "ProjectileDrop" or Name == "Drag" or Name == "Drop" or Name == "BulletDrop" or Name == "Gravity" then
+							return 0
+						end
+					end
+				end
+			end
+			local Deep = shared.MidnightOldNamecall
+			
+			if type(Deep) == "function" then
+				return Deep(self, ...)
+			end
+			return Old(self, ...)
+		end))
+	end)
+	
+	if Ok and type(Old) == "function" then
+		shared.MidnightFastGate = true
+	end
+end
+
+function installWallShot()
+	if type(shared) ~= "table" or shared.MidnightWallShot2 or type(hookmetamethod) ~= "function" then return end
+	local Old = nil
+	local function wrap(Callback)
+		if type(newcclosure) == "function" then
+			return newcclosure(Callback)
+		end
+		return Callback
+	end
+	local Ok = pcall(function()
+		Old = hookmetamethod(game, "__namecall", wrap(function(self, ...)
+			if shared.MidnightWallBusy then
+				local Deep = shared.MidnightOldNamecall
+				
+				if type(Deep) == "function" then
+					return Deep(self, ...)
+				end
+			end
+			local Method = getnamecallmethod()
+			
+			if Method == "FireServer" and typeof(self) == "Instance" and self.Name == "ProjectileInflict" and type(shared.MidnightWallWait) == "table" then
+				local Wall = shared.MidnightWallWait
+				local Args = { ... }
+				local Hit = Args[1]
+				local Target = Wall.part
+				
+				if os.clock() > (Wall.until_ or 0) then
+					shared.MidnightWallWait = nil
+				elseif typeof(Target) == "Instance" and Target.Parent and typeof(Hit) == "Instance" then
+					local Model = Hit:FindFirstAncestorOfClass("Model")
+					local OnTarget = Model and Target:IsDescendantOf(Model)
+					
+					if not OnTarget then
+						Args[1] = Target
+						Args[2] = Target.CFrame:ToObjectSpace(CFrame.new(Target.Position))
+					end
+					if type(Wall.tick) == "number" and type(Args[4]) == "number" then
+						Args[4] = Wall.tick
+					end
+					shared.MidnightWallWait = nil
+					task.spawn(function()
+						local Folder = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
+						local Mine = Folder and Folder:FindFirstChild(LocalPlayer.Name)
+						local Status = Mine and Mine:FindFirstChild("Status")
+						local UAC = Status and Status:FindFirstChild("UAC")
+						local Before = UAC and UAC:GetAttribute("LastVerifiedPos")
+						local Deadline = os.clock() + 0.4
+						
+						while UAC and os.clock() < Deadline do
+							if UAC:GetAttribute("LastVerifiedPos") ~= Before then
+								break
+							end
+							RunService.RenderStepped:Wait()
+						end
+						shared.MidnightWallBusy = true
+						pcall(function()
+							self:FireServer(table.unpack(Args))
+						end)
+						shared.MidnightWallBusy = false
+					end)
+					
+					return
+				end
+			end
+			return Old(self, ...)
+		end))
+	end)
+	
+	if Ok and type(Old) == "function" then
+		shared.MidnightWallShot2 = true
+	end
+end
+
+function installInstantSpeed()
+	if type(shared) ~= "table" or shared.MidnightInstantSpeed or type(hookmetamethod) ~= "function" then return end
+	local Old = nil
+	local function wrap(Callback)
+		if type(newcclosure) == "function" then
+			return newcclosure(Callback)
+		end
+		return Callback
+	end
+	local Ok = pcall(function()
+		Old = hookmetamethod(game, "__namecall", wrap(function(self, ...)
+			local Method = getnamecallmethod()
+			
+			if Method == "GetAttribute" and flagBool("SA_InstantBypass") and typeof(self) == "Instance" then
+				local Name = ...
+				local Parent = self.Parent
+				
+				if type(Name) == "string" and Parent and Parent.Name == "AmmoTypes" then
+					if Name == "ProjectileDrop" or Name == "Drag" or Name == "Drop" or Name == "BulletDrop" or Name == "Gravity" then
+						return 0
+					end
+					if Name == "MuzzleVelocity" then
+						return 500000
+					end
+				end
+			end
+			return Old(self, ...)
+		end))
+	end)
+	
+	if Ok and type(Old) == "function" then
+		shared.MidnightInstantSpeed = true
+	end
+end
+
+function installInstantFix()
+	if type(shared) ~= "table" or shared.MidnightInstantFix or type(hookmetamethod) ~= "function" then return end
+	local Old = nil
+	local function wrap(Callback)
+		if type(newcclosure) == "function" then
+			return newcclosure(Callback)
+		end
+		return Callback
+	end
+	local Ok = pcall(function()
+		Old = hookmetamethod(game, "__namecall", wrap(function(self, ...)
+			local Method = getnamecallmethod()
+			
+			if Method == "FireServer" and typeof(self) == "Instance" and self.Name == "ProjectileInflict" and flagBool("SA_InstantBypass") then
+				local Deep = shared.MidnightOldNamecall
+				
+				if type(Deep) == "function" then
+					return Deep(self, ...)
+				end
+			end
+			if Method == "InvokeServer" and typeof(self) == "Instance" and self.Name == "FireProjectile" and flagBool("SA_InstantBypass") then
+				local Args = { ... }
+				local Id = Args[2]
+				
+				if type(Id) ~= "number" then
+					for _, Value in Args do
+						if type(Value) == "number" and Value % 1 == 0 and math.abs(Value) > 50 and math.abs(Value) < 1000000000 then
+							Id = Value
+							
+							break
+						end
+					end
+				end
+				local Packed = table.pack(Old(self, ...))
+				
+				if type(Id) == "number" and type(shared.MidnightBypass) == "table" then
+					local Bypass = shared.MidnightBypass
+					
+					Bypass.id = Id
+					Bypass.seen = Bypass.seen or {}
+					Bypass.seen[#Bypass.seen + 1] = Id
+					Bypass.sent = false
+					task.defer(queueInstantHits)
+				end
+				return table.unpack(Packed, 1, Packed.n)
+			end
+			return Old(self, ...)
+		end))
+	end)
+	
+	if Ok and type(Old) == "function" then
+		shared.MidnightInstantFix = true
+	end
+end
+
+function installRealBallistics()
+	if type(shared) ~= "table" or shared.MidnightRealBallistic or type(hookmetamethod) ~= "function" then return end
+	local Old = nil
+	local function wrap(Callback)
+		if type(newcclosure) == "function" then
+			return newcclosure(Callback)
+		end
+		return Callback
+	end
+	local Ok = pcall(function()
+		Old = hookmetamethod(game, "__namecall", wrap(function(self, ...)
+			local Method = getnamecallmethod()
+			
+			if Method == "GetAttribute" and typeof(self) == "Instance" then
+				local Name = ...
+				local Parent = self.Parent
+				
+				if type(Name) == "string" and Parent and Parent.Name == "AmmoTypes" and (Name == "MuzzleVelocity" or Name == "ProjectileDrop" or Name == "Drag" or Name == "Drop" or Name == "BulletDrop" or Name == "Gravity") then
+					local Deep = shared.MidnightOldNamecall
+					
+					if type(Deep) == "function" then
+						return Deep(self, ...)
+					end
+				end
+			end
+			return Old(self, ...)
+		end))
+	end)
+	
+	if Ok and type(Old) == "function" then
+		shared.MidnightRealBallistic = true
+	end
+end
+
+function installSpeedHook()
+	if type(shared) ~= "table" or shared.MidnightSpeedHooked or type(hookmetamethod) ~= "function" then return end
+	local Old = nil
+	local function wrap(Callback)
+		if type(newcclosure) == "function" then
+			return newcclosure(Callback)
+		end
+		return Callback
+	end
+	local Ok = pcall(function()
+		Old = hookmetamethod(game, "__namecall", wrap(function(self, ...)
+			local Method = getnamecallmethod()
+			
+			if Method == "GetAttribute" and flagBool("SA_InstantBypass") and typeof(self) == "Instance" then
+				local Name = ...
+				local Parent = self.Parent
+				
+				if type(Name) == "string" and Parent and Parent.Name == "AmmoTypes" then
+					if Name == "ProjectileDrop" or Name == "Drag" or Name == "Drop" or Name == "BulletDrop" then
+						return 0
+					end
+					if Name == "MuzzleVelocity" then
+						return 500000
+					end
+				end
+			end
+			return Old(self, ...)
+		end))
+	end)
+	
+	if Ok and type(Old) == "function" then
+		shared.MidnightSpeedHooked = true
+	end
+end
 
 function installBypassHook()
 	if type(shared) ~= "table" or shared.MidnightBypassHooked or type(hookmetamethod) ~= "function" then return end
@@ -10970,60 +13465,111 @@ function installBypassHook()
 		return Callback
 	end
 	local Old = nil
+	local Inside = false
+	local function leave(...)
+		Inside = false
+		return ...
+	end
 	local Ok, _ = pcall(function()
 		Old = hookmetamethod(game, "__namecall", wrap(function(self, ...)
+			if Inside then
+				return Old(self, ...)
+			end
+			Inside = true
+			local Method = getnamecallmethod()
+			
+			if (Method == "Play" or Method == "Resume") and flagBool("Hit_Enabled") and typeof(self) == "Instance" and self.ClassName == "Sound" then
+				local SoundName = string.lower(self.Name)
+				local SoundId = self.SoundId
+				local Skip = self.Name == "MidnightHit"
+				local Shot = string.find(SoundName, "shoot", 1, true) or string.find(SoundName, "fire", 1, true) or string.find(SoundName, "shot", 1, true)
+				
+				if Shot and not Skip and not string.find(SoundName, "reload", 1, true) and not string.find(SoundName, "equip", 1, true) and not string.find(SoundName, "click", 1, true) and not string.find(SoundName, "ui", 1, true) then
+					self.Volume = 0
+					
+					return leave()
+				end
+			end
+			if Method == "Kick" and self == LocalPlayer and peekBypassOn() then
+				local Msg = ...
+				local Low = type(Msg) == "string" and string.lower(Msg) or ""
+				
+				if type(Msg) ~= "string" or string.find(Low, "exploit", 1, true) or string.find(Low, "detect", 1, true) or string.find(Low, "ban", 1, true) or string.find(Low, "kick", 1, true) or string.find(Low, "cheat", 1, true) or string.find(Low, "flight", 1, true) or string.find(Low, "teleport", 1, true) then
+					return leave()
+				end
+			end
 			local Bypass = shared.MidnightBypass
 			
 			if type(Bypass) ~= "table" or Bypass.busy then
-				return Old(self, ...)
+				return leave(Old(self, ...))
 			end
-			local Method = getnamecallmethod()
-			
 			if Method == "GetAttribute" and Bypass.fast and typeof(self) == "Instance" then
 				local Name = ...
 				local Parent = self.Parent
 				
 				if type(Name) == "string" and Parent and Parent.Name == "AmmoTypes" then
-					if Name == "ProjectileDrop" or Name == "Drag" then
-						return 0
+					if Name == "ProjectileDrop" or Name == "Drag" or Name == "Drop" or Name == "BulletDrop" or Name == "Gravity" then
+						return leave(0)
 					end
 					if Name == "MuzzleVelocity" then
-						local Real = Old(self, Name)
-						
-						if type(Real) ~= "number" or Real < 50 then
-							Real = 900
-						end
-						return math.clamp(Real * 12, 3000, 9000)
+						return leave(500000)
 					end
 				end
 			elseif Method == "InvokeServer" and Bypass.on and typeof(self) == "Instance" and self.Name == "FireProjectile" then
-				local _, Id = ...
+				local _, Id, FireTick = ...
 				
+				if type(Id) ~= "number" then
+					local First = ...
+					
+					if type(First) == "number" then
+						Id = First
+					end
+				end
 				if type(Id) == "number" then
 					Bypass.id = Id
+					Bypass.seen = Bypass.seen or {}
+					Bypass.seen[#Bypass.seen + 1] = Id
+					Bypass.hold = Bypass.hold or {}
+					Bypass.hold[Id] = os.clock()
+					Bypass.tickById = Bypass.tickById or {}
+					Bypass.tickById[Id] = tick()
 				end
 			elseif Method == "FireServer" and typeof(self) == "Instance" and self.Name == "ProjectileInflict" then
 				local Args = { ... }
-				local Id = Args[3]
+				local HitArg = Args[1]
 				
-				if type(Id) == "number" and Bypass.consumed and Bypass.consumed[Id] and os.clock() - Bypass.consumed[Id] < 0.25 then
-					return nil
+				if typeof(HitArg) == "Instance" then
+					task.defer(function()
+						local Model = HitArg:FindFirstAncestorOfClass("Model")
+						
+						if Model and Model ~= LocalPlayer.Character and Model:FindFirstChildOfClass("Humanoid") then
+							pcall(noteHit, Model, HitArg.Name, true)
+						end
+					end)
 				end
-				if Bypass.on and os.clock() < (Bypass["until"] or 0) and typeof(Bypass.part) == "Instance" and Bypass.part.Parent then
-					local Part = Bypass.part
+				if flagBool("SA_InstantBypass") then
+					local Id = Args[3]
 					
-					Args[1] = Part
-					Args[2] = Part.CFrame:ToObjectSpace(CFrame.new(Part.Position))
-					Bypass.sent = true
-					Bypass.consumed = Bypass.consumed or {}
-					
-					if type(Args[3]) == "number" then
-						Bypass.consumed[Args[3]] = os.clock()
+					if type(Id) == "number" and Bypass.done and Bypass.done[Id] and os.clock() - Bypass.done[Id] < 3 then
+						return leave()
 					end
-					return Old(self, table.unpack(Args))
+					if type(Args[4]) == "number" then
+						local Base = Args[4]
+						
+						if Base < 100000 then
+							Base = type(Bypass.fireTick) == "number" and Bypass.fireTick or tick()
+						end
+						Args[4] = Base + 5
+						if type(Id) == "number" then
+							Bypass.done = Bypass.done or {}
+							Bypass.done[Id] = os.clock()
+							Bypass.sent = true
+						end
+						return leave(Old(self, table.unpack(Args)))
+					end
 				end
 			end
-			return Old(self, ...)
+			return leave(Old(self, ...))
 		end))
 	end)
 	
@@ -11038,6 +13584,13 @@ end
 
 function installSwimHooks()
 	installBypassHook()
+	installSpeedHook()
+	installRealBallistics()
+	installInstantSpeed()
+	installInstantFix()
+	installFastGate()
+	installWallShot()
+	installHipAim()
 	if type(shared) ~= "table" then return end
 	function shared.MidnightNameFire(p356, ...)
 		local MidnightOldNamecallFunction = shared.MidnightOldNamecall
@@ -11145,6 +13698,492 @@ function ensureUtilityGui()
 	end
 end
 
+function clearStorm()
+	local Folder = workspace:FindFirstChild("MidnightStorm")
+	
+	if Folder then
+		Folder:Destroy()
+	end
+	stormFolder = nil
+	local Lighting = game:GetService("Lighting")
+	local Flash = Lighting:FindFirstChild("MidnightStormFlash")
+	
+	if Flash then
+		Flash.Brightness = 0
+	end
+	if stormFog and not flagBool("Fullbright") then
+		Lighting.FogColor = stormFog.Color
+		Lighting.FogStart = stormFog.Start
+		Lighting.FogEnd = stormFog.End
+		Lighting.Brightness = stormFog.Brightness
+	end
+	stormFog = nil
+	stormFogSet = false
+	stormOn = false
+end
+
+function stormBolt(Position)
+	if typeof(Position) ~= "Vector3" then return end
+	local Top = Position + Vector3.new(math.random(-18, 18), 170, math.random(-18, 18))
+	local Points = { Top }
+	
+	for i = 1, 7 do
+		local Base = Top:Lerp(Position, i / 8)
+		
+		Points[#Points + 1] = Base + Vector3.new(math.random(-9, 9), 0, math.random(-9, 9))
+	end
+	Points[#Points + 1] = Position
+	local Folder = stormFolder or workspace
+	local Bolt = Instance.new("Folder")
+	Bolt.Name = "Bolt"
+	Bolt.Parent = Folder
+	
+	for i = 1, #Points - 1 do
+		local A = Points[i]
+		local B = Points[i + 1]
+		local Length = (B - A).Magnitude
+		local Part = Instance.new("Part")
+		Part.Anchored = true
+		Part.CanCollide = false
+		Part.CanQuery = false
+		Part.CanTouch = false
+		Part.Material = Enum.Material.Neon
+		Part.Color = Color3.fromRGB(210, 230, 255)
+		Part.Size = Vector3.new(0.55, 0.55, math.max(Length, 0.2))
+		Part.CFrame = CFrame.lookAt(A, B) * CFrame.new(0, 0, -Length / 2)
+		Part.Parent = Bolt
+	end
+	local Glow = Instance.new("Part")
+	Glow.Anchored = true
+	Glow.CanCollide = false
+	Glow.CanQuery = false
+	Glow.CanTouch = false
+	Glow.Material = Enum.Material.Neon
+	Glow.Shape = Enum.PartType.Ball
+	Glow.Color = Color3.fromRGB(230, 240, 255)
+	Glow.Size = Vector3.new(6, 6, 6)
+	Glow.CFrame = CFrame.new(Position + Vector3.new(0, 2, 0))
+	Glow.Parent = Bolt
+	task.delay(0.22, function()
+		Bolt:Destroy()
+	end)
+end
+
+function tickStorm(On)
+	if not On then
+		if stormOn or stormFolder or stormFog then
+			clearStorm()
+		end
+		return
+	end
+	local Camera = workspace.CurrentCamera
+	
+	if not Camera then return end
+	local Lighting = game:GetService("Lighting")
+	
+	if not stormFog then
+		stormFog = {
+			Color = Lighting.FogColor,
+			Start = Lighting.FogStart,
+			End = Lighting.FogEnd,
+			Brightness = Lighting.Brightness
+		}
+	end
+	stormOn = true
+	
+	if not stormFogSet and not flagBool("Fullbright") then
+		stormFogSet = true
+		Lighting.FogColor = Color3.fromRGB(28, 32, 42)
+		Lighting.FogStart = 30
+		Lighting.FogEnd = 380
+		Lighting.Brightness = math.min(Lighting.Brightness, 0.6)
+	end
+	if not stormFolder or not stormFolder.Parent then
+		stormFolder = Instance.new("Folder")
+		stormFolder.Name = "MidnightStorm"
+		stormFolder.Parent = workspace
+		local Host = Instance.new("Part")
+		Host.Name = "Clouds"
+		Host.Anchored = true
+		Host.CanCollide = false
+		Host.CanQuery = false
+		Host.CanTouch = false
+		Host.Transparency = 1
+		Host.Size = Vector3.new(1, 1, 1)
+		Host.Parent = stormFolder
+		local Emitter = Instance.new("ParticleEmitter")
+		Emitter.Texture = "rbxasset://textures/particles/smoke_main.dds"
+		Emitter.Rate = 22
+		Emitter.Lifetime = NumberRange.new(5, 8)
+		Emitter.Speed = NumberRange.new(1, 4)
+		Emitter.SpreadAngle = Vector2.new(180, 12)
+		Emitter.Rotation = NumberRange.new(0, 360)
+		Emitter.RotSpeed = NumberRange.new(-8, 8)
+		Emitter.LightEmission = 0
+		Emitter.Drag = 0.6
+		Emitter.EmissionDirection = Enum.NormalId.Bottom
+		Emitter.Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 36),
+			NumberSequenceKeypoint.new(1, 70)
+		})
+		Emitter.Transparency = NumberSequence.new(0.28)
+		Emitter.Color = ColorSequence.new(Color3.fromRGB(48, 54, 68), Color3.fromRGB(16, 18, 26))
+		Emitter.Parent = Host
+		
+		for i = 1, 8 do
+			local Cloud = Instance.new("Part")
+			Cloud.Name = "CloudPart"
+			Cloud.Anchored = true
+			Cloud.CanCollide = false
+			Cloud.CanQuery = false
+			Cloud.CanTouch = false
+			Cloud.Material = Enum.Material.SmoothPlastic
+			Cloud.Color = Color3.fromRGB(52, 58, 70)
+			Cloud.Transparency = 0.22
+			Cloud.Size = Vector3.new(80 + (i % 3) * 28, 12, 60 + (i % 4) * 18)
+			Cloud:SetAttribute("ox", ((i % 4) - 1.5) * 78)
+			Cloud:SetAttribute("oz", (math.floor((i - 1) / 4) - 0.5) * 90)
+			Cloud:SetAttribute("oy", 62 + (i % 3) * 16)
+			Cloud.Parent = stormFolder
+		end
+	end
+	local Position = Camera.CFrame.Position
+	local Host = stormFolder:FindFirstChild("Clouds")
+	
+	if Host then
+		Host.CFrame = CFrame.new(Position + Vector3.new(0, 88, 0))
+	end
+	for _, Cloud in stormFolder:GetChildren() do
+		if Cloud.Name == "CloudPart" then
+			Cloud.CFrame = CFrame.new(Position + Vector3.new(Cloud:GetAttribute("ox") or 0, Cloud:GetAttribute("oy") or 80, Cloud:GetAttribute("oz") or 0))
+		end
+	end
+	if os.clock() < (stormNext or 0) then return end
+	stormNext = os.clock() + math.random(40, 85) / 10
+	local Spot = Position + Vector3.new(math.random(-90, 90), 0, math.random(-90, 90))
+	local Params = RaycastParams.new()
+	Params.FilterType = Enum.RaycastFilterType.Exclude
+	Params.FilterDescendantsInstances = { stormFolder, LocalPlayer.Character }
+	local Hit = workspace:Raycast(Spot + Vector3.new(0, 220, 0), Vector3.new(0, -500, 0), Params)
+	local Land = Hit and Hit.Position or Position + Vector3.new(0, -8, 0)
+	
+	stormBolt(Land)
+	playShotSound("rbxassetid://138186576", 0.95, math.random(85, 110) / 100)
+	local Flash = Lighting:FindFirstChild("MidnightStormFlash")
+	
+	if not Flash then
+		Flash = Instance.new("ColorCorrectionEffect")
+		Flash.Name = "MidnightStormFlash"
+		Flash.Parent = Lighting
+	end
+	Flash.Brightness = 0.55
+	Flash.Contrast = 0.25
+	task.delay(0.09, function()
+		if Flash then
+			Flash.Brightness = 0
+			Flash.Contrast = 0
+		end
+	end)
+	task.delay(0.4, function()
+		if stormOn then
+			playShotSound("rbxassetid://188361771", 0.6, 0.78)
+		end
+	end)
+end
+
+function applyWorldLook()
+	local Lighting = game:GetService("Lighting")
+	
+	if type(shared) == "table" and not shared.MidnightClockLock then
+		shared.MidnightClockLock = true
+		local Setting = false
+		
+		Lighting:GetPropertyChangedSignal("ClockTime"):Connect(function()
+			if Setting then return end
+			local Want = nil
+			
+			if flagBool("TimeChanger") then
+				Want = flagNum("ClockHour", 14)
+			elseif flagBool("SkyEnabled") then
+				local SkyName = flagText("Skybox", "")
+				
+				if SkyName == "Thunderstorm" then
+					Want = 0.15
+				elseif SkyName == "Sunrise" then
+					Want = 6.35
+				end
+			end
+			if type(Want) ~= "number" or math.abs(Lighting.ClockTime - Want) < 0.5 then return end
+			Setting = true
+			Lighting.ClockTime = Want
+			Setting = false
+		end)
+	end
+	local Choice = "Default"
+	
+	if flagBool("SkyEnabled") then
+		Choice = flagText("Skybox", "Night")
+		
+		if Choice == "Default" or Choice == "" then
+			Choice = "Night"
+		end
+	end
+	local Skies = {
+		Thunderstorm = {
+			"12064107",
+			"12064152",
+			"12064121",
+			"12063984",
+			"12064115",
+			"12064131"
+		},
+		Night = {
+			"15536110634",
+			"15536112543",
+			"15536116141",
+			"15536114370",
+			"15536118762",
+			"15536117282"
+		},
+		Sunrise = {
+			"151165214",
+			"151165197",
+			"151165224",
+			"151165191",
+			"151165206",
+			"151165227"
+		},
+		Space = {
+			"149397692",
+			"149397686",
+			"149397697",
+			"149397684",
+			"149397688",
+			"149397702"
+		},
+		Galaxy = {
+			"159454299",
+			"159454296",
+			"159454293",
+			"159454286",
+			"159454300",
+			"159454288"
+		}
+	}
+	local Keys = {
+		"SkyboxBk",
+		"SkyboxDn",
+		"SkyboxFt",
+		"SkyboxLf",
+		"SkyboxRt",
+		"SkyboxUp"
+	}
+	local Sky = Lighting:FindFirstChildOfClass("Sky")
+	
+	if not Sky then
+		Sky = Instance.new("Sky")
+		Sky.Name = "MidnightSky"
+		Sky.Parent = Lighting
+	end
+	if not skySaved then
+		skySaved = { StarCount = Sky.StarCount, Celestial = Sky.CelestialBodiesShown }
+		
+		for _, Key in Keys do
+			skySaved[Key] = Sky[Key]
+		end
+	end
+	local Ids = Skies[Choice]
+	
+	if Ids and skyApplied == Choice then
+		-- sky textures already match
+	elseif not Ids then
+		for _, Key in Keys do
+			if skySaved[Key] ~= nil then
+				Sky[Key] = skySaved[Key]
+			end
+		end
+		Sky.StarCount = skySaved.StarCount or 3000
+		Sky.CelestialBodiesShown = skySaved.Celestial ~= false
+		local Atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+		
+		if skyAtmo and Atmo then
+			Atmo.Density = skyAtmo
+			skyAtmo = nil
+		end
+		if skyClock and not flagBool("TimeChanger") and lightBase then
+			Lighting.ClockTime = lightBase.ClockTime
+		end
+		skyClock = false
+		skyApplied = nil
+	else
+		for i, Key in Keys do
+			Sky[Key] = "rbxassetid://" .. Ids[i]
+		end
+		skyApplied = Choice
+		Sky.CelestialBodiesShown = Choice ~= "Thunderstorm"
+		Sky.StarCount = if Choice == "Thunderstorm" then 0 elseif Choice == "Sunrise" then 80 else 3000
+		local Atmo = Lighting:FindFirstChildOfClass("Atmosphere")
+		
+		if Choice == "Thunderstorm" then
+			if Atmo and skyAtmo == nil then
+				skyAtmo = Atmo.Density
+			end
+			if Atmo then
+				Atmo.Density = 0.62
+				Atmo.Color = Color3.fromRGB(35, 42, 55)
+				Atmo.Decay = Color3.fromRGB(20, 24, 32)
+			end
+			skyClock = true
+		elseif Choice == "Sunrise" then
+			skyClock = true
+			if skyAtmo and Atmo then
+				Atmo.Density = skyAtmo
+				skyAtmo = nil
+			end
+		else
+			if skyAtmo and Atmo then
+				Atmo.Density = skyAtmo
+				skyAtmo = nil
+			end
+			if skyClock and not flagBool("TimeChanger") and lightBase then
+				Lighting.ClockTime = lightBase.ClockTime
+			end
+			skyClock = false
+		end
+	end
+	if flagBool("TimeChanger") then
+		local Hour = flagNum("ClockHour", 14)
+		
+		if math.abs(Lighting.ClockTime - Hour) > 0.5 then
+			Lighting.ClockTime = Hour
+		end
+		skyClock = false
+	elseif Choice == "Thunderstorm" then
+		if math.abs(Lighting.ClockTime - 0.15) > 0.5 then
+			Lighting.ClockTime = 0.15
+		end
+		skyClock = true
+	elseif Choice == "Sunrise" then
+		if math.abs(Lighting.ClockTime - 6.35) > 0.5 then
+			Lighting.ClockTime = 6.35
+		end
+		skyClock = true
+	end
+	local Rgb = Lighting:FindFirstChild("MidnightRGB")
+	
+	if flagBool("RgbWorld") then
+		if not rgbSnap then
+			rgbSnap = {
+				Ambient = Lighting.Ambient,
+				OutdoorAmbient = Lighting.OutdoorAmbient,
+				FogColor = Lighting.FogColor,
+				ColorShift_Top = Lighting.ColorShift_Top
+			}
+		end
+		local Hue = (os.clock() * flagNum("RgbSpeed", 8) * 0.12) % 1
+		local Bright = math.clamp(flagNum("RgbBright", 70) / 100, 0.15, 1)
+		local Color = Color3.fromHSV(Hue, 1, Bright)
+		
+		Lighting.Ambient = Color
+		Lighting.OutdoorAmbient = Color
+		Lighting.FogColor = Color
+		Lighting.ColorShift_Top = Color
+		
+		if not Rgb then
+			Rgb = Instance.new("ColorCorrectionEffect")
+			Rgb.Name = "MidnightRGB"
+			Rgb.Parent = Lighting
+		end
+		Rgb.Enabled = true
+		Rgb.TintColor = Color
+		Rgb.Brightness = (Bright - 0.45) * 0.55
+		Rgb.Saturation = 0.45
+		rgbOn = true
+	elseif rgbOn then
+		if Rgb then
+			Rgb:Destroy()
+		end
+		if rgbSnap and not flagBool("Amb_Enabled") and not flagBool("Fullbright") then
+			Lighting.Ambient = rgbSnap.Ambient
+			Lighting.OutdoorAmbient = rgbSnap.OutdoorAmbient
+			Lighting.FogColor = rgbSnap.FogColor
+			Lighting.ColorShift_Top = rgbSnap.ColorShift_Top
+		end
+		rgbSnap = nil
+		rgbOn = false
+	end
+	tickStorm(flagBool("SkyEnabled") and Choice == "Thunderstorm")
+end
+
+function sahurPart(Name, Size, Color, Shape)
+	local Part = Instance.new("Part")
+	Part.Name = Name
+	Part.Size = Size
+	Part.Color = Color
+	Part.Material = Enum.Material.Wood
+	Part.Anchored = false
+	Part.CanCollide = false
+	Part.CanQuery = false
+	Part.CanTouch = false
+	Part.Massless = true
+	Part.CastShadow = false
+	
+	if Shape then
+		Part.Shape = Shape
+	end
+	return Part
+end
+
+function clearSahur()
+	local Character = LocalPlayer.Character
+	local Model = Character and (Character:FindFirstChild("MidnightChar") or Character:FindFirstChild("MidnightSahur"))
+	
+	if Model then
+		Model:Destroy()
+	end
+	if sahurHid and Character then
+		for _, Part in Character:GetDescendants() do
+			if Part:IsA("BasePart") and Part.Name ~= "HumanoidRootPart" then
+				Part.LocalTransparencyModifier = 0
+			end
+		end
+	end
+	sahurHid = false
+	sahurParts = nil
+end
+
+function applySahur()
+	if sahurCleared then return end
+	local Character = LocalPlayer.Character
+	
+	if not Character then return end
+	local Model = Character:FindFirstChild("MidnightChar") or Character:FindFirstChild("MidnightSahur")
+	
+	if Model then
+		Model:Destroy()
+	end
+	for _, Part in Character:GetDescendants() do
+		if Part:IsA("BasePart") and Part.LocalTransparencyModifier == 1 then
+			Part.LocalTransparencyModifier = 0
+		end
+	end
+	sahurCleared = true
+end
+
+task.defer(function()
+	pcall(applySahur)
+end)
+
+function hideAaLocal(Character, Hide)
+	if not Character then return end
+	for _, Part in Character:GetDescendants() do
+		if Part:IsA("BasePart") and Part.Name ~= "HumanoidRootPart" and not Part:FindFirstAncestor("MidnightChar") and not Part:FindFirstAncestor("MidnightSahur") then
+			Part.LocalTransparencyModifier = Hide and 1 or 0
+		end
+	end
+	aaHidBody = Hide
+end
+
 function applyUtility(Camera)
 	local Lighting = game:GetService("Lighting")
 	
@@ -11202,12 +14241,16 @@ function applyUtility(Camera)
 		Lighting.GlobalShadows = lightBase.GlobalShadows
 		lightBase.shadowOn = false
 	end
-	if flagBool("TimeChanger") then
-		Lighting.ClockTime = flagNum("ClockHour", 14)
-		lightBase.timeOn = true
-	elseif lightBase.timeOn then
+	if not flagBool("TimeChanger") and lightBase.timeOn then
 		Lighting.ClockTime = lightBase.ClockTime
 		lightBase.timeOn = false
+	end
+	lightBase.timeOn = flagBool("TimeChanger") == true
+	applyWorldLook()
+	
+	if not worldLookBind then
+		worldLookBind = true
+		RunService:BindToRenderStep("MidnightWorldLook", Enum.RenderPriority.Last.Value + 25, applyWorldLook)
 	end
 	if flagBool("Coords") or flagBool("ProxAlert") then
 		ensureUtilityGui()
@@ -11252,59 +14295,84 @@ function applyUtility(Camera)
 		end
 	end
 	if flagBool("Crosshair") and Camera and type(Drawing) == "table" and type(Drawing.new) == "function" then
-		if not crossDraw then
-			crossDraw = {}
+		crossDraw = crossDraw or {}
+		local function slot(Index, Kind)
+			local Item = crossDraw[Index]
 			
-			for i1 = 1, 4 do
-				local Drawing1 = Drawing.new("Line")
-				Drawing1.Visible = false
-				Drawing1.Thickness = 1
-				crossDraw[i1] = Drawing1
+			if not Item then
+				Item = Drawing.new(Kind)
+				Item.Visible = false
+				crossDraw[Index] = Item
 			end
+			return Item
 		end
-		local ScaledViewportSize = Camera.ViewportSize * 0.5
-		local CrossGap = flagNum("CrossGap", 4)
-		local CrossSize = flagNum("CrossSize", 8)
-		local CrossColor = flagColor("CrossColor", Color3.fromRGB(255, 255, 255))
+		local Center = Camera.ViewportSize * 0.5
+		local Gap = flagNum("CrossGap", 4)
+		local Size = flagNum("CrossSize", 8)
+		local Thick = flagNum("CrossThick", 1)
+		local Color = flagColor("CrossColor", Color3.fromRGB(255, 255, 255))
+		local Style = flagText("CrossStyle", "Cross")
+		local Angle = 0
 		
-		for i, value in {
-			{
-				ScaledViewportSize.X - CrossGap - CrossSize,
-				ScaledViewportSize.Y,
-				ScaledViewportSize.X - CrossGap,
-				ScaledViewportSize.Y
-			},
-			{
-				ScaledViewportSize.X + CrossGap,
-				ScaledViewportSize.Y,
-				ScaledViewportSize.X + CrossGap + CrossSize,
-				ScaledViewportSize.Y
-			},
-			{
-				ScaledViewportSize.X,
-				ScaledViewportSize.Y - CrossGap - CrossSize,
-				ScaledViewportSize.X,
-				ScaledViewportSize.Y - CrossGap
-			},
-			{
-				ScaledViewportSize.X,
-				ScaledViewportSize.Y + CrossGap,
-				ScaledViewportSize.X,
-				ScaledViewportSize.Y + CrossGap + CrossSize
-			}
-		} do
-			local CrossDrawEntry = crossDraw[i]
-			CrossDrawEntry.Visible = true
-			CrossDrawEntry.Color = CrossColor
-			CrossDrawEntry.From = Vector2.new(value[1], value[2])
-			CrossDrawEntry.To = Vector2.new(value[3], value[4])
+		if Style == "X" then
+			Angle = math.rad(45)
 		end
-		return
-	else
-		if crossDraw then
-			for _, value1 in crossDraw do
-				value1.Visible = false
+		if flagBool("CrossSpin") then
+			Angle += os.clock() * math.rad(flagNum("CrossSpinSpeed", 140))
+		end
+		local Cos = math.cos(Angle)
+		local Sin = math.sin(Angle)
+		local function spin(X, Y)
+			return Vector2.new(Center.X + X * Cos - Y * Sin, Center.Y + X * Sin + Y * Cos)
+		end
+		local Arms = {
+			{ -Gap - Size, 0, -Gap, 0 },
+			{ Gap, 0, Gap + Size, 0 },
+			{ 0, -Gap - Size, 0, -Gap },
+			{ 0, Gap, 0, Gap + Size }
+		}
+		local ShowLines = Style == "Cross" or Style == "X"
+		
+		for i = 1, 4 do
+			local Line = slot(i, "Line")
+			local Outline = slot(i + 4, "Line")
+			local Arm = Arms[i]
+			
+			Line.Visible = ShowLines
+			Outline.Visible = ShowLines and flagBool("CrossOutline")
+			
+			if ShowLines then
+				local From = spin(Arm[1], Arm[2])
+				local To = spin(Arm[3], Arm[4])
+				
+				Outline.From = From
+				Outline.To = To
+				Outline.Color = Color3.new(0, 0, 0)
+				Outline.Thickness = Thick + 2
+				Line.From = From
+				Line.To = To
+				Line.Color = Color
+				Line.Thickness = Thick
 			end
+		end
+		local Dot = slot(9, "Circle")
+		local Ring = slot(10, "Circle")
+		
+		Dot.Visible = flagBool("CrossDot") or Style == "Dot"
+		Dot.Filled = true
+		Dot.Radius = math.max(1, Thick)
+		Dot.Position = Center
+		Dot.Color = Color
+		Dot.Thickness = 1
+		Ring.Visible = Style == "Circle"
+		Ring.Filled = false
+		Ring.Radius = Gap + Size
+		Ring.Position = Center
+		Ring.Color = Color
+		Ring.Thickness = Thick
+	elseif crossDraw then
+		for _, value1 in crossDraw do
+			value1.Visible = false
 		end
 	end
 end
@@ -11391,13 +14459,15 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 	if syncSpread then
 		syncSpread()
 	end
-	if syncInstantAmmo then
-		syncInstantAmmo()
-	end
-	if applyInstantHeal then
+	if applyInstantHeal and os.clock() - (healAnimAt or 0) > 0.15 then
+		healAnimAt = os.clock()
 		applyInstantHeal()
 	end
-	if refreshWhitelist then
+	if applyInstantLoot then
+		applyInstantLoot()
+	end
+	if refreshWhitelist and os.clock() - (whiteTick or 0) > 1.5 then
+		whiteTick = os.clock()
 		refreshWhitelist()
 	end
 	if flagBool("AA_Enabled") then
@@ -11473,6 +14543,12 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 				end
 			end
 			RootPartResult.CFrame = CFrame.new(RootPartResult.Position) * CFrame.Angles(0, Ry, 0)
+			
+			if not thirdActive() then
+				hideAaLocal(Character, true)
+			elseif aaHidBody then
+				hideAaLocal(Character, false)
+			end
 		end
 		if v0.Flags.AA_ShowServer == false then
 			if serverGhost then
@@ -11522,12 +14598,19 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 		end
 		moonNeck = nil
 		moonNeckC0 = nil
+		
+		if aaHidBody then
+			hideAaLocal(LocalPlayer.Character, false)
+		end
 	end
 	if not flagBool("AA_Enabled") and serverGhost then
 		serverGhost.Parent = nil
 	end
 	aaWasOn = flagBool("AA_Enabled")
-	applyUtility(CurrentCamera)
+	if os.clock() - (utilTick or 0) > 0.12 then
+		utilTick = os.clock()
+		applyUtility(CurrentCamera)
+	end
 	checkHits()
 	paintKeybindModes()
 	gunClock += DeltaTime
@@ -11544,7 +14627,25 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 	if FovChangerAmount and not Flag1 then
 		CurrentCamera.FieldOfView += (FovChangerAmount - CurrentCamera.FieldOfView) * math.clamp(DeltaTime * flagNum("FovZoom_AnimSpeed", 8), 0, 1)
 	end
-	if flagBool("Freecam_Enabled") and Inverted and not Flag1 then
+	local MenuOpen = MIDNIGHTCC and MIDNIGHTCC.IsOpen == true
+	
+	if not MenuOpen and MIDNIGHTCC and MIDNIGHTCC.Items and MIDNIGHTCC.Items.Outline and MIDNIGHTCC.Items.Outline.Instance then
+		MenuOpen = MIDNIGHTCC.Items.Outline.Instance.Visible
+	end
+	if MenuOpen then
+		pcall(function()
+			local ModalButton = LocalPlayer.PlayerGui.MainGui.ModalButton
+			
+			if ModalButton.Modal then
+				ModalButton.Modal = false
+			end
+		end)
+		if UserInputService.MouseBehavior ~= Enum.MouseBehavior.Default then
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		end
+		UserInputService.MouseIconEnabled = true
+	end
+	if flagBool("Freecam_Enabled") and Inverted and not Flag1 and not MenuOpen then
 		Flag1 = true
 		_CFrame = CurrentCamera.CFrame
 		local LookVector = _CFrame.LookVector
@@ -11698,6 +14799,13 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 		Humanoid.WalkSpeed = math.clamp(flagNum("OmniSprintSpeed", 20), 16, 20)
 	elseif flagBool("Speedhack") and Humanoid then
 		Humanoid.WalkSpeed = math.clamp(flagNum("SpeedhackSpeed", 20), 16, 24)
+	end
+	if flagBool("SprintAim") and Humanoid and Humanoid.MoveDirection.Magnitude > 0.05 and UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+		local Aiming = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or Humanoid:GetAttribute("Aiming") == true or Humanoid:GetAttribute("IsAiming") == true or Humanoid:GetAttribute("ADS") == true
+		
+		if Aiming then
+			Humanoid.WalkSpeed = math.clamp(flagNum("OmniSprintSpeed", 18), 16, 22)
+		end
 	end
 	if flagBool("NoSprintAnim") then
 		muteSprintAnims(Character, CurrentCamera)
@@ -11928,6 +15036,8 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 	if mapEspOn() and not espMapRunning then
 		espMapRunning = true
 		task.spawn(runEspMap)
+	elseif not mapEspOn() and espMapFrame then
+		pcall(closeEspMap)
 	end
 	if flagBool("RemoveGrass_Enabled") then
 		if not Flag2 then
