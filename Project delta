@@ -567,6 +567,18 @@ GunMods:Toggle({
 	Default = false,
 	Callback = none
 })
+GunMods:Toggle({
+	Name = "No Sound Shot",
+	Flag = "NoShotSound",
+	Default = false,
+	Callback = none
+})
+GunMods:Toggle({
+	Name = "Dozer Aim",
+	Flag = "DozerAim",
+	Default = false,
+	Callback = none
+})
 local HitFeedback = Combat:Section({ Name = "Hit Feedback", Side = 2 })
 HitFeedback:Toggle({
 	Name = "Hitsound",
@@ -847,6 +859,12 @@ Spiderman:Slider({
 	Callback = none
 })
 local Extra = Movement:Section({ Name = "Extra", Side = 1 })
+Extra:Toggle({
+	Name = "Silent Walk",
+	Flag = "SilentWalk",
+	Default = false,
+	Callback = none
+})
 Extra:Toggle({
 	Name = "No Fall Damage",
 	Flag = "NoFallDamage_Enabled",
@@ -3436,7 +3454,20 @@ function canWallbang(Origin, Part)
 			Ice = true,
 			Fabric = true,
 			Cardboard = true,
-			Foil = true
+			Foil = true,
+			Plastic = true,
+			SmoothPlastic = true
+		}
+		local Thin = {
+			Metal = 1.15,
+			DiamondPlate = 1.15,
+			CorrodedMetal = 1.15,
+			Concrete = 1.25,
+			Brick = 1.25,
+			Cobblestone = 1.15,
+			Slate = 1.15,
+			Basalt = 1,
+			Rock = 1
 		}
 		local Pos = Origin
 		local Left = Part.Position - Origin
@@ -3452,7 +3483,14 @@ function canWallbang(Origin, Part)
 			if not Hit or Hit.Instance:IsDescendantOf(Part.Parent) then
 				break
 			end
-			if Hit.Instance:IsA("Terrain") or not Soft[Hit.Material.Name] then
+			if Hit.Instance:IsA("Terrain") then
+				Ok = false
+				
+				break
+			end
+			local Limit = Thin[Hit.Material.Name]
+			
+			if not Soft[Hit.Material.Name] and not Limit then
 				Ok = false
 				
 				break
@@ -3461,7 +3499,7 @@ function canWallbang(Origin, Part)
 			local Back = workspace:Raycast(Hit.Position + Dir * 3, -Dir * 3, Params)
 			local Thick = Back and (Back.Position - Hit.Position).Magnitude or 0.4
 			
-			if Thick > 2 then
+			if Thick > (Limit or 2) then
 				Ok = false
 				
 				break
@@ -6116,12 +6154,13 @@ end)
 if not Hui1 then
 	Hui1 = game:GetService("CoreGui")
 end
+local ParentGui = LocalPlayer:FindFirstChildOfClass("PlayerGui") or Hui1
 local MidnightBosses = Instance.new("ScreenGui")
 MidnightBosses.Name = "MidnightBosses"
 MidnightBosses.ResetOnSpawn = false
 MidnightBosses.IgnoreGuiInset = true
 MidnightBosses.DisplayOrder = 90
-MidnightBosses.Parent = Hui1
+MidnightBosses.Parent = ParentGui
 local Bosses = Instance.new("Frame")
 Bosses.Name = "Bosses"
 Bosses.AnchorPoint = Vector2.new(1, 0)
@@ -6174,6 +6213,13 @@ Label4.LayoutOrder = 3
 Label4.Parent = Bosses
 bossPanel = Bosses
 dragOverlay(Bosses)
+task.defer(function()
+	local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui") or LocalPlayer:WaitForChild("PlayerGui", 8)
+	
+	if PlayerGui and MidnightBosses.Parent ~= PlayerGui then
+		MidnightBosses.Parent = PlayerGui
+	end
+end)
 local Quests = Instance.new("Frame")
 Quests.Name = "Quests"
 Quests.AnchorPoint = Vector2.new(0, 0)
@@ -7448,15 +7494,19 @@ function drawWorldEsp(Camera, p274)
 				local QuickBossesResultEntry = QuickBossesResult[value.label]
 				
 				if typeof(QuickBossesResultEntry) == "Instance" and QuickBossesResultEntry.Parent then
-					List[#List + 1] = value.label .. "  True"
+					local Point = instancePoint(QuickBossesResultEntry)
+					local Cam = workspace.CurrentCamera
+					local Dist = Point and Cam and math.floor((Point - Cam.CFrame.Position).Magnitude * 0.28 + 0.5)
+					
+					List[#List + 1] = value.label .. (Dist and ("  " .. Dist .. "m") or "  up")
 				else
-					List[#List + 1] = value.label .. "  False"
+					List[#List + 1] = value.label .. "  --"
 				end
 			end
 			Label4.Text = table.concat(List, "\n")
 		end
 	end
-	if flagBool("ItemESPEnabled") or flagBool("AIESPEnabled") or flagBool("BossESPEnabled") or flagBool("ExfilESPEnabled") or flagBool("CorpseESPEnabled") or flagBool("CorpseAI") or flagBool("VehicleESP") or flagBool("MineESP") or flagBool("TraderESP") or flagBool("DropESP") or flagBool("LandmarkESP") or flagBool("QuestESP") or IsBossTracker then
+	if flagBool("ItemESPEnabled") or flagBool("AIESPEnabled") or flagBool("BossESPEnabled") or flagBool("ExfilESPEnabled") or flagBool("CorpseESPEnabled") or flagBool("CorpseAI") or flagBool("VehicleESP") or flagBool("MineESP") or flagBool("TraderESP") or flagBool("DropESP") or flagBool("LandmarkESP") or flagBool("QuestESP") then
 		if p274 then
 			refreshWorld()
 			
@@ -12115,11 +12165,76 @@ function checkHits() end
 
 function tuneModule() end
 
+function wearingDozer()
+	if os.clock() - (dozerAt or 0) < 0.5 then
+		return dozerOn == true
+	end
+	dozerAt = os.clock()
+	dozerOn = false
+	
+	local function named(Object)
+		return string.find(string.lower(tostring(Object and Object.Name or "")), "dozer", 1, true) ~= nil
+	end
+	
+	local Character = LocalPlayer.Character
+	
+	if Character then
+		for _, Child in Character:GetChildren() do
+			if named(Child) then
+				dozerOn = true
+				
+				return true
+			end
+		end
+	end
+	local Folder = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
+	local Mine = Folder and Folder:FindFirstChild(LocalPlayer.Name)
+	local Inventory = Mine and (Mine:FindFirstChild("Inventory") or Mine:FindFirstChild("Clothing") or Mine:FindFirstChild("Gear"))
+	
+	if Inventory then
+		for _, Child in Inventory:GetDescendants() do
+			if named(Child) then
+				dozerOn = true
+				
+				return true
+			end
+		end
+	end
+	return false
+end
+
+function applyDozerAim()
+	if not flagBool("DozerAim") or not wearingDozer() then return end
+	local Character = LocalPlayer.Character
+	local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+	
+	if Humanoid then
+		Humanoid:SetAttribute("CanAim", true)
+		Humanoid:SetAttribute("CanADS", true)
+		Humanoid:SetAttribute("ADSBlocked", false)
+		Humanoid:SetAttribute("NoAim", false)
+		Humanoid:SetAttribute("AimRestricted", false)
+	end
+	if type(springClients) == "table" then
+		for _, Client in springClients do
+			if type(Client) == "table" then
+				if rawget(Client, "canAim") ~= nil then
+					Client.canAim = true
+				end
+				if rawget(Client, "aimRestricted") ~= nil then
+					Client.aimRestricted = false
+				end
+				Client.AimInSpeed = 1e6
+			end
+		end
+	end
+end
+
 function applyGunMods()
 	local HeldGunResult = LocalPlayer.Character and heldGun(LocalPlayer.Character)
 	
 	if HeldGunResult then
-		if flagBool("Hit_Enabled") then
+		if flagBool("Hit_Enabled") or flagBool("NoShotSound") then
 			muteGunSounds()
 		else
 			restoreGunSounds()
@@ -12637,7 +12752,7 @@ function applySpringMods()
 	local Bob = flagBool("NoBob_Enabled")
 	local Wall = flagBool("NoWallTouch")
 	local Spread = flagBool("NoSpread_Enabled")
-	local Aim = flagBool("InstantAim")
+	local Aim = flagBool("InstantAim") or (flagBool("DozerAim") and dozerOn)
 	local Rapid = flagBool("RapidFire") or flagBool("ForceAuto")
 	
 	if not Recoil and not Sway and not Bob and not Wall and not Spread and not Aim and not Rapid then return end
@@ -13193,6 +13308,17 @@ function installFastGate()
 			end
 			if Method == "GetAttribute" and typeof(self) == "Instance" then
 				local Name = ...
+				
+				if flagBool("DozerAim") and dozerOn and type(Name) == "string" then
+					local Low = string.lower(Name)
+					
+					if Low == "cantaim" or Low == "noaim" or Low == "adsblocked" or Low == "blockads" or Low == "restrictaim" or Low == "aimrestricted" then
+						return false
+					end
+					if Low == "canaim" or Low == "canads" or Low == "allowaim" then
+						return true
+					end
+				end
 				local Parent = self.Parent
 				
 				if type(Name) == "string" and Parent and Parent.Name == "AmmoTypes" then
@@ -13478,13 +13604,17 @@ function installBypassHook()
 			Inside = true
 			local Method = getnamecallmethod()
 			
-			if (Method == "Play" or Method == "Resume") and flagBool("Hit_Enabled") and typeof(self) == "Instance" and self.ClassName == "Sound" then
+			if (Method == "Play" or Method == "Resume") and typeof(self) == "Instance" and self.ClassName == "Sound" and self.Name ~= "MidnightHit" then
 				local SoundName = string.lower(self.Name)
-				local SoundId = self.SoundId
-				local Skip = self.Name == "MidnightHit"
 				local Shot = string.find(SoundName, "shoot", 1, true) or string.find(SoundName, "fire", 1, true) or string.find(SoundName, "shot", 1, true)
+				local Skip = string.find(SoundName, "reload", 1, true) or string.find(SoundName, "equip", 1, true) or string.find(SoundName, "click", 1, true) or string.find(SoundName, "ui", 1, true)
 				
-				if Shot and not Skip and not string.find(SoundName, "reload", 1, true) and not string.find(SoundName, "equip", 1, true) and not string.find(SoundName, "click", 1, true) and not string.find(SoundName, "ui", 1, true) then
+				if (flagBool("NoShotSound") or flagBool("Hit_Enabled")) and Shot and not Skip then
+					self.Volume = 0
+					
+					return leave()
+				end
+				if flagBool("SilentWalk") and not Shot and (string.find(SoundName, "step", 1, true) or string.find(SoundName, "foot", 1, true) or string.find(SoundName, "walk", 1, true)) then
 					self.Volume = 0
 					
 					return leave()
@@ -13913,7 +14043,7 @@ function applyWorldLook()
 					Want = 6.35
 				end
 			end
-			if type(Want) ~= "number" or math.abs(Lighting.ClockTime - Want) < 0.5 then return end
+			if type(Want) ~= "number" or math.abs(Lighting.ClockTime - Want) < 0.02 then return end
 			Setting = true
 			Lighting.ClockTime = Want
 			Setting = false
@@ -14054,17 +14184,17 @@ function applyWorldLook()
 	if flagBool("TimeChanger") then
 		local Hour = flagNum("ClockHour", 14)
 		
-		if math.abs(Lighting.ClockTime - Hour) > 0.5 then
+		if Lighting.ClockTime ~= Hour then
 			Lighting.ClockTime = Hour
 		end
 		skyClock = false
 	elseif Choice == "Thunderstorm" then
-		if math.abs(Lighting.ClockTime - 0.15) > 0.5 then
+		if Lighting.ClockTime ~= 0.15 then
 			Lighting.ClockTime = 0.15
 		end
 		skyClock = true
 	elseif Choice == "Sunrise" then
-		if math.abs(Lighting.ClockTime - 6.35) > 0.5 then
+		if Lighting.ClockTime ~= 6.35 then
 			Lighting.ClockTime = 6.35
 		end
 		skyClock = true
@@ -14610,6 +14740,7 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 	if os.clock() - (utilTick or 0) > 0.12 then
 		utilTick = os.clock()
 		applyUtility(CurrentCamera)
+		pcall(applyDozerAim)
 	end
 	checkHits()
 	paintKeybindModes()
