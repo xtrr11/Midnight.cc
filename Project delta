@@ -379,69 +379,6 @@ SilentAim:Toggle({
 	Callback = none
 })
 SilentAim:Toggle({
-	Name = "Manipulation",
-	Flag = "Manip_Enabled",
-	Default = false,
-	Callback = none
-})
-SilentAim:Label("Manip Key", "Left"):Keybind({
-	Name = "Manip Key",
-	Flag = "ManipKey",
-	Default = Enum.KeyCode.G,
-	Mode = "Hold",
-	Callback = none
-})
-SilentAim:Slider({
-	Name = "Manip Range",
-	Flag = "ManipRange",
-	Min = 4,
-	Default = 10,
-	Max = 18,
-	Suffix = " studs",
-	Decimals = 1,
-	Callback = none
-})
-SilentAim:Label("Visible Color", "Left"):Colorpicker({
-	Name = "SA Visible Color",
-	Flag = "SA_TargetVisible",
-	Default = Color3.fromRGB(80, 255, 120),
-	Callback = none
-})
-SilentAim:Label("Hidden Color", "Left"):Colorpicker({
-	Name = "SA Hidden Color",
-	Flag = "SA_TargetHidden",
-	Default = Color3.fromRGB(255, 70, 70),
-	Callback = none
-})
-SilentAim:Toggle({
-	Name = "Visibility Bar",
-	Flag = "TargetState",
-	Default = true,
-	Callback = none
-})
-SilentAim:Toggle({
-	Name = "Status Background",
-	Flag = "Status_Bg",
-	Default = true,
-	Callback = none
-})
-SilentAim:Slider({
-	Name = "Status Transparency",
-	Flag = "Status_Transparency",
-	Min = 0,
-	Default = 15,
-	Max = 90,
-	Suffix = "%",
-	Decimals = 1,
-	Callback = none
-})
-SilentAim:Label("Status Color", "Left"):Colorpicker({
-	Name = "Status Color",
-	Flag = "Status_Color",
-	Default = Color3.fromRGB(0, 0, 0),
-	Callback = none
-})
-SilentAim:Toggle({
 	Name = "Ignore Downed",
 	Flag = "SA_DownCheck",
 	Default = true,
@@ -457,6 +394,70 @@ SilentAim:Toggle({
 	Name = "Team Check",
 	Flag = "SA_TeamCheck",
 	Default = true,
+	Callback = none
+})
+local TargetBox = Combat:Section({ Name = "Target", Side = 1 })
+TargetBox:Toggle({
+	Name = "Manipulation",
+	Flag = "Manip_Enabled",
+	Default = false,
+	Callback = none
+})
+TargetBox:Label("Manip Key", "Left"):Keybind({
+	Name = "Manip Key",
+	Flag = "ManipKey",
+	Default = Enum.KeyCode.G,
+	Mode = "Hold",
+	Callback = none
+})
+TargetBox:Slider({
+	Name = "Manip Range",
+	Flag = "ManipRange",
+	Min = 4,
+	Default = 10,
+	Max = 18,
+	Suffix = " studs",
+	Decimals = 1,
+	Callback = none
+})
+TargetBox:Label("Visible Color", "Left"):Colorpicker({
+	Name = "SA Visible Color",
+	Flag = "SA_TargetVisible",
+	Default = Color3.fromRGB(80, 255, 120),
+	Callback = none
+})
+TargetBox:Label("Hidden Color", "Left"):Colorpicker({
+	Name = "SA Hidden Color",
+	Flag = "SA_TargetHidden",
+	Default = Color3.fromRGB(255, 70, 70),
+	Callback = none
+})
+TargetBox:Toggle({
+	Name = "Visibility Bar",
+	Flag = "TargetState",
+	Default = true,
+	Callback = none
+})
+TargetBox:Toggle({
+	Name = "Status Background",
+	Flag = "Status_Bg",
+	Default = true,
+	Callback = none
+})
+TargetBox:Slider({
+	Name = "Status Transparency",
+	Flag = "Status_Transparency",
+	Min = 0,
+	Default = 15,
+	Max = 90,
+	Suffix = "%",
+	Decimals = 1,
+	Callback = none
+})
+TargetBox:Label("Status Color", "Left"):Colorpicker({
+	Name = "Status Color",
+	Flag = "Status_Color",
+	Default = Color3.fromRGB(0, 0, 0),
 	Callback = none
 })
 local GunMods = Combat:Section({ Name = "Gun Mods", Side = 2 })
@@ -795,6 +796,54 @@ HitFeedback:Toggle({
 	Default = false,
 	Callback = none
 })
+HitFeedback:Toggle({
+	Name = "Kill Fade",
+	Flag = "KillFade",
+	Default = true,
+	Callback = none
+})
+HitFeedback:Slider({
+	Name = "Hit Log X",
+	Flag = "Hit_X",
+	Min = 5,
+	Default = 50,
+	Max = 95,
+	Suffix = "%",
+	Decimals = 1,
+	Callback = function()
+		if hitBack then
+			hitBack:SetAttribute("Dragged", nil)
+		end
+	end
+})
+HitFeedback:Slider({
+	Name = "Hit Log Y",
+	Flag = "Hit_Y",
+	Min = 5,
+	Default = 72,
+	Max = 95,
+	Suffix = "%",
+	Decimals = 1,
+	Callback = function()
+		if hitBack then
+			hitBack:SetAttribute("Dragged", nil)
+		end
+	end
+})
+HitFeedback:Slider({
+	Name = "Hit Log Z",
+	Flag = "Hit_Z",
+	Min = -200,
+	Default = 0,
+	Max = 200,
+	Suffix = "px",
+	Decimals = 1,
+	Callback = function()
+		if hitBack then
+			hitBack:SetAttribute("Dragged", nil)
+		end
+	end
+})
 local OmniSprint = Movement:Section({ Name = "Omni Sprint", Side = 1 })
 OmniSprint:Toggle({
 	Name = "Enabled",
@@ -859,6 +908,31 @@ Spiderman:Slider({
 	Callback = none
 })
 local Extra = Movement:Section({ Name = "Extra", Side = 1 })
+Extra:Toggle({
+	Name = "No Jump Cooldown",
+	Flag = "NoJumpCd",
+	Default = false,
+	Callback = none
+})
+Extra:Toggle({
+	Name = "Server Spoof",
+	Flag = "Desync",
+	Default = false,
+	Callback = none
+})
+Extra:Toggle({
+	Name = "Show Server Pos",
+	Flag = "DesyncShow",
+	Default = true,
+	Callback = none
+})
+Extra:Slider({ Name = "Spoof X", Flag = "DesyncX", Min = -20, Default = 0, Max = 20, Suffix = " studs", Decimals = 1, Callback = none })
+Extra:Slider({ Name = "Spoof Y", Flag = "DesyncY", Min = -20, Default = 0, Max = 20, Suffix = " studs", Decimals = 1, Callback = none })
+Extra:Slider({ Name = "Spoof Z", Flag = "DesyncZ", Min = -20, Default = 6, Max = 20, Suffix = " studs", Decimals = 1, Callback = none })
+Extra:Slider({ Name = "Spoof Rot X", Flag = "DesyncRX", Min = -180, Default = 0, Max = 180, Suffix = " deg", Decimals = 1, Callback = none })
+Extra:Slider({ Name = "Spoof Rot Y", Flag = "DesyncRY", Min = -180, Default = 0, Max = 180, Suffix = " deg", Decimals = 1, Callback = none })
+Extra:Slider({ Name = "Spoof Rot Z", Flag = "DesyncRZ", Min = -180, Default = 0, Max = 180, Suffix = " deg", Decimals = 1, Callback = none })
+Extra:Slider({ Name = "Spoof Up Angle", Flag = "DesyncUp", Min = -89, Default = 0, Max = 89, Suffix = " deg", Decimals = 1, Callback = none })
 Extra:Toggle({
 	Name = "Silent Walk",
 	Flag = "SilentWalk",
@@ -1320,9 +1394,7 @@ function targetSection(p9, Name, Side, Text, Default, Default1, p15)
 			Name = "Font",
 			Flag = "EspFont",
 			Default = "Plex",
-			Items = {
-				"Plex", "System", "UI", "Monospace", "Arcade", "Fantasy"
-			},
+			Items = { "Plex", "System", "UI", "Monospace" },
 			Callback = none
 		})
 		SectionResult:Slider({
@@ -1358,6 +1430,35 @@ Awareness:Toggle({
 	Callback = none
 })
 Awareness:Toggle({
+	Name = "Proximity Alert",
+	Flag = "ProxAlert",
+	Default = false,
+	Callback = none
+})
+Awareness:Slider({
+	Name = "Alert Range",
+	Flag = "ProxRange",
+	Min = 5,
+	Default = 40,
+	Max = 200,
+	Suffix = "m",
+	Decimals = 1,
+	Callback = none
+})
+Awareness:Toggle({
+	Name = "Alert Background",
+	Flag = "ProxBg",
+	Default = true,
+	Callback = none
+})
+Awareness:Label("Alert Color", "Left"):Colorpicker({
+	Name = "Alert Color",
+	Flag = "ProxColor",
+	Default = Color3.fromRGB(255, 90, 90),
+	Callback = none
+})
+local Cards = ESP:Section({ Name = "Cards", Side = 1 })
+Cards:Toggle({
 	Name = "KD Background",
 	Flag = "SelfBg",
 	Default = true,
@@ -2630,15 +2731,22 @@ function kdOf(Player)
 	local Name = Players and (Players:FindFirstChild(Player.Name) or Players:FindFirstChild(tostring(Player.UserId)))
 	local Status = Name and Name:FindFirstChild("Status")
 	local Journey = Status and Status:FindFirstChild("Journey")
-	local WipeStatistics = Journey and Journey:FindFirstChild("WipeStatistics")
+	local WipeStatistics = Journey and (Journey:FindFirstChild("WipeStatistics") or Journey:FindFirstChild("Statistics"))
+	local StatFolder = Journey and Journey:FindFirstChild("Statistics")
+	local BestK, BestD = nil, nil
 	
-	if WipeStatistics then
-		local Number = tonumber(WipeStatistics:GetAttribute("Kills"))
-		local Number1 = tonumber(WipeStatistics:GetAttribute("Deaths"))
-		
-		if Number and Number1 then
-			return if Number1 <= 0 then Number else Number / Number1
+	for _, Folder in { WipeStatistics, StatFolder } do
+		if Folder then
+			local Kills = tonumber(Folder:GetAttribute("Kills"))
+			local Deaths = tonumber(Folder:GetAttribute("Deaths"))
+			
+			if Kills and Deaths and (not BestK or Kills + Deaths > BestK + BestD) then
+				BestK, BestD = Kills, Deaths
+			end
 		end
+	end
+	if BestK and BestD then
+		return if BestD <= 0 then BestK else BestK / BestD
 	end
 	local StatValueResult = statValue(Player, list2) or statValue(Name, list2)
 	
@@ -2669,6 +2777,35 @@ end
 
 local t4 = {}
 local t5 = {}
+
+function markedCheater(Player, Kd, Hours, Reports, Hs)
+	if Player == LocalPlayer then
+		return false
+	end
+	local SafeHours = flagNum("CheatSafeHours", 150)
+	local SafeKd = flagNum("CheatSafeKd", 5)
+	
+	if type(Hours) == "number" and Hours >= SafeHours and (type(Kd) ~= "number" or Kd < SafeKd) then
+		return false
+	end
+	local MinKd = flagNum("CheatMinKd", 5)
+	local MaxAge = flagNum("CheatMaxAge", 60)
+	local MaxHours = flagNum("CheatMaxHours", 25)
+	local MinReports = flagNum("CheatMinReports", 3)
+	local MinHs = flagNum("CheatMinHs", 0)
+	local LowTime = Player.AccountAge <= MaxAge or (type(Hours) == "number" and Hours <= MaxHours)
+	
+	if LowTime and type(Kd) == "number" and Kd >= MinKd then
+		return true
+	end
+	if MinReports > 0 and type(Reports) == "number" and Reports >= MinReports then
+		return true
+	end
+	if MinHs > 0 and type(Hs) == "number" and Hs >= MinHs and type(Kd) == "number" and Kd >= 2 then
+		return true
+	end
+	return false
+end
 
 function suspicious(Player, Character, Part)
 	if Player.AccountAge < 30 then
@@ -3781,7 +3918,7 @@ function considerSilent(p152, Camera, p154, _, p156, p157, p158)
 		return p156, p157
 	end
 	local SilentVisibleResult = silentVisible(p154, p152, p158)
-	local ThroughWall = flagBool("SA_Wallbang") and canWallbang(p154, p152) or flagBool("SA_Autowall") and canPenetrate(p154, p152)
+	local ThroughWall = (flagBool("SA_Wallbang") or flagBool("SA_Autowall")) and canWallbang(p154, p152)
 	
 	if not flagBool("SA_ForceHit") and not SilentVisibleResult and not ThroughWall and flagBool("SA_VisibleCheck") then
 		return p156, p157
@@ -3907,6 +4044,34 @@ function paintAim()
 	end
 end
 
+function fadeKillEsp(Model)
+	if not flagBool("KillFade") or typeof(Model) ~= "Instance" then return end
+	local Player = Players:GetPlayerFromCharacter(Model)
+	local Pack = Player and t3 and t3[Player]
+	
+	if Pack then
+		for _, Key in { "name", "dist", "weapon", "kd", "cheat", "hpText", "visor", "aim" } do
+			local Item = Pack[Key]
+			
+			if Item then
+				Item.Visible = false
+			end
+		end
+	end
+	local Highlight = Model:FindFirstChildOfClass("Highlight")
+	
+	if not Highlight then return end
+	task.spawn(function()
+		for _ = 1, 14 do
+			if not Highlight.Parent then return end
+			Highlight.FillTransparency = math.min(1, Highlight.FillTransparency + 0.07)
+			Highlight.OutlineTransparency = math.min(1, Highlight.OutlineTransparency + 0.07)
+			task.wait(0.04)
+		end
+		Highlight.Enabled = false
+	end)
+end
+
 function noteHit(Character, p164, p165)
 	local ClockTime = os.clock()
 	
@@ -3934,25 +4099,24 @@ function noteHit(Character, p164, p165)
 	local NewPosition = HumanoidRootPart and HumanoidRootPart.Position + Vector3.new(-0.6, 2.2, 0)
 	local IsHead = string.lower(Text) == "head"
 	
+	if p165 and flagBool("Hit_Notify") then
+		pushHit(string.format("%s   %s   %dm", Character.Name, Text, Floored))
+	end
+	if type(HealthSnapEntry) == "number" and modelHp(Character) ~= nil and modelHp(Character) <= 0 then
+		local Root = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
+		
+		if Root then
+			strikeLightning(Root.Position)
+			burstSparkle(Root.Position)
+		end
+		fadeKillEsp(Character)
+	end
 	if NewPosition and type(HealthSnapEntry) == "number" then
-		task.delay(0.22, function()
-			if not Character.Parent or not NewPosition then return end
-			local ModelHpResult = modelHp(Character)
-			
-			if type(ModelHpResult) == "number" and HealthSnapEntry - ModelHpResult >= 1 then
-				healthSnap[Character] = ModelHpResult
-				pushDamagePop(NewPosition, tostring(math.floor(HealthSnapEntry - ModelHpResult + 0.5)), IsHead)
-				
-				if ModelHpResult <= 0 then
-					local Root = Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Head")
-					
-					if Root then
-						strikeLightning(Root.Position)
-						burstSparkle(Root.Position)
-					end
-				end
-			end
-		end)
+		local Now = modelHp(Character)
+		
+		if type(Now) == "number" and HealthSnapEntry - Now >= 1 then
+			pushDamagePop(NewPosition, tostring(math.floor(HealthSnapEntry - Now + 0.5)), IsHead)
+		end
 	end
 	if HumanoidRootPart then
 		sprayBlood(HumanoidRootPart.Position)
@@ -3967,7 +4131,7 @@ function noteHit(Character, p164, p165)
 			if type(HealthSnapEntry) == "number" and type(NowHp) == "number" and HealthSnapEntry - NowHp < 1 then
 				return
 			end
-			if flagBool("Hit_Notify") then
+			if flagBool("Hit_Notify") and not p165 then
 				pushHit(string.format("%s   %s   %dm", Character.Name, Text, Floored))
 			end
 			if flagBool("Hit_Enabled") then
@@ -4524,7 +4688,8 @@ function isHealName(p187)
 	
 	for _, value in {
 		"ai-2", "ai2", "ai-4", "ai4", "ai-12", "ai12", "aa-2", "aa2", "survival",
-		"bandage", "splint", "surv", "ifak", "salewa", "grizzly", "medkit",
+		"bandage", "splint", "surv", "surv12", "s12", "ifak", "salewa", "grizzly", "medkit",
+		"firstaid", "first aid", "cms", "afak", "survival kit",
 		"morphine", "stim", "serum", "tourniquet", "cms", "afak", "hemostat",
 		"calok", "dressing", "rags", "gauze", "med"
 	} do
@@ -4724,67 +4889,7 @@ function lootCircle(Object)
 	return (string.find(ParentName, "loot", 1, true) or string.find(ParentName, "drag", 1, true)) and (Name == "fill" or Name == "progress" or string.find(Name, "hold", 1, true))
 end
 
-function fireSlotLoot(Slot)
-	if typeof(Slot) ~= "Instance" then return end
-	local Remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
-	local Quick = Remotes and Remotes:FindFirstChild("QuickLoot")
-	
-	if not Quick then return end
-	local Item = Slot:FindFirstChild("Item") or Slot:FindFirstChild("ItemValue")
-	
-	pcall(function()
-		Quick:FireServer(Slot.Name)
-	end)
-	
-	if Item and Item:IsA("ObjectValue") and Item.Value then
-		pcall(function()
-			Quick:FireServer(Item.Value)
-		end)
-	end
-end
 
-function pumpLootCircles()
-	local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
-	local Main = PlayerGui and PlayerGui:FindFirstChild("MainGui")
-	
-	if not Main then return end
-	local MainFrame = Main:FindFirstChild("MainFrame")
-	
-	if MainFrame and MainFrame:IsA("GuiObject") and not MainFrame.Visible then return end
-	local Now = os.clock()
-	
-	if Now - (lootPump or 0) < 0.08 then return end
-	lootPump = Now
-	lootSeen = lootSeen or {}
-	
-	for _, Object in Main:GetDescendants() do
-		if Object:IsA("GuiObject") and lootCircle(Object) then
-			local Active = Object.Visible and Object.AbsoluteSize.X > 6
-			local Id = Object:GetFullName()
-			
-			if Active and not lootSeen[Id] then
-				local Slot = Object.Parent
-				local Guard = 0
-				
-				while Slot and Guard < 5 and not (Slot:FindFirstChild("Item") or Slot:FindFirstChild("ItemValue")) do
-					Slot = Slot.Parent
-					Guard += 1
-				end
-				if Slot and Slot:IsA("GuiObject") then
-					fireSlotLoot(Slot)
-				end
-				pcall(function()
-					Object.Size = UDim2.fromScale(1, 1)
-				end)
-			end
-			lootSeen[Id] = Active
-		end
-	end
-end
-
-function applyInstantLoot()
-	return
-end
 
 function applyInstantHeal()
 	if flagBool("InstantHeal") then
@@ -4851,6 +4956,545 @@ function applyInstantHeal()
 			pcall(patchHealItems)
 		end
 		healWas = false
+	end
+end
+
+function isFootSound(Sound)
+	if typeof(Sound) ~= "Instance" or Sound.ClassName ~= "Sound" or Sound.Name == "MidnightHit" then
+		return false
+	end
+	local Name = string.lower(Sound.Name)
+	
+	if string.find(Name, "shoot", 1, true) or string.find(Name, "fire", 1, true) or string.find(Name, "shot", 1, true) or string.find(Name, "reload", 1, true) or string.find(Name, "equip", 1, true) or string.find(Name, "click", 1, true) or string.find(Name, "ui", 1, true) or string.find(Name, "bolt", 1, true) or string.find(Name, "mag", 1, true) or string.find(Name, "hit", 1, true) then
+		return false
+	end
+	for _, Word in { "step", "foot", "walk", "land", "run", "sprint", "concrete", "grass", "dirt", "metal", "wood", "gravel", "sand", "tile", "mud", "snow", "fabric", "cloth", "water" } do
+		if string.find(Name, Word, 1, true) then
+			return true
+		end
+	end
+	local Character = LocalPlayer.Character
+	
+	if Character and Sound:IsDescendantOf(Character) then
+		local Length = Sound.TimeLength
+		
+		return Length == 0 or Length < 1.4
+	end
+	return false
+end
+
+function quietSteps()
+	if not stepHooked and type(hookmetamethod) == "function" then
+		stepHooked = true
+		pcall(function()
+			local Old
+			local Inside = false
+			
+			Old = hookmetamethod(game, "__newindex", function(self, Key, Value)
+				if not Inside and Key == "Playing" and Value == true and flagBool("SilentWalk") and isFootSound(self) then
+					Inside = true
+					self.Volume = 0
+					local Result = Old(self, Key, false)
+					
+					Inside = false
+					
+					return Result
+				end
+				return Old(self, Key, Value)
+			end)
+		end)
+	end
+	if not flagBool("SilentWalk") then return end
+	local Character = LocalPlayer.Character
+	
+	if not Character then return end
+	for _, Sound in Character:GetDescendants() do
+		if isFootSound(Sound) then
+			Sound.Volume = 0
+			Sound.RollOffMaxDistance = 0
+		end
+	end
+end
+
+function applyChatBlur()
+	if flagBool("NoInvBlur") then
+		for _, Effect in game:GetService("Lighting"):GetChildren() do
+			if Effect:IsA("BlurEffect") then
+				Effect.Size = 0
+			end
+		end
+	end
+	local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
+	
+	if not flagBool("HideChat") then
+		if chatHidden then
+			for _, Object in chatHidden do
+				if Object and Object.Parent then
+					if Object:IsA("ScreenGui") then
+						Object.Enabled = true
+					elseif Object:IsA("GuiObject") then
+						Object.Visible = true
+					end
+				end
+			end
+			chatHidden = nil
+			chatLooked = false
+		end
+		return
+	end
+	if not chatLooked then
+		chatLooked = true
+		chatHidden = {}
+		
+		local function remember(Object)
+			if typeof(Object) ~= "Instance" then return end
+			for _, Have in chatHidden do
+				if Have == Object then return end
+			end
+			chatHidden[#chatHidden + 1] = Object
+		end
+		
+		if PlayerGui then
+			remember(PlayerGui:FindFirstChild("Chat"))
+			local Main = PlayerGui:FindFirstChild("MainGui")
+			
+			if Main then
+				for _, Object in Main:GetDescendants() do
+					local Text = ""
+					
+					if Object:IsA("TextLabel") or Object:IsA("TextBox") or Object:IsA("TextButton") then
+						Text = string.lower(Object.Text or "")
+					end
+					if string.find(Text, "to chat click here", 1, true) or string.find(Text, "press (\"t\"", 1, true) or string.find(string.lower(Object.Name), "chatbar", 1, true) then
+						local Host = Object
+						
+						for _ = 1, 5 do
+							if not Host.Parent or Host.Parent == Main or Host.Parent == PlayerGui or Host:IsA("ScreenGui") then
+								break
+							end
+							Host = Host.Parent
+						end
+						if Host ~= Main and Host ~= PlayerGui then
+							remember(Host)
+						end
+					end
+				end
+			end
+			for _, Gui in PlayerGui:GetChildren() do
+				if Gui:IsA("ScreenGui") and Gui.Name ~= "MainGui" and string.find(string.lower(Gui.Name), "chat", 1, true) then
+					remember(Gui)
+				end
+			end
+		end
+		if #chatHidden == 0 then
+			chatHidden = nil
+			task.delay(4, function()
+				chatLooked = false
+			end)
+		end
+	end
+	if not chatHidden then return end
+	if not chatBind then
+		chatBind = true
+		RunService:BindToRenderStep("MidnightChat", Enum.RenderPriority.Last.Value + 5, function()
+			if not flagBool("HideChat") or not chatHidden then return end
+			for _, Object in chatHidden do
+				if Object and Object.Parent then
+					if Object:IsA("ScreenGui") then
+						Object.Enabled = false
+					elseif Object:IsA("GuiObject") then
+						Object.Visible = false
+					end
+				end
+			end
+		end)
+	end
+	for _, Object in chatHidden do
+		if Object and Object.Parent then
+			if Object:IsA("ScreenGui") then
+				Object.Enabled = false
+			elseif Object:IsA("GuiObject") then
+				Object.Visible = false
+			end
+		end
+	end
+end
+
+function desyncCFrame(Real)
+	local X = flagNum("DesyncX", 0)
+	local Y = flagNum("DesyncY", 0)
+	local Z = flagNum("DesyncZ", 6)
+	local Rx = flagNum("DesyncRX", 0)
+	local Ry = flagNum("DesyncRY", 0)
+	local Rz = flagNum("DesyncRZ", 0)
+	local Up = flagNum("DesyncUp", 0)
+	
+	return Real * CFrame.new(X, Y, Z) * CFrame.Angles(math.rad(Rx + Up), math.rad(Ry), math.rad(Rz))
+end
+
+function placeServerBody(Spoof)
+	if not serverBody or not serverBody.Parent then
+		if serverBody then
+			serverBody:Destroy()
+		end
+		serverBody = Instance.new("Model")
+		serverBody.Name = "MidnightServerPos"
+		serverParts = {}
+		
+		local function limb(Name, Size, Offset)
+			local Part = Instance.new("Part")
+			
+			Part.Name = Name
+			Part.Size = Size
+			Part.Color = Color3.fromRGB(255, 0, 255)
+			Part.Material = Enum.Material.ForceField
+			Part.Transparency = 0.2
+			Part.Anchored = true
+			Part.CanCollide = false
+			Part.CanQuery = false
+			Part.CanTouch = false
+			Part.CastShadow = false
+			Part.Parent = serverBody
+			serverParts[#serverParts + 1] = { Part, Offset }
+		end
+		
+		limb("Torso", Vector3.new(2, 2, 1), CFrame.new(0, 0, 0))
+		limb("Head", Vector3.new(1.15, 1.15, 1.15), CFrame.new(0, 1.55, 0))
+		limb("Left Arm", Vector3.new(1, 2, 1), CFrame.new(-1.5, 0, 0))
+		limb("Right Arm", Vector3.new(1, 2, 1), CFrame.new(1.5, 0, 0))
+		limb("Left Leg", Vector3.new(1, 2, 1), CFrame.new(-0.5, -2, 0))
+		limb("Right Leg", Vector3.new(1, 2, 1), CFrame.new(0.5, -2, 0))
+		
+		local Highlight = Instance.new("Highlight")
+		
+		Highlight.FillColor = Color3.fromRGB(255, 0, 255)
+		Highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+		Highlight.FillTransparency = 0.35
+		Highlight.OutlineTransparency = 0
+		Highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+		Highlight.Parent = serverBody
+		serverBody.Parent = workspace
+	end
+	for _, Limb in serverParts do
+		Limb[1].CFrame = Spoof * Limb[2]
+	end
+end
+
+function applyDesyncPov(On)
+	if On then
+		if not povSaved then
+			povSaved = {
+				Mode = LocalPlayer.CameraMode,
+				Min = LocalPlayer.CameraMinZoomDistance,
+				Max = LocalPlayer.CameraMaxZoomDistance
+			}
+		end
+		LocalPlayer.CameraMode = Enum.CameraMode.LockFirstPerson
+		LocalPlayer.CameraMinZoomDistance = 0.5
+		LocalPlayer.CameraMaxZoomDistance = 0.5
+	elseif povSaved then
+		LocalPlayer.CameraMode = povSaved.Mode
+		LocalPlayer.CameraMinZoomDistance = povSaved.Min
+		LocalPlayer.CameraMaxZoomDistance = povSaved.Max
+		povSaved = nil
+	end
+end
+
+function paintServerLook(Character, On)
+	if On or restoredLook or not Character then return end
+	restoredLook = true
+	
+	for _, Part in Character:GetDescendants() do
+		if Part:IsA("BasePart") and Part.Material == Enum.Material.ForceField then
+			Part.Material = Enum.Material.SmoothPlastic
+		end
+	end
+end
+
+function ensureDesync()
+	if desyncBound then return end
+	desyncBound = true
+	RunService.Heartbeat:Connect(function()
+		local Character = LocalPlayer.Character
+		local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+		
+		if not flagBool("Desync") or not Root or peekState then
+			desyncReal = nil
+			desyncSpoof = nil
+			
+			return
+		end
+		desyncReal = Root.CFrame
+		local Wanted = desyncCFrame(desyncReal)
+		local Delta = Wanted.Position - desyncReal.Position
+		
+		if Delta.Magnitude > 2.5 then
+			local Stepped = desyncReal.Position + Delta.Unit * 2.5
+			
+			desyncSpoof = CFrame.new(Stepped) * (Wanted - Wanted.Position)
+		else
+			desyncSpoof = Wanted
+		end
+		desyncWant = Wanted
+		Root.CFrame = desyncSpoof
+		pcall(function()
+			local PlayersFolder = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
+			local Node = PlayersFolder and PlayersFolder:FindFirstChild(LocalPlayer.Name)
+			local Status = Node and Node:FindFirstChild("Status")
+			local UAC = Status and Status:FindFirstChild("UAC")
+			
+			if UAC then
+				UAC:SetAttribute("LastVerifiedPos", desyncSpoof.Position)
+			end
+		end)
+	end)
+	RunService:BindToRenderStep("MidnightSpoofCam", Enum.RenderPriority.Camera.Value - 1, function()
+		local Character = LocalPlayer.Character
+		local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+		local Show = flagBool("Desync") and flagBool("DesyncShow") and not peekState
+		
+		if flagBool("HideChat") then
+			pcall(applyChatBlur)
+		end
+		if not desyncReal or not Root or not flagBool("Desync") then
+			paintServerLook(Character, false)
+			
+			if serverBody then
+				serverBody.Parent = nil
+			end
+			return
+		end
+		local Spoof = desyncWant or desyncSpoof or desyncCFrame(desyncReal)
+		
+		Root.CFrame = desyncReal
+		paintServerLook(Character, Show)
+		
+		if not Show then
+			if serverBody then
+				serverBody.Parent = nil
+			end
+			return
+		end
+		placeServerBody(Spoof)
+	end)
+end
+
+function applyReach()
+end
+
+
+
+function applyMoses()
+	local Terrain = workspace:FindFirstChildOfClass("Terrain")
+	
+	if not Terrain then return end
+	if not flagBool("Moses") then
+		if mosesWas then
+			pcall(function()
+				Terrain.WaterTransparency = mosesWater or 0
+			end)
+			mosesWas = false
+		end
+		return
+	end
+	if not mosesWas then
+		mosesWater = Terrain.WaterTransparency
+		mosesWas = true
+	end
+	pcall(function()
+		Terrain.WaterTransparency = 1
+		Terrain.WaterWaveSize = 0
+		Terrain.WaterWaveSpeed = 0
+	end)
+	local Root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	
+	if not Root or os.clock() - (mosesAt or 0) < 0.45 then return end
+	mosesAt = os.clock()
+	local Pos = Root.Position
+	local Region = Region3.new(Pos - Vector3.new(70, 24, 70), Pos + Vector3.new(70, 8, 70)):ExpandToGrid(4)
+	
+	pcall(function()
+		Terrain:ReplaceMaterial(Region, 4, Enum.Material.Water, Enum.Material.Air)
+	end)
+end
+
+function applyAntiDrown()
+	if not flagBool("AntiDrown") then return end
+	local Character = LocalPlayer.Character
+	local Health = Character and Character:FindFirstChild("Health")
+	
+	if not Health then return end
+	for _, Child in Health:GetChildren() do
+		local Low = string.lower(Child.Name)
+		
+		if Child:IsA("ValueBase") and (string.find(Low, "oxygen", 1, true) or string.find(Low, "breath", 1, true) or string.find(Low, "air", 1, true)) then
+			local Max = tonumber(Child:GetAttribute("Max")) or 100
+			
+			if tonumber(Child.Value) and Child.Value < Max then
+				Child.Value = Max
+			end
+		end
+	end
+end
+
+
+function startKdDrop()
+	if kdDropRunning then return end
+	kdDropRunning = true
+	kdDropStop = false
+	task.spawn(function()
+		local ReplicatedStorage = game:GetService("ReplicatedStorage")
+		local Goal = math.max(1, math.floor(flagNum("KdDropCount", 5)))
+		local Done = 0
+		
+		while flagBool("KdDrop") and not kdDropStop and Done < Goal do
+			local Folder = ReplicatedStorage:FindFirstChild("Players")
+			local Node = Folder and Folder:FindFirstChild(LocalPlayer.Name)
+			local Spawned = nil
+			
+			pcall(function()
+				Spawned = Node.Status.GameplayVariables:GetAttribute("Spawned")
+			end)
+			if Spawned ~= true then
+				pcall(function()
+					ReplicatedStorage.Remotes.SpawnCharacter:InvokeServer("West")
+				end)
+				task.wait(3)
+			end
+			local Character = workspace:FindFirstChild(LocalPlayer.Name)
+			
+			if not Character then
+				pcall(function()
+					ReplicatedStorage.Remotes.SpawnCharacter:InvokeServer("West")
+				end)
+				task.wait(5)
+				Character = workspace:FindFirstChild(LocalPlayer.Name)
+				
+				if not Character then
+					task.wait(1)
+					continue
+				end
+			end
+			local Drown = Character:FindFirstChild("Health") and Character.Health:FindFirstChild("Drowning")
+			
+			if Drown then
+				for _ = 1, 20 do
+					if not flagBool("KdDrop") then break end
+					pcall(function()
+						Drown:FireServer(5)
+					end)
+					task.wait(0.01)
+				end
+			end
+			pcall(function()
+				ReplicatedStorage.Remotes.ResetCharacter:FireServer()
+			end)
+			Done += 1
+			kdDropDone = Done
+			local Deaths = nil
+			
+			pcall(function()
+				Deaths = Node.Status.Journey.Statistics:GetAttribute("Deaths")
+			end)
+			v0:Notification(string.format("Drop %d/%d  deaths %s", Done, Goal, tostring(Deaths or "?")), 3, Color3.fromRGB(255, 255, 255))
+			task.wait(6.7)
+			local Extra = 2
+			
+			pcall(function()
+				local Text = LocalPlayer.PlayerGui.RespawnMenu.MainFrame.Transitions.RespawnScreen.RespawnOptions.WestSpawnButton.Timer.Text
+				
+				Extra = (tonumber(string.match(Text, "%d+")) or 0) + 2
+			end)
+			task.wait(Extra)
+			if not flagBool("KdDrop") then break end
+			pcall(function()
+				ReplicatedStorage.Remotes.SpawnCharacter:InvokeServer("West")
+			end)
+		end
+		kdDropRunning = false
+		v0:Notification(flagBool("KdDrop") and string.format("Drop done %d", Done) or string.format("Drop stopped %d/%d", Done, Goal), 3, Color3.fromRGB(255, 255, 255))
+	end)
+end
+
+function applyAntiMine()
+	if not flagBool("AntiMine") then return end
+	local Character = LocalPlayer.Character
+	local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+	local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+	
+	if not Root then return end
+	if not mineScanBusy and os.clock() - (mineListAt or 0) > 3 then
+		mineScanBusy = true
+		mineListAt = os.clock()
+		task.spawn(function()
+			local List = {}
+			local Checked = 0
+			
+			local function isMine(Name)
+				local Low = string.lower(Name)
+				
+				return string.find(Low, "pmn", 1, true) or string.find(Low, "mon-50", 1, true) or string.find(Low, "mon50", 1, true) or string.find(Low, "ozm", 1, true) or string.find(Low, "claymore", 1, true) or string.find(Low, "pomz", 1, true) or string.find(Low, "tripwire", 1, true)
+			end
+			
+			for _, Object in workspace:GetDescendants() do
+				Checked += 1
+				
+				if Checked % 600 == 0 then
+					task.wait()
+				end
+				if Object:IsA("Model") and isMine(Object.Name) then
+					List[#List + 1] = Object
+				end
+			end
+			mineList = List
+			mineScanBusy = false
+		end)
+	end
+	for _, Object in mineList or {} do
+		if Object.Parent then
+			local Part = Object:FindFirstChildWhichIsA("BasePart", true)
+			
+			if Part and (Part.Position - Root.Position).Magnitude < 36 then
+				for _, Child in Object:GetDescendants() do
+					if Child:IsA("BasePart") then
+						Child.CanTouch = false
+						Child.CanCollide = false
+					end
+				end
+				if getconnections then
+					pcall(function()
+						for _, Connection in getconnections(Part.Touched) do
+							Connection:Disconnect()
+						end
+					end)
+				end
+			end
+		end
+	end
+	if Humanoid then
+		if type(mineHp) ~= "number" then
+			mineHp = Humanoid.Health
+		end
+		if Humanoid.Health + 1 < mineHp then
+			local Close = false
+			
+			for _, Object in mineList or {} do
+				local Part = Object.Parent and Object:FindFirstChildWhichIsA("BasePart", true)
+				
+				if Part and (Part.Position - Root.Position).Magnitude < 12 then
+					Close = true
+					
+					break
+				end
+			end
+			if Close then
+				Humanoid.Health = mineHp
+			else
+				mineHp = Humanoid.Health
+			end
+		else
+			mineHp = Humanoid.Health
+		end
 	end
 end
 
@@ -6137,10 +6781,10 @@ end
 local list5 = {
 	{ label = "Anton", keys = { "anton" } },
 	{ label = "Dozer", keys = { "dozer" } },
-	{ label = "Whisper", keys = { "whisper", "quiet" } },
+	{ label = "Whisper", keys = { "whisper", "quiet", "stalker", "phantom", "wraith" } },
 	{
 		label = "Death",
-		keys = { "death", "wendigo", "halloween" }
+		keys = { "death", "wendigo", "halloween", "reaper", "hollow" }
 	},
 	{ label = "Mi-24", keys = { "mi-24", "mi24", "hind" } },
 	{ label = "BTR-80", keys = { "btr-80", "btr80", "btr" } }
@@ -6512,17 +7156,55 @@ scanFound = nil
 scanBosses = nil
 liveBosses = {}
 
+function nameIsMine(Name)
+	local Low = string.lower(tostring(Name or ""))
+	
+	if Low == "" or string.find(Low, "minefield", 1, true) or string.find(Low, "midnight", 1, true) then
+		return false
+	end
+	return string.find(Low, "pmn", 1, true) or string.find(Low, "mon-50", 1, true) or string.find(Low, "mon50", 1, true) or string.find(Low, "ozm", 1, true) or string.find(Low, "pomz", 1, true) or string.find(Low, "claymore", 1, true) or string.find(Low, "tripwire", 1, true) or string.find(Low, "landmine", 1, true) or string.find(Low, "land mine", 1, true) or string.find(Low, "tm-62", 1, true) or string.find(Low, "tm62", 1, true) or string.find(Low, "bounding", 1, true) or (string.find(Low, "f1", 1, true) and string.find(Low, "trap", 1, true)) or string.find(Low, "mine", 1, true)
+end
+
+function modelIsMine(Object)
+	if typeof(Object) ~= "Instance" or not Object:IsA("Model") then
+		return false
+	end
+	if nameIsMine(Object.Name) or nameIsMine(Object.Parent and Object.Parent.Name) then
+		return true
+	end
+	for _, Key in { "ItemName", "Name", "DisplayName", "CallSign" } do
+		if nameIsMine(Object:GetAttribute(Key)) then
+			return true
+		end
+	end
+	local Props = Object:FindFirstChild("ItemProperties")
+	
+	if Props then
+		for _, Key in { "ItemName", "Name", "DisplayName", "CallSign" } do
+			if nameIsMine(Props:GetAttribute(Key)) then
+				return true
+			end
+		end
+	end
+	for _, Child in Object:GetChildren() do
+		if nameIsMine(Child.Name) then
+			return true
+		end
+	end
+	return false
+end
+
 function markKind(Model)
 	local Lowered = string.lower(Model.Name .. " " .. (Model.Parent and Model.Parent.Name or ""))
 	
-	return if flagBool("VehicleESP") and (Model:FindFirstChildWhichIsA("VehicleSeat", true) or string.find(Lowered, "vehicle", 1, true) or string.find(Lowered, "btr", 1, true) or string.find(Lowered, "heli", 1, true)) then {
+	return if flagBool("VehicleESP") and (Model:FindFirstChildWhichIsA("VehicleSeat", true) or string.find(Lowered, "vehicle", 1, true) or string.find(Lowered, "chassis", 1, true) or string.find(Lowered, "btr", 1, true) or string.find(Lowered, "heli", 1, true)) then {
 		model = Model,
 		kind = "mark",
 		label = Model.Name,
 		flag = "VehicleESP",
 		color = flagColor("VehicleColor", Color3.fromRGB(120, 180, 255)),
 		distFlag = "VehicleMax"
-	} elseif flagBool("MineESP") and (string.find(Lowered, "mine", 1, true) or string.find(Lowered, "claymore", 1, true) or string.find(Lowered, "tripwire", 1, true)) then {
+	} elseif flagBool("MineESP") and modelIsMine(Model) then {
 		model = Model,
 		kind = "mark",
 		label = Model.Name,
@@ -6822,6 +7504,10 @@ function nextWorldDraw()
 end
 
 function quickBosses()
+	if bossLive and os.clock() - (bossScanAt or 0) < 1.8 then
+		return bossLive
+	end
+	bossScanAt = os.clock()
 	local t = {}
 	
 	local function consider(Object)
@@ -6881,15 +7567,17 @@ function quickBosses()
 		end
 	end
 	
-	local AiZones = workspace:FindFirstChild("AiZones")
-	
-	if AiZones then
-		for _, Model in AiZones:GetChildren() do
-			considerNpc(Model)
-			
-			if not Model:IsA("Model") then
-				for _, child in Model:GetChildren() do
-					considerNpc(child)
+	for _, FolderName in { "AiZones", "Bosses", "NPCs", "AI", "Spawns" } do
+		local Folder = workspace:FindFirstChild(FolderName)
+		
+		if Folder then
+			for _, Model in Folder:GetChildren() do
+				considerNpc(Model)
+				
+				if not Model:IsA("Model") then
+					for _, child in Model:GetChildren() do
+						considerNpc(child)
+					end
 				end
 			end
 		end
@@ -6899,6 +7587,44 @@ function quickBosses()
 			consider(Model1)
 		end
 	end
+	bossSeen = bossSeen or {}
+	bossMarks = bossMarks or {}
+	
+	for Label, Object in t do
+		if typeof(Object) == "Instance" and Object ~= bossMarks[Label] then
+			local Point = instancePoint(Object)
+			
+			if typeof(Point) == "Vector3" then
+				bossSeen[Label] = { pos = Point, t = os.clock() }
+			end
+		end
+	end
+	for _, Row in list5 do
+		local Seen = bossSeen[Row.label]
+		
+		if t[Row.label] == nil and Seen and os.clock() - Seen.t < 30 and typeof(Seen.pos) == "Vector3" then
+			local Mark = bossMarks[Row.label]
+			
+			if not Mark or not Mark.Parent then
+				Mark = Instance.new("Part")
+				Mark.Name = Row.label
+				Mark.Anchored = true
+				Mark.CanCollide = false
+				Mark.CanQuery = false
+				Mark.CanTouch = false
+				Mark.Transparency = 1
+				Mark.Size = Vector3.new(1, 1, 1)
+				Mark.Parent = workspace
+				bossMarks[Row.label] = Mark
+			end
+			Mark.CFrame = CFrame.new(Seen.pos)
+			t[Row.label] = Mark
+		elseif bossMarks[Row.label] then
+			bossMarks[Row.label]:Destroy()
+			bossMarks[Row.label] = nil
+		end
+	end
+	bossLive = t
 	return t
 end
 
@@ -7534,6 +8260,10 @@ function drawWorldEsp(Camera, p274)
 				IsAi = isFrozenPlayerCopy(Model) or (not Model or not Model.Parent) and typeof(value2.pos) ~= "Vector3"
 			end
 			if not IsAi then
+				if value2.flag == "VehicleESP" or value2.flag == "MineESP" then
+					value2.pos = nil
+					value2.anchor = nil
+				end
 				local Pos = typeof(value2.pos) == "Vector3" and value2.pos or nil
 				local HumanoidRootPart = value2.anchor
 				
@@ -7786,7 +8516,7 @@ function profileStats(Player)
 	local Stat = statCache[Player]
 	
 	if Stat and os.clock() - Stat.t < 2 then
-		return Stat.kills, Stat.deaths, Stat.kd, Stat.reports, Stat.hours
+		return Stat.kills, Stat.deaths, Stat.kd, Stat.reports, Stat.hours, Stat.hs
 	end
 	local Players = game:GetService("ReplicatedStorage"):FindFirstChild("Players")
 	local Name = Players and (Players:FindFirstChild(Player.Name) or Players:FindFirstChild(tostring(Player.UserId)))
@@ -7797,10 +8527,19 @@ function profileStats(Player)
 	local Status = Name and Name:FindFirstChild("Status")
 	local Journey = Status and Status:FindFirstChild("Journey")
 	local WipeStatistics = Journey and Journey:FindFirstChild("WipeStatistics")
+	local Statistics = Journey and Journey:FindFirstChild("Statistics")
 	
 	if WipeStatistics then
 		Number = tonumber(WipeStatistics:GetAttribute("Kills")) or 0
 		Number1 = tonumber(WipeStatistics:GetAttribute("Deaths")) or 0
+	end
+	if Statistics then
+		local Kills = tonumber(Statistics:GetAttribute("Kills")) or 0
+		local Deaths = tonumber(Statistics:GetAttribute("Deaths")) or 0
+		
+		if Kills + Deaths > Number + Number1 then
+			Number, Number1 = Kills, Deaths
+		end
 	end
 	local function absorbReports(Value)
 		if typeof(Value) ~= "Instance" then return end
@@ -7865,11 +8604,29 @@ function profileStats(Player)
 		takeReports(Reports)
 	end
 	absorbReports(WipeStatistics)
+	absorbReports(Statistics)
 	absorbReports(Journey)
 	absorbReports(UAC)
 	absorbReports(Status)
 	absorbReports(Name)
 	absorbReports(Player)
+	
+	local function reportOf(Folder)
+		if not Folder then
+			return 0
+		end
+		local Best = tonumber(Folder:GetAttribute("Reports")) or tonumber(Folder:GetAttribute("ReportCount")) or 0
+		local Child = Folder:FindFirstChild("Reports")
+		
+		if Child and Child:IsA("ValueBase") then
+			Best = math.max(Best, tonumber(Child.Value) or 0)
+		elseif Child then
+			Best = math.max(Best, #Child:GetChildren())
+		end
+		return Best
+	end
+	
+	Count = math.max(Count, reportOf(WipeStatistics), reportOf(Statistics), reportOf(Journey), reportOf(Status), reportOf(UAC))
 	local function consider(Name, Text)
 		local Lowered = string.lower(tostring(Name))
 		
@@ -7910,17 +8667,69 @@ function profileStats(Player)
 	readHours(Status)
 	readHours(Name)
 	readHours(Player)
+	local Heads = nil
+	local HeadKey = ""
+	
+	local function takeHs(Object)
+		if not Object or Heads then return end
+		for Key, Value in Object:GetAttributes() do
+			local Name = string.lower(Key)
+			
+			if string.find(Name, "head", 1, true) or Name == "hs" or Name == "hsr" or string.find(Name, "hsr", 1, true) then
+				local Number = tonumber(Value)
+				
+				if Number then
+					Heads = Number
+					HeadKey = Name
+					
+					return
+				end
+			end
+		end
+		for _, Child in Object:GetChildren() do
+			local Name = string.lower(Child.Name)
+			
+			if Child:IsA("ValueBase") and (string.find(Name, "head", 1, true) or Name == "hs" or Name == "hsr" or string.find(Name, "hsr", 1, true)) then
+				local Number = tonumber(Child.Value)
+				
+				if Number then
+					Heads = Number
+					HeadKey = Name
+					
+					return
+				end
+			end
+		end
+	end
+	
+	takeHs(WipeStatistics)
+	takeHs(Journey)
+	takeHs(Status)
+	takeHs(Status and Status:FindFirstChild("Stats"))
+	takeHs(Status and Status:FindFirstChild("Combat"))
+	local Hs = nil
+	
+	if type(Heads) == "number" then
+		if string.find(HeadKey, "ratio", 1, true) or string.find(HeadKey, "hsr", 1, true) or string.find(HeadKey, "percent", 1, true) then
+			Hs = Heads <= 1 and Heads * 100 or Heads
+		elseif Number > 0 and Heads <= Number then
+			Hs = Heads / Number * 100
+		elseif Heads <= 100 then
+			Hs = Heads
+		end
+	end
 	local NumberRatio = Number1 > 0 and Number / Number1 or Number
 	statCache[Player] = {
-		t = os.clock(),
+		t = (Number == 0 and Number1 == 0 and Count == 0) and os.clock() - 1.6 or os.clock(),
 		kills = Number,
 		deaths = Number1,
 		kd = NumberRatio,
 		reports = Count,
-		hours = Hours
+		hours = Hours,
+		hs = Hs
 	}
 	
-	return Number, Number1, NumberRatio, Count, Hours
+	return Number, Number1, NumberRatio, Count, Hours, Hs
 end
 
 cardUser = nil
@@ -8272,7 +9081,7 @@ function updateTargetCard(Character)
 			end
 		end)
 	end
-	local ProfileStatsResult, ProfileStatsResult2, ProfileStatsResult3, ProfileStatsResult4, ProfileStatsResult5 = profileStats(Player)
+	local ProfileStatsResult, ProfileStatsResult2, ProfileStatsResult3, ProfileStatsResult4, ProfileStatsResult5, Hs = profileStats(Player)
 	local Formatted = ProfileStatsResult5 and string.format("%dh", math.floor(ProfileStatsResult5 + 0.5)) or "--"
 	cardUserText.Text = Player.Name
 	cardKdText.Text = string.format("%.2f (%d / %d)", ProfileStatsResult3, ProfileStatsResult, ProfileStatsResult2)
@@ -8466,9 +9275,7 @@ function drawingFont()
 		Plex = 2,
 		System = 1,
 		UI = 0,
-		Monospace = 3,
-		Arcade = 3,
-		Fantasy = 1
+		Monospace = 3
 	})[EspFont] or 2
 end
 
@@ -8482,9 +9289,7 @@ function guiFont()
 		Plex = Enum.Font.Gotham,
 		System = Enum.Font.SourceSans,
 		UI = Enum.Font.GothamMedium,
-		Monospace = Enum.Font.Code,
-		Arcade = Enum.Font.Arcade,
-		Fantasy = Enum.Font.Fantasy
+		Monospace = Enum.Font.Code
 	})[EspFont] or Enum.Font.Gotham
 end
 
@@ -8781,9 +9586,6 @@ if not shared.MidnightFall then
 		if applyInstantHeal then
 			applyInstantHeal()
 		end
-		if applyInstantLoot then
-			applyInstantLoot()
-		end
 	end)
 end
 RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, function(DeltaTime)
@@ -8921,21 +9723,23 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 		if player ~= LocalPlayer and (v0.Flags.PlayersKD ~= false or PlayersCheater) then
 			local Kd = kdCache and kdCache[player]
 			
-			if Kd and os.clock() - Kd.t < 8 then
-				KdOfResult = Kd.v
-			else
-				KdOfResult = kdOf(player)
+			if not Kd or os.clock() - Kd.t >= 8 then
+				local _, _, KdValue, Reports, Hours, Hs = profileStats(player)
+				
 				kdCache = kdCache or {}
-				kdCache[player] = { t = os.clock(), v = KdOfResult }
+				kdCache[player] = {
+					t = os.clock(),
+					v = KdValue,
+					reports = Reports,
+					hours = Hours,
+					hs = Hs
+				}
+				Kd = kdCache[player]
 			end
+			KdOfResult = Kd.v
 		end
-		local IsKdOfResultAbove = type(KdOfResult) == "number" and KdOfResult > 3
-		local AccountAge = player.AccountAge
-		
-		if type(AccountAge) ~= "number" then
-			AccountAge = 0
-		end
-		local IsKdOfResultAbove1 = player ~= LocalPlayer and (IsKdOfResultAbove or AccountAge < 30)
+		local Cached = kdCache and kdCache[player]
+		local IsKdOfResultAbove1 = player ~= LocalPlayer and markedCheater(player, KdOfResult, Cached and Cached.hours, Cached and Cached.reports, Cached and Cached.hs)
 		
 		if IsKdOfResultAbove1 then
 			Count += 1
@@ -9039,7 +9843,7 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 						EnsurePackResult.kd.OutlineColor = Color3.new(0, 0, 0)
 						EnsurePackResult.kd.Position = Vector2.new(Box2dResult + Box2dResult3 * 0.5 + #player.Name * EnsurePackResult.name.Size * 0.28 + 4, Box2dResultDelta)
 						EnsurePackResult.cheat.Visible = IsKdOfResultAbove1_1
-						EnsurePackResult.cheat.Text = IsKdOfResultAbove1_1 and string.format("CHEATER %dd", AccountAge) or ""
+						EnsurePackResult.cheat.Text = IsKdOfResultAbove1_1 and string.format("CHEATER %dd", player.AccountAge) or ""
 						EnsurePackResult.cheat.Size = math.max(EnsurePackResult.name.Size - 1, 8)
 						EnsurePackResult.cheat.Font = DrawingFontResult
 						EnsurePackResult.cheat.Outline = true
@@ -9264,8 +10068,8 @@ RunService:BindToRenderStep("MidnightESP", Enum.RenderPriority.Last.Value, funct
 				Label2.Parent.Visible = false
 			end
 		else
-			local _, _, ProfileStatsResult3, ProfileStatsResult4 = profileStats(LocalPlayer)
-			Label2.Text = string.format("kd%s\nreports %d", ProfileStatsResult3 and string.format("%.2f", ProfileStatsResult3) or "--", ProfileStatsResult4 or 0)
+			local Kills, Deaths, ProfileStatsResult3, ProfileStatsResult4 = profileStats(LocalPlayer)
+			Label2.Text = string.format("kd %s (%d/%d)\nreports %d%s", ProfileStatsResult3 and string.format("%.2f", ProfileStatsResult3) or "--", Kills or 0, Deaths or 0, ProfileStatsResult4 or 0, kdDropRunning and string.format("\ndrop %d", kdDropDone or 0) or "")
 			
 			if Label2.Parent then
 				Label2.Parent.Visible = true
@@ -9697,6 +10501,22 @@ Ambience:Toggle({
 	Default = false,
 	Callback = none
 })
+Ambience:Slider({
+	Name = "Fullbright Intensity",
+	Flag = "FullbrightAmt",
+	Min = 10,
+	Default = 70,
+	Max = 100,
+	Suffix = "%",
+	Decimals = 1,
+	Callback = none
+})
+Ambience:Toggle({
+	Name = "No Fog",
+	Flag = "NoFog",
+	Default = false,
+	Callback = none
+})
 Ambience:Toggle({
 	Name = "No Shadows",
 	Flag = "NoShadows",
@@ -9861,10 +10681,193 @@ InventoryViewer:Label("Other", "Left"):Colorpicker({
 })
 local Exploits = Misc:Section({ Name = "Exploits", Side = 1 })
 Exploits:Toggle({
+	Name = "Anti Drown",
+	Flag = "AntiDrown",
+	Default = false,
+	Callback = none
+})
+Exploits:Toggle({
+	Name = "Moses",
+	Flag = "Moses",
+	Default = false,
+	Callback = none
+})
+Exploits:Toggle({
+	Name = "KD Dropper",
+	Flag = "KdDrop",
+	Default = false,
+	Callback = none
+})
+Exploits:Slider({
+	Name = "Drop Restarts",
+	Flag = "KdDropCount",
+	Min = 1,
+	Default = 5,
+	Max = 500,
+	Decimals = 1,
+	Callback = none
+})
+Exploits:Toggle({
 	Name = "Instant Heal",
 	Flag = "InstantHeal",
 	Default = false,
 	Callback = none
+})
+Exploits:Toggle({
+	Name = "Anti Mine",
+	Flag = "AntiMine",
+	Default = false,
+	Callback = none
+})
+Exploits:Button({
+	Name = "Explode Mines",
+	Callback = function()
+		task.spawn(function()
+			local Count = 0
+			local Root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+			
+			blownMines = blownMines or {}
+			
+			local function isMine(Name)
+				return nameIsMine(Name)
+			end
+			
+			local Checked = 0
+			
+			for _, Object in workspace:GetDescendants() do
+				Checked += 1
+				
+				if Checked % 500 == 0 then
+					task.wait()
+				end
+				local Mine = Object:IsA("Model") and modelIsMine(Object) or Object:IsA("BasePart") and nameIsMine(Object.Name)
+				local Host = Object:IsA("Model") and Object or Object.Parent
+				
+				if Mine and Host and not blownMines[Host] then
+					local Part = Object:IsA("BasePart") and Object or Object:FindFirstChildWhichIsA("BasePart", true)
+					
+					if Part then
+						blownMines[Host] = true
+						Count += 1
+						pcall(function()
+							if Root and firetouchinterest then
+								firetouchinterest(Part, Root, 0)
+								firetouchinterest(Part, Root, 1)
+							end
+						end)
+						
+						for _, Child in (Object:IsA("Model") and Object or Host):GetDescendants() do
+							if Child:IsA("RemoteEvent") then
+								pcall(function()
+									Child:FireServer()
+								end)
+							elseif Child:IsA("ClickDetector") then
+								pcall(function()
+									fireclickdetector(Child)
+								end)
+							elseif Child:IsA("ProximityPrompt") then
+								pcall(function()
+									fireproximityprompt(Child)
+								end)
+							end
+						end
+					end
+				end
+			end
+			v0:Notification("Exploded " .. tostring(Count), 3, Color3.fromRGB(255, 255, 255))
+		end)
+	end
+})
+Exploits:Button({
+	Name = "Bring Vehicle",
+	Callback = function()
+		local Character = LocalPlayer.Character
+		local Root = Character and Character:FindFirstChild("HumanoidRootPart")
+		local Humanoid = Character and Character:FindFirstChildOfClass("Humanoid")
+		
+		if not Root then return end
+		local Best, BestDist, BestPart = nil, 4000, nil
+		
+		local function skipName(Name)
+			local Low = string.lower(Name)
+			
+			return string.find(Low, "suspension", 1, true) or string.find(Low, "wheel", 1, true) or string.find(Low, "tire", 1, true) or string.find(Low, "door", 1, true)
+		end
+		
+		for _, Object in workspace:GetDescendants() do
+			if Object:IsA("Model") and Object ~= Character and not skipName(Object.Name) then
+				local Parent = Object.Parent
+				local ParentName = Parent and string.lower(Parent.Name) or ""
+				local IsChild = Parent and Parent:IsA("Model") and (ParentName == "chassis" or string.find(ParentName, "vehicle", 1, true))
+				local Seat = Object:FindFirstChildWhichIsA("VehicleSeat") or Object:FindFirstChildWhichIsA("Seat")
+				local Chassis = Object:FindFirstChild("Chassis")
+				local Label = string.lower(Object.Name)
+				local IsVehicle = not IsChild and (Label == "chassis" or Chassis or Seat or string.find(Label, "btr", 1, true) or string.find(Label, "uaz", 1, true) or string.find(Label, "heli", 1, true))
+				local Part = (Chassis and Chassis:IsA("BasePart") and Chassis) or Seat or Object.PrimaryPart or Object:FindFirstChildWhichIsA("BasePart")
+				
+				if IsVehicle and Part and Part:IsA("BasePart") then
+					local Dist = (Part.Position - Root.Position).Magnitude
+					
+					if Dist < BestDist then
+						Best = Object
+						BestPart = Part
+						BestDist = Dist
+					end
+				end
+			end
+		end
+		if not Best or not BestPart then
+			v0:Notification("No vehicle", 3, Color3.fromRGB(255, 255, 255))
+			
+			return
+		end
+		pcall(function()
+			if setsimulationradius then
+				setsimulationradius(math.huge, math.huge)
+			end
+		end)
+		local Seat = Best:FindFirstChildWhichIsA("VehicleSeat", true) or Best:FindFirstChildWhichIsA("Seat", true)
+		
+		if Seat and Humanoid then
+			pcall(function()
+				Seat:Sit(Humanoid)
+			end)
+		end
+		task.spawn(function()
+			local Params = RaycastParams.new()
+			
+			Params.FilterType = Enum.RaycastFilterType.Exclude
+			Params.FilterDescendantsInstances = { Character, Best }
+			
+			for _ = 1, 12 do
+				local Look = Root.CFrame.LookVector
+				local Flat = Vector3.new(Look.X, 0, Look.Z)
+				
+				if Flat.Magnitude < 0.1 then
+					Flat = Vector3.new(0, 0, -1)
+				end
+				Flat = Flat.Unit
+				local Pos = Root.Position + Flat * 18 + Vector3.new(0, 12, 0)
+				local Hit = workspace:Raycast(Pos, Vector3.new(0, -40, 0), Params)
+				
+				if Hit then
+					Pos = Hit.Position + Vector3.new(0, 3, 0)
+				else
+					Pos = Root.Position + Flat * 18 + Vector3.new(0, 3, 0)
+				end
+				pcall(function()
+					Best:PivotTo(CFrame.new(Pos, Pos + Flat))
+					
+					if BestPart then
+						BestPart.AssemblyLinearVelocity = Vector3.zero
+						BestPart.AssemblyAngularVelocity = Vector3.zero
+					end
+				end)
+				task.wait(0.15)
+			end
+		end)
+		v0:Notification("Brought " .. Best.Name, 3, Color3.fromRGB(255, 255, 255))
+	end
 })
 Exploits:Button({
 	Name = "Rejoin",
@@ -9882,19 +10885,15 @@ Utility:Toggle({
 	Callback = none
 })
 Utility:Toggle({
-	Name = "Proximity Alert",
-	Flag = "ProxAlert",
+	Name = "Hide Chat",
+	Flag = "HideChat",
 	Default = false,
 	Callback = none
 })
-Utility:Slider({
-	Name = "Alert Range",
-	Flag = "ProxRange",
-	Min = 5,
-	Default = 40,
-	Max = 200,
-	Suffix = "m",
-	Decimals = 1,
+Utility:Toggle({
+	Name = "No Inventory Blur",
+	Flag = "NoInvBlur",
+	Default = false,
 	Callback = none
 })
 Utility:Toggle({
@@ -9914,6 +10913,63 @@ ServerScan:Slider({
 	Decimals = 1,
 	Callback = none
 })
+ServerScan:Slider({
+	Name = "Min KD",
+	Flag = "CheatMinKd",
+	Min = 1,
+	Default = 5,
+	Max = 20,
+	Decimals = 1,
+	Callback = none
+})
+ServerScan:Slider({
+	Name = "Max Account Age",
+	Flag = "CheatMaxAge",
+	Min = 1,
+	Default = 60,
+	Max = 400,
+	Suffix = "d",
+	Decimals = 1,
+	Callback = none
+})
+ServerScan:Slider({
+	Name = "Max Hours",
+	Flag = "CheatMaxHours",
+	Min = 1,
+	Default = 25,
+	Max = 200,
+	Suffix = "h",
+	Decimals = 1,
+	Callback = none
+})
+ServerScan:Slider({
+	Name = "Ignore Over Hours",
+	Flag = "CheatSafeHours",
+	Min = 20,
+	Default = 150,
+	Max = 500,
+	Suffix = "h",
+	Decimals = 1,
+	Callback = none
+})
+ServerScan:Slider({
+	Name = "If KD Under",
+	Flag = "CheatSafeKd",
+	Min = 1,
+	Default = 5,
+	Max = 15,
+	Decimals = 1,
+	Callback = none
+})
+ServerScan:Slider({
+	Name = "Min Reports",
+	Flag = "CheatMinReports",
+	Min = 0,
+	Default = 3,
+	Max = 30,
+	Decimals = 1,
+	Callback = none
+})
 ServerScan:Button({
 	Name = "Scan Cheaters",
 	Callback = function()
@@ -9921,23 +10977,10 @@ ServerScan:Button({
 		
 		for _, player in Players:GetPlayers() do
 			if player ~= LocalPlayer then
-				local Character = player.Character
-				local RootPartResult = Character and rootPart(Character)
-				local List = {}
+				local _, _, KdOfResult, Reports, Hours, Hs = profileStats(player)
 				
-				if player.AccountAge < 30 then
-					List[#List + 1] = "new account"
-				end
-				local KdOfResult = kdOf(player)
-				
-				if KdOfResult and KdOfResult >= 3 then
-					List[#List + 1] = "high kd"
-				end
-				if Character and RootPartResult and suspicious(player, Character, RootPartResult) and player.AccountAge >= 30 and (not KdOfResult or KdOfResult < 3) then
-					List[#List + 1] = "movement"
-				end
-				if #List > 0 then
-					t[#t + 1] = string.format("%s | age %dd | kd %s | %s", player.Name, player.AccountAge, KdOfResult and string.format("%.2f", KdOfResult) or "--", table.concat(List, ", "))
+				if markedCheater(player, KdOfResult, Hours, Reports, Hs) then
+					t[#t + 1] = string.format("%s | age %dd | kd %s | %sh | reports %s", player.Name, player.AccountAge, KdOfResult and string.format("%.2f", KdOfResult) or "--", Hours and string.format("%.0f", Hours) or "--", Reports and tostring(math.floor(Reports)) or "0")
 				end
 			end
 		end
@@ -10515,7 +11558,7 @@ function applyConfig(Input)
 	
 	if type(Data) ~= "table" then return end
 	for i, entry in Data do
-		if i == "Configs List" or i == "Config Name" or i == "InstantLoot" then
+		if i == "Configs List" or i == "Config Name" then
 			continue
 		end
 		local SetFlag = v0.SetFlags[i]
@@ -12039,7 +13082,15 @@ function rememberHealth(Object)
 	healthSnap[Object] = HealthSnapEntry
 	
 	if Object ~= LocalPlayer.Character and os.clock() - (lastShot or 0) < 1.6 then
-		pcall(noteHit, Object, "Body", true)
+		local Zone = "Body"
+		local PartName = string.lower(tostring(lastHitPart or ""))
+		
+		if string.find(PartName, "head", 1, true) or string.find(PartName, "face", 1, true) then
+			Zone = "Head"
+		elseif PartName ~= "" and PartName ~= "body" then
+			Zone = lastHitPart
+		end
+		pcall(noteHit, Object, Zone, true)
 	end
 	healthSnap[Object] = Health
 end
@@ -12158,6 +13209,10 @@ function pushHit(Text)
 		hitLog.TextColor3 = flagColor("Hit_Color", Color3.fromRGB(255, 255, 255))
 		hitBack.Visible = true
 		hitBack.BackgroundTransparency = if v0.Flags.Hit_Bg == false then 1 else 0.2
+		
+		if not hitBack:GetAttribute("Dragged") then
+			hitBack.Position = UDim2.new(flagNum("Hit_X", 50) / 100, 0, flagNum("Hit_Y", 72) / 100, flagNum("Hit_Z", 0))
+		end
 	end
 end
 
@@ -13045,7 +14100,23 @@ function queueInstantHits()
 end
 
 function peekBypassOn()
-	return peekState ~= nil or type(fallGuard) == "number" and os.clock() < fallGuard or flagBool("UnderEnable") or flagBool("SkyPeek") or flagBool("AntiKick")
+	return peekState ~= nil or type(fallGuard) == "number" and os.clock() < fallGuard or flagBool("UnderEnable") or flagBool("SkyPeek") or flagBool("AntiKick") or flagBool("Desync")
+end
+
+if not kickHooked and type(hookfunction) == "function" then
+	kickHooked = true
+	pcall(function()
+		local OldKick = hookfunction(LocalPlayer.Kick, function(self, Message)
+			if peekBypassOn() then
+				local Low = string.lower(tostring(Message or ""))
+				
+				if Message == nil or string.find(Low, "noclip", 1, true) or string.find(Low, "clip", 1, true) or string.find(Low, "detect", 1, true) or string.find(Low, "exploit", 1, true) then
+					return
+				end
+			end
+			return OldKick(self, Message)
+		end)
+	end)
 end
 
 function peekRoot()
@@ -13614,9 +14685,19 @@ function installBypassHook()
 					
 					return leave()
 				end
-				if flagBool("SilentWalk") and not Shot and (string.find(SoundName, "step", 1, true) or string.find(SoundName, "foot", 1, true) or string.find(SoundName, "walk", 1, true)) then
+				if flagBool("SilentWalk") and not Shot and not Skip and isFootSound(self) then
 					self.Volume = 0
 					
+					return leave()
+				end
+			end
+			if Method == "FireServer" and flagBool("AntiDrown") and typeof(self) == "Instance" and string.lower(self.Name) == "drowning" then
+				return leave()
+			end
+			if Method == "FireServer" and flagBool("SilentWalk") and typeof(self) == "Instance" then
+				local RemoteName = string.lower(self.Name)
+				
+				if string.find(RemoteName, "step", 1, true) or string.find(RemoteName, "foot", 1, true) or string.find(RemoteName, "walk", 1, true) then
 					return leave()
 				end
 			end
@@ -13624,7 +14705,7 @@ function installBypassHook()
 				local Msg = ...
 				local Low = type(Msg) == "string" and string.lower(Msg) or ""
 				
-				if type(Msg) ~= "string" or string.find(Low, "exploit", 1, true) or string.find(Low, "detect", 1, true) or string.find(Low, "ban", 1, true) or string.find(Low, "kick", 1, true) or string.find(Low, "cheat", 1, true) or string.find(Low, "flight", 1, true) or string.find(Low, "teleport", 1, true) then
+				if type(Msg) ~= "string" or string.find(Low, "exploit", 1, true) or string.find(Low, "esploit", 1, true) or string.find(Low, "detect", 1, true) or string.find(Low, "ban", 1, true) or string.find(Low, "kick", 1, true) or string.find(Low, "cheat", 1, true) or string.find(Low, "flight", 1, true) or string.find(Low, "teleport", 1, true) or string.find(Low, "jump", 1, true) or string.find(Low, "noclip", 1, true) or string.find(Low, "no clip", 1, true) or string.find(Low, "clip", 1, true) then
 					return leave()
 				end
 			end
@@ -14335,34 +15416,88 @@ function applyUtility(Camera)
 			lightBase.Haze = Atmosphere.Haze
 		end
 	end
-	if flagBool("Fullbright") then
-		Lighting.FogStart = 0
-		Lighting.FogEnd = 100000
-		
-		if not flagBool("Amb_Enabled") then
-			Lighting.Brightness = 2
-			Lighting.Ambient = Color3.fromRGB(190, 190, 190)
-			Lighting.OutdoorAmbient = Color3.fromRGB(190, 190, 190)
+	if flagBool("NoFog") then
+		if Lighting.FogEnd < 90000 then
+			Lighting.FogStart = 0
+			Lighting.FogEnd = 100000
 		end
-		if lightBase.Atmo then
-			lightBase.Atmo.Density = 0
-			lightBase.Atmo.Haze = 0
+		for _, Effect in Lighting:GetChildren() do
+			if Effect:IsA("Atmosphere") then
+				if Effect:GetAttribute("MidnightFog") == nil then
+					Effect:SetAttribute("MidnightFog", Effect.Density)
+					Effect:SetAttribute("MidnightHaze", Effect.Haze)
+				end
+				if Effect.Density ~= 0 then
+					Effect.Density = 0
+					Effect.Haze = 0
+				end
+			end
 		end
 		lightBase.fogOn = true
 	elseif lightBase.fogOn then
 		Lighting.FogEnd = lightBase.FogEnd
 		Lighting.FogStart = lightBase.FogStart
 		
-		if not flagBool("Amb_Enabled") then
-			Lighting.Brightness = lightBase.Brightness
-			Lighting.Ambient = lightBase.Ambient
-			Lighting.OutdoorAmbient = lightBase.OutdoorAmbient
-		end
-		if lightBase.Atmo then
-			lightBase.Atmo.Density = lightBase.Density
-			lightBase.Atmo.Haze = lightBase.Haze
+		for _, Effect in Lighting:GetChildren() do
+			if Effect:IsA("Atmosphere") and Effect:GetAttribute("MidnightFog") ~= nil then
+				Effect.Density = Effect:GetAttribute("MidnightFog")
+				Effect.Haze = Effect:GetAttribute("MidnightHaze")
+				Effect:SetAttribute("MidnightFog", nil)
+			end
 		end
 		lightBase.fogOn = false
+	end
+	local Bright = Lighting:FindFirstChild("MidnightBright")
+	
+	if Bright then
+		Bright.Enabled = false
+	end
+	if flagBool("Fullbright") and not flagBool("Amb_Enabled") then
+		local Amt = math.clamp(flagNum("FullbrightAmt", 70) / 100, 0.05, 1)
+		local Level = math.floor(90 + Amt * 165)
+		local Color = Color3.fromRGB(Level, Level, Level)
+		
+		Lighting.Ambient = Color
+		Lighting.OutdoorAmbient = Color
+		Lighting.Brightness = 1 + Amt * 1.4
+		lightBase.brightOn = true
+	elseif lightBase.brightOn then
+		Lighting.Ambient = lightBase.Ambient
+		Lighting.OutdoorAmbient = lightBase.OutdoorAmbient
+		Lighting.Brightness = lightBase.Brightness
+		lightBase.brightOn = false
+	end
+	if (flagBool("NoFog") or flagBool("Fullbright")) and not lightBind then
+		lightBind = true
+		RunService:BindToRenderStep("MidnightLight", Enum.RenderPriority.Last.Value + 40, function()
+			local LightingNow = game:GetService("Lighting")
+			
+			if flagBool("NoFog") then
+				if LightingNow.FogEnd < 90000 then
+					LightingNow.FogStart = 0
+					LightingNow.FogEnd = 100000
+				end
+				for _, Effect in LightingNow:GetChildren() do
+					if Effect:IsA("Atmosphere") and Effect.Density ~= 0 then
+						if Effect:GetAttribute("MidnightFog") == nil then
+							Effect:SetAttribute("MidnightFog", Effect.Density)
+							Effect:SetAttribute("MidnightHaze", Effect.Haze)
+						end
+						Effect.Density = 0
+						Effect.Haze = 0
+					end
+				end
+			end
+			if flagBool("Fullbright") and not flagBool("Amb_Enabled") then
+				local Amt = math.clamp(flagNum("FullbrightAmt", 70) / 100, 0.05, 1)
+				local Level = math.floor(90 + Amt * 165)
+				local Color = Color3.fromRGB(Level, Level, Level)
+				
+				LightingNow.Ambient = Color
+				LightingNow.OutdoorAmbient = Color
+				LightingNow.Brightness = 1 + Amt * 1.4
+			end
+		end)
 	end
 	if flagBool("NoShadows") then
 		Lighting.GlobalShadows = false
@@ -14412,7 +15547,7 @@ function applyUtility(Camera)
 				local Character = player ~= LocalPlayer and player.Character
 				local RootPartResult = Character and rootPart(Character)
 				
-				if RootPartResult then
+				if RootPartResult and not isWhitelisted(player) then
 					local Distance = (RootPartResult.Position - Position).Magnitude
 					
 					if Distance <= Huge then
@@ -14421,6 +15556,9 @@ function applyUtility(Camera)
 				end
 			end
 			proxLabel.Text = #List > 0 and table.concat(List, "\n") or "clear"
+			proxLabel.TextColor3 = flagColor("ProxColor", Color3.fromRGB(255, 90, 90))
+			proxFrame.BackgroundColor3 = flagColor("ProxColor", Color3.fromRGB(8, 8, 8))
+			proxFrame.BackgroundTransparency = if v0.Flags.ProxBg == false then 1 else 0.25
 			proxFrame.Visible = true
 		end
 	end
@@ -14740,6 +15878,13 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 	if os.clock() - (utilTick or 0) > 0.12 then
 		utilTick = os.clock()
 		applyUtility(CurrentCamera)
+		pcall(applyReach)
+		pcall(applyMoses)
+		pcall(applyAntiDrown)
+		if flagBool("KdDrop") and not kdDropRunning then
+			startKdDrop()
+		end
+		pcall(applyAntiMine)
 		pcall(applyDozerAim)
 	end
 	checkHits()
@@ -14993,6 +16138,15 @@ RunService:BindToRenderStep("MidnightMisc", Enum.RenderPriority.Camera.Value + 1
 	
 	if flagBool("NoFallDamage_Enabled") and Humanoid and RootPartResult then
 		applyNoFall()
+	end
+	if Humanoid and RootPartResult and flagBool("NoJumpCd") then
+		Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+	end
+	if os.clock() - (miscLookAt or 0) > 0.35 then
+		miscLookAt = os.clock()
+		pcall(quietSteps)
+		pcall(applyChatBlur)
+		pcall(ensureDesync)
 	end
 	if flagBool("Jesus_Enabled") and RootPartResult then
 		local RaycastParams2 = RaycastParams.new()
