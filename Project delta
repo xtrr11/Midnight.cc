@@ -2956,6 +2956,14 @@ do
 							r273:UnbindFromRenderStep("midnight_peek")
 							r273:UnbindFromRenderStep("midnight_under")
 						end)
+						pcall(function()
+							if r384.misc.kd_drop then
+								r384.misc.kd_drop.enabled = false
+							end
+							if r384.nade_folder then
+								r384.nade_folder:Destroy()
+							end
+						end)
 						t21:Destroy()
 						r100.unloading = false
 						getgenv().midnight_cc = false
@@ -9633,6 +9641,7 @@ do
 				double_tap = false,
 				rapid_fire = { enabled = false, value = 1 },
 				rapid_knife = { enabled = false, rate = 1 },
+				insta_nade = false,
 			},
 			resolvers = {
 				use_sit = false,
@@ -9681,6 +9690,8 @@ do
 			item_aura = { enabled = false, interval = 0.2, range = 6 },
 			hover_loot = { on = false, key = false },
 			anti_mine = false,
+			kd_drop = { enabled = false, count = 5, running = false },
+			grenade_pred = { enabled = false, color = r116(255, 220, 80), thick = 2 },
 			no_visor = false,
 			no_gas = false,
 			nofall = { enabled = false },
@@ -9696,6 +9707,7 @@ do
 				long_jump = { enabled = false, using = false, forward_force = 10, upward_force = 2, cooldown = 1 },
 				flyhack = { enabled = false, speed_horizontal = 20, speed_vertical = 20, multiplier = 1 },
 				noclip = { on = false, key = false, kinds = { "Floors", "Walls" }, layers = 1, speed = 1 },
+				spider = { enabled = false, on = false, speed = 11 },
 				jesus = false,
 				remove_jump_cooldown = false,
 				no_drown = false,
@@ -10270,6 +10282,19 @@ do
 					icon_transparency = 0,
 				},
 				heli = {
+					enabled = false,
+					outline = true,
+					outline_color = r116(0, 0, 0),
+					outline_transparency = 0,
+					font = "Tahoma",
+					distance = false,
+					color = r116(255, 255, 255),
+					transparency = 0,
+					icon = false,
+					icon_color = r116(255, 255, 255),
+					icon_transparency = 0,
+				},
+				btr = {
 					enabled = false,
 					outline = true,
 					outline_color = r116(0, 0, 0),
@@ -12624,6 +12649,7 @@ r352.instance_template = function(s33)
 		body = r100.images.Body,
 		item = r100.images.Item,
 		heli = r100.images.Heli,
+		btr = r100.images.Uaz,
 	}
 
 	s4.icon = r7("ImageLabel", {
@@ -12700,6 +12726,83 @@ r352.heli = function(s2)
 	s10()
 	r100:connection(s8:GetAttributeChangedSignal("Health"), s10)
 	r100:connection(s8:GetAttributeChangedSignal("MaxHealth"), s10)
+end
+
+r352.is_btr = function(sModel)
+	if typeof(sModel) ~= "Instance" or not r155(sModel, "Model") then
+		return false
+	end
+	if not string.find(r320(sModel.Name), "btr", 1, true) then
+		return false
+	end
+	local sParent = sModel.Parent
+	while sParent and sParent ~= r95 do
+		if r155(sParent, "Model") and string.find(r320(sParent.Name), "btr", 1, true) then
+			return false
+		end
+		sParent = sParent.Parent
+	end
+	return true
+end
+
+r352.btr = function(s2)
+	if not r377.tracked[s2] then
+		return
+	end
+	local s12 = r377.tracked[s2]
+	local s14 = s12.gui
+	local s16 = "BTR-80"
+	local sPart = nil
+	for _, sName in r1_2, { "Collision", "Hull", "Body", "Chassis", "Hitbox", "CollisionPilot" }, nil do
+		local sHit = r26(s2, sName)
+		if sHit and r155(sHit, "BasePart") and sHit:GetAttribute("Health") ~= nil then
+			sPart = sHit
+			break
+		end
+	end
+	if not sPart and type(s2:GetAttribute("Health")) == "number" then
+		sPart = s2
+	end
+	if not sPart then
+		local sN = 0
+		for _, sInst in r1_2, s2:GetDescendants(), nil do
+			sN = sN + 1
+			if sN > 400 then
+				break
+			end
+			if r155(sInst, "BasePart") and type(sInst:GetAttribute("Health")) == "number" then
+				sPart = sInst
+				break
+			end
+		end
+	end
+	if not sPart then
+		local sHum = s2:FindFirstChildOfClass("Humanoid")
+		if sHum and sHum.MaxHealth > 0 then
+			local function s10()
+				local t2_1 = r352.format_text(s16 .. " " .. r310(sHum.Health) .. "/" .. r310(sHum.MaxHealth) .. " hp")
+				s12.base_text = t2_1
+				s14.label.Text = t2_1
+			end
+			s10()
+			r100:connection(sHum.HealthChanged, s10)
+			return
+		end
+		local t2_1 = r352.format_text(s16)
+		s12.base_text = t2_1
+		s14.label.Text = t2_1
+		return
+	end
+	local function s10()
+		local t2 = sPart:GetAttribute("Health") or 0
+		local t3 = sPart:GetAttribute("MaxHealth") or 1
+		local t2_1 = r352.format_text(s16 .. " " .. r310(t2) .. "/" .. t3 .. " hp")
+		s12.base_text = t2_1
+		s14.label.Text = t2_1
+	end
+	s10()
+	r100:connection(sPart:GetAttributeChangedSignal("Health"), s10)
+	r100:connection(sPart:GetAttributeChangedSignal("MaxHealth"), s10)
 end
 
 r352.path = function(arg1, s32)
@@ -13704,6 +13807,8 @@ r352.new_instance = function(s31, s32)
 
 		if s32 == "heli" then
 			s34 = "MI24V"
+		elseif s32 == "btr" then
+			s34 = "BTR-80"
 		end
 	end
 
@@ -13711,6 +13816,8 @@ r352.new_instance = function(s31, s32)
 
 	if s32 == "heli" then
 		r352.heli(s31)
+	elseif s32 == "btr" then
+		r352.btr(s31)
 	else
 		s1.label.Text = r352.format_text(s34, r384.esp.text_case)
 	end
@@ -16910,6 +17017,393 @@ do
 		end)
 	end
 
+	r353.held_item_name = function()
+		local sChar = r97.Character or r3_7
+		if not sChar then
+			return ""
+		end
+		local sHold = r26(sChar, "Holding")
+		if sHold and typeof(sHold.Value) == "Instance" then
+			return sHold.Value.Name
+		end
+		local sTool = sChar:FindFirstChildOfClass("Tool")
+		if sTool then
+			return sTool.Name
+		end
+		local sCam = r95.CurrentCamera
+		local sVm = sCam and r26(sCam, "ViewModel")
+		local sItem = sVm and r26(sVm, "Item")
+		if sItem then
+			return sItem.Name
+		end
+		return ""
+	end
+
+	r353.nade_profile = function(sName)
+		local sLow = r320(r324(sName or ""))
+		local function sHas(sBit)
+			return string.find(sLow, sBit, 1, true) ~= nil
+		end
+		if sHas("flashlight") or sHas("torch") or sHas("lamp") then
+			return nil
+		end
+		local sNade = sHas("gren") or sHas("frag") or sHas("molotov") or sHas("impact") or sHas("rdg") or sHas("m18") or sHas("zarya") or sHas("rgo") or sHas("rgn") or sHas("vog") or sHas("v40") or sHas("rgd") or sHas("m67") or sHas("f-1") or sLow == "f1" or sHas("f1 ") or sHas("smoke") or sHas("flash") or sHas("stun")
+		if not sNade then
+			return nil
+		end
+		if sHas("flash") and not sHas("gren") and not sHas("bang") and not sHas("zarya") and not sHas("stun") then
+			return nil
+		end
+		if sHas("molotov") then
+			return 62, 22
+		end
+		if sHas("impact") or sHas("rgo") or sHas("rgn") then
+			return 92, 8
+		end
+		if sHas("vog") or sHas("v40") then
+			return 88, 10
+		end
+		if sHas("smoke") or sHas("rdg") or sHas("m18") then
+			return 70, 16
+		end
+		if sHas("flash") or sHas("zarya") or sHas("stun") then
+			return 76, 18
+		end
+		return 78, 18
+	end
+
+	r353.spider_step = function()
+		local sSp = r384.misc.movement.spider
+		local sChar = r97.Character or r3_7
+		local sHum = sChar and r287(sChar, "Humanoid")
+		local sRoot = sChar and r26(sChar, "HumanoidRootPart")
+		local sClimb = false
+		if sSp and sSp.enabled and sSp.on and sHum and sRoot and sHum.Health > 0 then
+			local sMove = sHum.MoveDirection
+			local sFlat = r24(sMove.X, 0, sMove.Z)
+			local sCam = r95.CurrentCamera
+			local sLook = sCam and sCam.CFrame.LookVector
+			local sFlatLook = sLook and r24(sLook.X, 0, sLook.Z)
+			local sDirs = {}
+			if sFlat.Magnitude > 0.05 then
+				sDirs[#sDirs + 1] = sFlat.Unit
+			end
+			if sFlatLook and sFlatLook.Magnitude > 0.1 then
+				sDirs[#sDirs + 1] = sFlatLook.Unit
+			end
+			if #sDirs > 0 then
+				local sParams = RaycastParams.new()
+				sParams.FilterType = Enum.RaycastFilterType.Exclude
+				sParams.FilterDescendantsInstances = { sChar }
+				local sHit = nil
+				for _, sDir in r1_2, sDirs, nil do
+					for _, sY in r1_2, { 0, 1.6, -1.5 }, nil do
+						local sCast = r95:Raycast(sRoot.Position + r24(0, sY, 0), sDir * 4.2, sParams)
+						if sCast and sCast.Normal.Y < 0.72 then
+							sHit = sCast
+							break
+						end
+					end
+					if sHit then
+						break
+					end
+				end
+				if sHit then
+					sClimb = true
+					local sVel = sRoot.AssemblyLinearVelocity
+					sRoot.AssemblyLinearVelocity = r24(sVel.X, r311(sSp.speed or 11, 6, 18), sVel.Z)
+				end
+			end
+		end
+		if not sClimb and r384.spider_was and sRoot then
+			local sVel = sRoot.AssemblyLinearVelocity
+			if sVel.Y > 1 then
+				sRoot.AssemblyLinearVelocity = r24(sVel.X, 0, sVel.Z)
+			end
+		end
+		r384.spider_was = sClimb
+	end
+
+	r353.insta_nade = function()
+		if not r384.combat.gun_mods.insta_nade then
+			return
+		end
+		if not r353.nade_profile(r353.held_item_name()) then
+			return
+		end
+		local function sBoost(sHum)
+			if not sHum then
+				return
+			end
+			local sAnim = r26(sHum, "Animator")
+			if not sAnim then
+				return
+			end
+			for _, sTrack in r1_2, sAnim:GetPlayingAnimationTracks(), nil do
+				local sAnimName = sTrack.Animation and sTrack.Animation.Name or ""
+				local sBlob = r320(r324(sTrack.Name) .. " " .. r324(sAnimName))
+				if string.find(sBlob, "throw", 1, true) or string.find(sBlob, "cook", 1, true) or string.find(sBlob, "pin", 1, true) or string.find(sBlob, "overhand", 1, true) or string.find(sBlob, "underhand", 1, true) or string.find(sBlob, "overhead", 1, true) or string.find(sBlob, "grenade", 1, true) or string.find(sBlob, "use", 1, true) then
+					if sTrack.Speed < 20 then
+						sTrack:AdjustSpeed(20)
+					end
+				end
+			end
+		end
+		local sChar = r97.Character or r3_7
+		sBoost(sChar and r287(sChar, "Humanoid"))
+		local sCam = r95.CurrentCamera
+		local sVm = sCam and r26(sCam, "ViewModel")
+		sBoost(sVm and r287(sVm, "Humanoid"))
+	end
+
+	r353.nade_part = function(sIndex)
+		r384.nade_parts = r384.nade_parts or {}
+		local sPart = r384.nade_parts[sIndex]
+		if sPart and sPart.Parent then
+			return sPart
+		end
+		if not r384.nade_folder or not r384.nade_folder.Parent then
+			r384.nade_folder = r7("Folder", { Name = "midnight_nade", Parent = r95 })
+		end
+		sPart = r7("Part", {
+			Name = "arc",
+			Anchored = true,
+			CanCollide = false,
+			CanQuery = false,
+			CanTouch = false,
+			Material = Enum.Material.Neon,
+			CastShadow = false,
+			Transparency = 1,
+			Size = r24(0.2, 0.2, 0.2),
+			Parent = r384.nade_folder,
+		})
+		r384.nade_parts[sIndex] = sPart
+		return sPart
+	end
+
+	r353.grenade_pred = function()
+		local sCfg = r384.misc.grenade_pred
+		local sSpeed, sUp = nil, nil
+		if sCfg and sCfg.enabled then
+			sSpeed, sUp = r353.nade_profile(r353.held_item_name())
+		end
+		if r384.nade_parts then
+			for _, sPart in r1_2, r384.nade_parts, nil do
+				if sPart then
+					sPart.Transparency = 1
+				end
+			end
+		end
+		if not sSpeed then
+			return
+		end
+		local sCam = r95.CurrentCamera
+		local sChar = r97.Character or r3_7
+		if not sCam then
+			return
+		end
+		local sParams = RaycastParams.new()
+		sParams.FilterType = Enum.RaycastFilterType.Exclude
+		sParams.FilterDescendantsInstances = { sChar, r384.nade_folder }
+		local sPos = sCam.CFrame.Position
+		local sVel = sCam.CFrame.LookVector * sSpeed + r24(0, sUp, 0)
+		local sGrav = r24(0, -r95.Gravity, 0)
+		local sColor = sCfg.color or r116(255, 220, 80)
+		local sWidth = r311(sCfg.thick or 2, 1, 6) * 0.08
+		local sLast = sPos
+		for sIndex = 1, 24 do
+			sVel = sVel + sGrav * 0.08
+			local sNext = sPos + sVel * 0.08
+			local sHit = r95:Raycast(sPos, sNext - sPos, sParams)
+			local sEnd = sHit and sHit.Position or sNext
+			local sPart = r353.nade_part(sIndex)
+			local sLen = (sEnd - sLast).Magnitude
+			sPart.Color = sColor
+			sPart.Transparency = 0.15
+			sPart.Size = r24(sWidth, sWidth, math.max(sLen, 0.05))
+			if sLen > 0.05 then
+				sPart.CFrame = CFrame.lookAt(sLast, sEnd) * r303(0, 0, -sLen / 2)
+			end
+			if sHit then
+				break
+			end
+			sLast = sEnd
+			sPos = sNext
+		end
+	end
+
+	r353.apply_anti_mine = function()
+		if not r384.misc.anti_mine then
+			r384.mine_hp = nil
+			return
+		end
+		local sNow = r345()
+		if sNow - (r384.mine_step_at or 0) < 0.12 then
+			return
+		end
+		r384.mine_step_at = sNow
+		local sChar = r97.Character or r3_7
+		local sRoot = sChar and r26(sChar, "HumanoidRootPart")
+		local sHum = sChar and r287(sChar, "Humanoid")
+		if not sRoot then
+			return
+		end
+		if not r384.mine_scan_busy and sNow - (r384.mine_list_at or 0) > 3 then
+			r384.mine_scan_busy = true
+			r384.mine_list_at = sNow
+			r336(function()
+				local sList = {}
+				local sChecked = 0
+				local function sMine(sName)
+					local sLow = r320(sName)
+					return string.find(sLow, "pmn", 1, true) or string.find(sLow, "mon-50", 1, true) or string.find(sLow, "mon50", 1, true) or string.find(sLow, "ozm", 1, true) or string.find(sLow, "claymore", 1, true) or string.find(sLow, "pomz", 1, true) or string.find(sLow, "tripwire", 1, true)
+				end
+				for _, sObj in r1_2, r95:GetDescendants(), nil do
+					sChecked = sChecked + 1
+					if sChecked % 600 == 0 then
+						r337()
+					end
+					if r155(sObj, "Model") and sMine(sObj.Name) then
+						sList[#sList + 1] = sObj
+					end
+				end
+				r384.mine_list = sList
+				r384.mine_scan_busy = false
+			end)
+		end
+		for _, sObj in r1_2, r384.mine_list or {}, nil do
+			if sObj.Parent then
+				local sPart = sObj:FindFirstChildWhichIsA("BasePart", true)
+				if sPart and (sPart.Position - sRoot.Position).Magnitude < 36 then
+					for _, sChild in r1_2, sObj:GetDescendants(), nil do
+						if r155(sChild, "BasePart") then
+							sChild.CanTouch = false
+							sChild.CanCollide = false
+						end
+					end
+					if getconnections then
+						pcall(function()
+							for _, sConn in r1_2, getconnections(sPart.Touched), nil do
+								sConn:Disconnect()
+							end
+						end)
+					end
+				end
+			end
+		end
+		if sHum then
+			if type(r384.mine_hp) ~= "number" then
+				r384.mine_hp = sHum.Health
+			end
+			if sHum.Health + 1 < r384.mine_hp then
+				local sClose = false
+				for _, sObj in r1_2, r384.mine_list or {}, nil do
+					local sPart = sObj.Parent and sObj:FindFirstChildWhichIsA("BasePart", true)
+					if sPart and (sPart.Position - sRoot.Position).Magnitude < 12 then
+						sClose = true
+						break
+					end
+				end
+				if sClose then
+					sHum.Health = r384.mine_hp
+				else
+					r384.mine_hp = sHum.Health
+				end
+			else
+				r384.mine_hp = sHum.Health
+			end
+		end
+	end
+
+	r353.kd_drop = function()
+		local sSt = r384.misc.kd_drop
+		if not sSt or sSt.running then
+			return
+		end
+		sSt.running = true
+		r336(function()
+			local sGoal = math.max(1, r305(sSt.count or 5))
+			local sDone = 0
+			local sNode = r25 and r26(r25, r97.Name)
+			while sSt.enabled and sDone < sGoal do
+				local sSpawned = nil
+				pcall(function()
+					sSpawned = sNode.Status.GameplayVariables:GetAttribute("Spawned")
+				end)
+				if sSpawned ~= true then
+					pcall(function()
+						local sRemote = r26(r122, "SpawnCharacter")
+						if sRemote then
+							sRemote:InvokeServer("West")
+						end
+					end)
+					r337(3)
+				end
+				local sChar = r26(r95, r97.Name)
+				if not sChar then
+					pcall(function()
+						local sRemote = r26(r122, "SpawnCharacter")
+						if sRemote then
+							sRemote:InvokeServer("West")
+						end
+					end)
+					r337(5)
+					sChar = r26(r95, r97.Name)
+					if not sChar then
+						r337(1)
+						continue
+					end
+				end
+				local sHealth = r26(sChar, "Health")
+				local sDrown = sHealth and r26(sHealth, "Drowning")
+				if sDrown then
+					for _ = 1, 20 do
+						if not sSt.enabled then
+							break
+						end
+						pcall(function()
+							sDrown:FireServer(5)
+						end)
+						r337(0.01)
+					end
+				end
+				pcall(function()
+					local sReset = r26(r122, "ResetCharacter")
+					if sReset then
+						sReset:FireServer()
+					end
+				end)
+				sDone = sDone + 1
+				local sDeaths = nil
+				pcall(function()
+					sDeaths = r363.statistics:GetAttribute("Deaths") or r363.statistics:GetAttribute("D_PVP")
+				end)
+				r100:notification({ text = r323("Drop %d/%d  deaths %s", sDone, sGoal, r324(sDeaths or "?")), time = 3 })
+				r337(6.7)
+				local sExtra = 2
+				pcall(function()
+					local sText = r119.RespawnMenu.MainFrame.Transitions.RespawnScreen.RespawnOptions.WestSpawnButton.Timer.Text
+					sExtra = (r325(string.match(sText, "%d+")) or 0) + 2
+				end)
+				r337(sExtra)
+				if not sSt.enabled then
+					break
+				end
+				pcall(function()
+					local sRemote = r26(r122, "SpawnCharacter")
+					if sRemote then
+						sRemote:InvokeServer("West")
+					end
+				end)
+			end
+			sSt.running = false
+			r100:notification({
+				text = sSt.enabled and r323("Drop done %d", sDone) or r323("Drop stopped %d/%d", sDone, sGoal),
+				time = 3,
+			})
+		end)
+	end
+
 	r342:Connect(function()
 		local sStepOk, sStepErr = pcall(function()
 		if r378.draw_circle and r378.draw_outline and r384.combat.visualization.fov_enabled then
@@ -17015,35 +17509,24 @@ do
 		if r354.leaf_step then
 			r354.leaf_step()
 		end
+		if r353.spider_step then
+			r353.spider_step()
+		end
+		if r353.insta_nade then
+			r353.insta_nade()
+		end
+		if r353.grenade_pred then
+			r353.grenade_pred()
+		end
+		if r353.apply_anti_mine then
+			r353.apply_anti_mine()
+		end
 		if r345() - (r384.extra_at or 0) < 0.4 then
 			return
 		end
 		r384.extra_at = r345()
-		if r384.misc.anti_mine and r5_1 then
-			local sFolders = {}
-			if r371.landmines then
-				sFolders[#sFolders + 1] = r371.landmines
-			end
-			if r371.zones then
-				for _, sName in r1_2, { "OutpostLandmines", "OutpostClaymores", "HeliCrashClaymores", "ShipWreckClaymores", "BridgeClaymores" }, nil do
-					local sFold = r26(r371.zones, sName)
-					if sFold then
-						sFolders[#sFolders + 1] = sFold
-					end
-				end
-			end
-			for _, sFolder in r1_2, sFolders, nil do
-				for _, sObj in r1_2, sFolder:GetChildren(), nil do
-					local sLow = r320(sObj.Name)
-					if string.find(sLow, "pmn", 1, true) or string.find(sLow, "mon", 1, true) or string.find(sLow, "ozm", 1, true) or string.find(sLow, "claymore", 1, true) or string.find(sLow, "pomz", 1, true) or string.find(sLow, "mine", 1, true) or string.find(sLow, "trip", 1, true) or string.find(sLow, "landmine", 1, true) then
-						local sPart = r155(sObj, "BasePart") and sObj or sObj:FindFirstChildWhichIsA("BasePart", true)
-						if sPart and (sPart.Position - r5_1.Position).Magnitude < 40 then
-							sPart.CanTouch = false
-							sPart.CanCollide = false
-						end
-					end
-				end
-			end
+		if r384.misc.kd_drop and r384.misc.kd_drop.enabled and not r384.misc.kd_drop.running and r353.kd_drop then
+			r353.kd_drop()
 		end
 		if r351.update_session_data and r345() - (r384.rep_at or 0) > 1 then
 			r384.rep_at = r345()
@@ -17936,6 +18419,15 @@ do
 						if r384.combat.gun_mods.rapid_knife.enabled and (k == "Use" or k == "UseAlt" or k == "Stab") then
 							L:AdjustSpeed(r384.combat.gun_mods.rapid_knife.rate)
 						end
+
+						if r384.combat.gun_mods.insta_nade and r353.nade_profile and r353.nade_profile(r353.held_item_name()) then
+							local sLow = r320(k)
+							if string.find(sLow, "throw", 1, true) or string.find(sLow, "cook", 1, true) or string.find(sLow, "pin", 1, true) or string.find(sLow, "overhand", 1, true) or string.find(sLow, "underhand", 1, true) or string.find(sLow, "overhead", 1, true) or string.find(sLow, "grenade", 1, true) or sLow == "use" or sLow == "usealt" then
+								if L.Speed < 20 then
+									L:AdjustSpeed(20)
+								end
+							end
+						end
 					end)
 
 					r384.viewmodel_connection = r100:connection(R.DescendantAdded, function()
@@ -18212,11 +18704,25 @@ do
 			L, R = r371.vehicles:GetChildren()
 
 			for k, k in r1_2, L, R do
-				r352.new_instance(k, "uaz")
+				if r352.is_btr(k) then
+					r352.new_instance(k, "btr")
+				else
+					r352.new_instance(k, "uaz")
+				end
 			end
 
 			r100:connection(r371.vehicles.ChildAdded, function(k)
-				r352.new_instance(k, "uaz")
+				if r352.is_btr(k) then
+					r352.new_instance(k, "btr")
+				else
+					r352.new_instance(k, "uaz")
+				end
+			end)
+
+			r100:connection(r371.vehicles.DescendantAdded, function(k)
+				if r352.is_btr(k) and not r377.tracked[k] then
+					r352.new_instance(k, "btr")
+				end
 			end)
 		end
 
@@ -18244,6 +18750,41 @@ do
 			r100:connection(r371.zones.HeliAirfield.ChildAdded, function(R)
 				if r155(R, "Model") then
 					r352.new_instance(R, "heli")
+				end
+			end)
+		end
+
+		local function sTrackBtr(sInst)
+			if r352.is_btr(sInst) and not r377.tracked[sInst] then
+				r352.new_instance(sInst, "btr")
+			end
+		end
+
+		for _, sChild in r1_2, r95:GetChildren(), nil do
+			sTrackBtr(sChild)
+		end
+
+		r100:connection(r95.ChildAdded, function(sInst)
+			if not r352.is_btr(sInst) then
+				return
+			end
+			r339(0.25, function()
+				if sInst.Parent and not r377.tracked[sInst] then
+					r352.new_instance(sInst, "btr")
+				end
+			end)
+		end)
+
+		if r371.zones then
+			r100:connection(r371.zones.DescendantAdded, sTrackBtr)
+			r336(function()
+				local sN = 0
+				for _, sInst in r1_2, r371.zones:GetDescendants(), nil do
+					sN = sN + 1
+					if sN % 400 == 0 then
+						r337()
+					end
+					sTrackBtr(sInst)
 				end
 			end)
 		end
@@ -20988,6 +21529,86 @@ do
 		end,
 	})
 
+	r160:toggle({
+		name = "BTR-80",
+		flag = "btr_enabled",
+		callback = function(arg1)
+			r384.esp.other.btr.enabled = arg1
+			r352.refresh_custom()
+		end,
+	}):configuration({ name = "BTR Options" }, function(s33)
+		s33:toggle({
+			name = "Render Outline",
+			flag = "btr_outline",
+			default = true,
+			callback = function(arg1)
+				r384.esp.other.btr.outline = arg1
+				r352.refresh_custom()
+			end,
+		}):colorpicker({
+			name = "Outline Color",
+			flag = "btr_outline_color",
+			color = r116(0, 0, 0),
+			callback = function(arg1, t35)
+				r384.esp.other.btr.outline_color = arg1
+				r384.esp.other.btr.outline_transparency = 1 - t35
+				r352.refresh_custom()
+			end,
+		})
+
+		s33:splitter({ offset = 1 })
+
+		s33:toggle({
+			name = "Icon",
+			flag = "btr_icon",
+			callback = function(arg1)
+				r384.esp.other.btr.icon = arg1
+				r352.refresh_custom()
+			end,
+		}):colorpicker({
+			name = "Image Color",
+			flag = "btr_icon_color",
+			color = r116(255, 255, 255),
+			callback = function(arg1, t17)
+				r384.esp.other.btr.icon_color = arg1
+				r384.esp.other.btr.icon_transparency = 1 - t17
+				r352.refresh_custom()
+			end,
+		})
+
+		s33:toggle({
+			name = "Distance",
+			flag = "btr_distance",
+			callback = function(arg1)
+				r384.esp.other.btr.distance = arg1
+				r352.refresh_custom()
+			end,
+		})
+
+		s33:splitter({ offset = 1 })
+
+		s33:dropdown({
+			name = "Font",
+			scrolling = true,
+			flag = "btr_font",
+			items = r98,
+			default = "Tahoma",
+			callback = function(arg1)
+				r384.esp.other.btr.font = arg1
+				r352.refresh_custom()
+			end,
+		})
+	end):colorpicker({
+		name = "Text Color",
+		flag = "btr_color",
+		color = r116(255, 255, 255),
+		callback = function(arg1, s28)
+			r384.esp.other.btr.color = arg1
+			r384.esp.other.btr.transparency = 1 - s28
+			r352.refresh_custom()
+		end,
+	})
+
 	if r351.is_debug() then
 		r337(0.1)
 	end
@@ -21231,6 +21852,41 @@ do
 		flag = "noclip_speed",
 		callback = function(arg1)
 			r384.misc.movement.noclip.speed = arg1
+		end,
+	})
+
+	r163:toggle({
+		name = "Spiderman",
+		flag = "spider",
+		callback = function(arg1)
+			r384.misc.movement.spider.enabled = arg1
+			if not arg1 then
+				r384.misc.movement.spider.on = false
+			end
+		end,
+	}):keybind({
+		name = "Spiderman",
+		mode = "toggle",
+		key = Enum.KeyCode.X,
+		flag = "spider_bind",
+		callback = function(arg1)
+			if not r384.misc.movement.spider.enabled then
+				return
+			end
+			r384.misc.movement.spider.on = arg1 and true or false
+		end,
+	})
+
+	r163:slider({
+		name = "Climb Speed",
+		min = 6,
+		max = 18,
+		default = 11,
+		interval = 0.1,
+		suffix = "st",
+		flag = "spider_speed",
+		callback = function(arg1)
+			r384.misc.movement.spider.speed = arg1
 		end,
 	})
 
@@ -21564,8 +22220,46 @@ do
 		end,
 	})
 
+	r165_1:splitter()
+
+	r165_1:toggle({
+		name = "Insta Nade",
+		flag = "insta_nade",
+		callback = function(arg1)
+			r384.combat.gun_mods.insta_nade = arg1
+		end,
+	})
+
+	r165_1:toggle({
+		name = "Grenade Prediction",
+		flag = "grenade_pred",
+		callback = function(arg1)
+			r384.misc.grenade_pred.enabled = arg1
+		end,
+	}):configuration({ name = "Grenade Prediction" }, function(s19)
+		s19:slider({
+			name = "Thickness",
+			min = 1,
+			max = 6,
+			default = 2,
+			interval = 0.1,
+			flag = "grenade_thick",
+			callback = function(arg1)
+				r384.misc.grenade_pred.thick = arg1
+			end,
+		})
+	end):colorpicker({
+		name = "Arc Color",
+		flag = "grenade_color",
+		color = r116(255, 220, 80),
+		callback = function(arg1)
+			r384.misc.grenade_pred.color = arg1
+		end,
+	})
+
 	r166:toggle({
 		name = "Anti Mine",
+		tooltip = "Scans the map for mines, kills their touch, and puts health back if one pops",
 		flag = "anti_mine",
 		callback = function(arg1)
 			r384.misc.anti_mine = arg1
@@ -21940,6 +22634,31 @@ do
 			r384.misc.desync.visualization.server.visualize_animations = arg1
 		end,
 	})
+
+	r164:toggle({
+		name = "KD Dropper",
+		flag = "kd_drop",
+		callback = function(arg1)
+			r384.misc.kd_drop.enabled = arg1
+			if arg1 then
+				r353.kd_drop()
+			end
+		end,
+	})
+
+	r164:slider({
+		name = "Drop Restarts",
+		min = 1,
+		max = 500,
+		default = 5,
+		interval = 1,
+		flag = "kd_drop_count",
+		callback = function(arg1)
+			r384.misc.kd_drop.count = arg1
+		end,
+	})
+
+	r164:splitter()
 
 	r164:button_holder({})
 
